@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="fi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fffdf9">
-<title>户型装修设计</title>
+<title>Kodin sisustussuunnittelu</title>
 <style>
 :root{
   --bg:#f3efe7; --paper:#f7f4ee; --panel:#fffdf9; --line:#e3dccf; --ink:#2b2824; --muted:#8a8174;
@@ -107,7 +107,7 @@ kbd{font:11px ui-monospace,Menlo,monospace;background:#f2ece2;border:1px solid v
 #toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
   padding:8px 16px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:10}
 #toast.show{opacity:1;transform:translateX(-50%)}
-/* ---------- 2D / 3D 切换 ---------- */
+/* ---------- 2D / 3D -vaihto ---------- */
 .seg{position:relative;padding:3px}
 .seg .btn{position:relative;z-index:1;width:82px;transition:color .45s}
 .seg .btn:hover{background:transparent}
@@ -154,7 +154,7 @@ main.animating #hint3d{opacity:0}
   border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:0 10px 30px rgba(40,30,20,.14);z-index:20;animation:fadeIn .2s ease}
 .menu-pop .btn{text-align:left}
 .range span{font-variant-numeric:tabular-nums;color:var(--ink)}
-/* ---------- 选中后的浮动工具条 ---------- */
+/* ---------- Valinnan jälkeinen kelluva työkalupalkki ---------- */
 #fab{position:absolute;left:50%;bottom:16px;transform:translate(-50%,12px);display:flex;align-items:center;gap:4px;padding:5px;
   background:rgba(255,253,249,.97);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 26px rgba(40,30,20,.16);
   z-index:4;opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility 0s linear .2s;max-width:calc(100% - 24px)}
@@ -163,13 +163,13 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 #fab .name{padding:0 8px 0 6px;font-weight:600;max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #fab .btn{border:1px solid transparent}
 #fab .sep{width:1px;align-self:stretch;margin:4px 2px;background:var(--line)}
-/* ---------- 触屏漫游摇杆 ---------- */
+/* ---------- Kosketuskävelyn ohjaussauva ---------- */
 #joy{position:absolute;left:28px;bottom:28px;width:130px;height:130px;border-radius:50%;background:rgba(255,253,249,.25);
   border:2px solid rgba(255,255,255,.7);box-shadow:0 4px 18px rgba(0,0,0,.18);z-index:3;display:none;touch-action:none;backdrop-filter:blur(3px)}
 #joy i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,253,249,.92);
   box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none}
 #walkExit{position:absolute;right:16px;bottom:28px;z-index:3;display:none}
-/* ---------- 触屏：加大点击区域 ---------- */
+/* ---------- Kosketus: suuremmat kosketusalueet ---------- */
 @media (pointer:coarse){
   body{font-size:14px}
   header{padding:8px 12px;gap:8px}
@@ -188,8 +188,8 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   .mat{padding:9px 8px}
   .range input{width:120px!important}
 }
-/* ---------- 竖屏 / 窄屏（如 iPad 竖握）：侧栏改为抽屉 ---------- */
-/* ---------- 宽屏：左右面板可收起 ---------- */
+/* ---------- Pysty- / kapea näyttö (esim. iPad pystyasennossa): sivupalkit muuttuvat laatikoiksi ---------- */
+/* ---------- Leveä näyttö: sivupaneelit voi piilottaa ---------- */
 @media (min-width:1101px){
   .app{transition:grid-template-columns .3s cubic-bezier(.3,.7,.3,1)}
   .app.hide-lib{grid-template-columns:0 minmax(0,1fr) 300px}
@@ -197,7 +197,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   .app.hide-lib.hide-panel{grid-template-columns:0 minmax(0,1fr) 0}
   .app.hide-lib aside.lib,.app.hide-panel aside.right{overflow:hidden;border:0}
   aside{overflow-x:hidden}
-  aside.lib>div{min-width:220px} #panel{min-width:284px}   /* 收起动画中内容不被挤压变形 */
+  aside.lib>div{min-width:220px} #panel{min-width:284px}   /* sisältö ei vääristy sulkeutumisanimaation aikana */
 }
 .narrow-only{display:none!important}
 @media (max-width:1100px){
@@ -224,74 +224,74 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 <div class="app">
   <header>
     <div class="grp" id="paneBtns">
-      <button class="btn chip" id="tgLib" data-en="◧ Library">◧ 家具库</button>
-      <button class="btn chip" id="tgPanel" data-en="Properties ◨">属性 ◨</button>
+      <button class="btn chip" id="tgLib" data-en="◧ Library">◧ Kalusteet</button>
+      <button class="btn chip" id="tgPanel" data-en="Properties ◨">Ominaisuudet ◨</button>
     </div>
-    <div class="brand"><b data-en="3BR 2LR 2BA · Interior Design">三室两厅两卫 · 装修设计</b><span id="subtitle">原始户型 1:60 · 尺寸单位 mm</span></div>
-    <div class="grp seg" id="viewSeg" title="切换 2D / 3D (T)" data-en-title="Switch 2D / 3D (T)">
+    <div class="brand"><b data-en="3BR 2LR 2BA · Interior Design">3 mh · 2 oh · 2 kph · Sisustussuunnittelu</b><span id="subtitle">Alkuperäinen pohjapiirros 1:60 · mitat mm</span></div>
+    <div class="grp seg" id="viewSeg" title="Vaihda 2D / 3D (T)" data-en-title="Switch 2D / 3D (T)">
       <span class="pill"></span>
-      <button class="btn" data-view="2d" data-en="2D Plan">2D 平面</button>
-      <button class="btn" data-view="3d" data-en="3D Scene">3D 场景</button>
+      <button class="btn" data-view="2d" data-en="2D Plan">2D-pohja</button>
+      <button class="btn" data-view="3d" data-en="3D Scene">3D-näkymä</button>
     </div>
     <div class="grp only2d" id="tools">
-      <button class="btn on" data-tool="select" title="选择 / 移动 (V)" data-en-title="Select / Move (V)" data-en="Select">选择</button>
-      <button class="btn" data-tool="measure" title="测量 (M)" data-en-title="Measure (M)" data-en="Measure">测量</button>
-      <button class="btn" data-tool="demolish" title="拆改非承重墙 (X)" data-en-title="Demolish non-bearing walls (X)" data-en="Demolish">拆改墙体</button>
+      <button class="btn on" data-tool="select" title="Valitse / siirrä (V)" data-en-title="Select / Move (V)" data-en="Select">Valitse</button>
+      <button class="btn" data-tool="measure" title="Mittaa (M)" data-en-title="Measure (M)" data-en="Measure">Mittaa</button>
+      <button class="btn" data-tool="demolish" title="Pura ei-kantavia seiniä (X)" data-en-title="Demolish non-bearing walls (X)" data-en="Demolish">Purku</button>
     </div>
     <div class="grp only2d">
-      <button class="btn" id="zoomOut" title="缩小" data-en-title="Zoom out">−</button>
-      <button class="btn" id="zoomIn" title="放大" data-en-title="Zoom in">＋</button>
-      <button class="btn" id="fit" title="适应窗口 (F)" data-en-title="Fit to window (F)" data-en="Fit">适应</button>
-      <button class="btn" id="s60" title="按 1:60 显示（与原图同比例）" data-en-title="Show at 1:60 (same scale as the original plan)">1:60</button>
-      <button class="btn" id="s100" title="按 1:100 显示" data-en-title="Show at 1:100">1:100</button>
+      <button class="btn" id="zoomOut" title="Loitonna" data-en-title="Zoom out">−</button>
+      <button class="btn" id="zoomIn" title="Lähennä" data-en-title="Zoom in">＋</button>
+      <button class="btn" id="fit" title="Sovita ikkunaan (F)" data-en-title="Fit to window (F)" data-en="Fit">Sovita</button>
+      <button class="btn" id="s60" title="Näytä mittakaavassa 1:60 (sama kuin alkuperäisessä piirroksessa)" data-en-title="Show at 1:60 (same scale as the original plan)">1:60</button>
+      <button class="btn" id="s100" title="Näytä mittakaavassa 1:100" data-en-title="Show at 1:100">1:100</button>
     </div>
     <div class="grp only3d" id="modes3d">
-      <button class="btn on" data-mode="orbit" data-en="Orbit">鸟瞰</button>
-      <button class="btn" data-mode="walk" data-en="Walk">漫游</button>
+      <button class="btn on" data-mode="orbit" data-en="Orbit">Kierrä</button>
+      <button class="btn" data-mode="walk" data-en="Walk">Kävele</button>
     </div>
     <div class="grp only3d">
-      <button class="btn" id="vIso" data-en="Iso">斜视</button>
-      <button class="btn" id="vTop" data-en="Top">俯视</button>
+      <button class="btn" id="vIso" data-en="Iso">Viisto</button>
+      <button class="btn" id="vTop" data-en="Top">Ylhäältä</button>
     </div>
     <div class="grp">
-      <button class="btn" id="undo" title="撤销 (Ctrl+Z)" data-en-title="Undo (Ctrl+Z)" data-en="Undo">撤销</button>
-      <button class="btn" id="redo" title="重做 (Ctrl+Shift+Z)" data-en-title="Redo (Ctrl+Shift+Z)" data-en="Redo">重做</button>
-      <button class="btn danger" id="clearAll" title="清空所有家具家电（可撤销）" data-en-title="Remove all furniture and appliances (undoable)" data-en="Clear">清空布置</button>
+      <button class="btn" id="undo" title="Kumoa (Ctrl+Z)" data-en-title="Undo (Ctrl+Z)" data-en="Undo">Kumoa</button>
+      <button class="btn" id="redo" title="Tee uudelleen (Ctrl+Shift+Z)" data-en-title="Redo (Ctrl+Shift+Z)" data-en="Redo">Tee uudelleen</button>
+      <button class="btn danger" id="clearAll" title="Poista kaikki kalusteet ja laitteet (voi kumota)" data-en-title="Remove all furniture and appliances (undoable)" data-en="Clear">Tyhjennä sisustus</button>
     </div>
     <div class="grp only2d" id="layers">
-      <button class="btn chip on" data-layer="dims" data-en="Dims">尺寸</button>
-      <button class="btn chip on" data-layer="labels" data-en="Rooms">房间</button>
-      <button class="btn chip on" data-layer="furn" data-en="Furniture">家具</button>
-      <button class="btn chip" data-layer="grid" data-en="Grid">网格</button>
-      <button class="btn chip" data-layer="bearing" data-en="Bearing walls">承重墙</button>
-      <button class="btn chip on" data-layer="wallSnap" title="拖动家具时贴墙吸附" data-en-title="Snap furniture to walls while dragging" data-en="Wall snap">贴墙吸附</button>
+      <button class="btn chip on" data-layer="dims" data-en="Dims">Mitat</button>
+      <button class="btn chip on" data-layer="labels" data-en="Rooms">Huoneet</button>
+      <button class="btn chip on" data-layer="furn" data-en="Furniture">Kalusteet</button>
+      <button class="btn chip" data-layer="grid" data-en="Grid">Ruudukko</button>
+      <button class="btn chip" data-layer="bearing" data-en="Bearing walls">Kantavat seinät</button>
+      <button class="btn chip on" data-layer="wallSnap" title="Kiinnitä kalusteet seiniin vedettäessä" data-en-title="Snap furniture to walls while dragging" data-en="Wall snap">Seinäkiinnitys</button>
     </div>
     <div class="grp only3d">
-      <button class="btn chip on" data-cut="2.8" data-en="Full walls">全高墙</button>
-      <button class="btn chip" data-cut="1.2" data-en="Cut walls">剖切墙</button>
+      <button class="btn chip on" data-cut="2.8" data-en="Full walls">Täydet seinät</button>
+      <button class="btn chip" data-cut="1.2" data-en="Cut walls">Leikatut seinät</button>
     </div>
     <div class="grp only3d" id="toggles3d">
-      <button class="btn chip on" data-t="furn" data-en="Furniture">家具</button>
-      <button class="btn chip on" data-t="labels" data-en="Labels">房间名</button>
-      <button class="btn chip" data-t="night" data-en="Night">夜景</button>
+      <button class="btn chip on" data-t="furn" data-en="Furniture">Kalusteet</button>
+      <button class="btn chip on" data-t="labels" data-en="Labels">Huoneiden nimet</button>
+      <button class="btn chip" data-t="night" data-en="Night">Yö</button>
     </div>
-    <div class="grp only3d"><label class="range"><span data-en="Sun">日照</span> <input type="range" id="sun" min="7" max="18" step=".25" value="10" style="width:84px"><span id="sunT">10:00</span></label></div>
+    <div class="grp only3d"><label class="range"><span data-en="Sun">Aurinko</span> <input type="range" id="sun" min="7" max="18" step=".25" value="10" style="width:84px"><span id="sunT">10:00</span></label></div>
     <div class="spacer"></div>
-    <button class="btn" id="langBtn" title="Switch language / 切换语言" style="border:1px solid var(--line);background:#fff">EN</button>
-    <button class="btn" id="fullscreen" title="全屏 (Shift+F)" style="border:1px solid var(--line);background:#fff">⛶ 全屏</button>
-    <details class="menu"><summary class="btn" data-en="File ▾">文件 ▾</summary>
+    <button class="btn" id="langBtn" title="Switch language / Vaihda kieli" style="border:1px solid var(--line);background:#fff">EN</button>
+    <button class="btn" id="fullscreen" title="Koko näyttö (Shift+F)" style="border:1px solid var(--line);background:#fff">⛶ Koko näyttö</button>
+    <details class="menu"><summary class="btn" data-en="File ▾">Tiedosto ▾</summary>
       <div class="menu-pop">
-        <button class="btn" id="exportPng" data-en="Export image">导出图片</button>
-        <button class="btn" id="exportJson" data-en="Export plan JSON">导出方案 JSON</button>
-        <button class="btn" id="importJson" data-en="Import plan">导入方案</button>
-        <button class="btn danger" id="reset" data-en="Reset to default">重置为默认方案</button>
+        <button class="btn" id="exportPng" data-en="Export image">Vie kuva</button>
+        <button class="btn" id="exportJson" data-en="Export plan JSON">Vie suunnitelma (JSON)</button>
+        <button class="btn" id="importJson" data-en="Import plan">Tuo suunnitelma</button>
+        <button class="btn danger" id="reset" data-en="Reset to default">Palauta oletussuunnitelma</button>
       </div></details>
     <input type="file" id="fileIn" accept=".json,application/json" hidden>
   </header>
 
   <aside class="lib">
     <div id="lib3d" class="only3d">
-      <h4 data-en="Rooms · click to fly there">房间 · 点击飞到该房间</h4>
+      <h4 data-en="Rooms · click to fly there">Huoneet · napsauta lentääksesi huoneeseen</h4>
       <div id="roomList"></div>
     </div>
     <div id="lib"></div>
@@ -311,13 +311,13 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
       <g id="gSel"></g>
     </svg>
     <div id="view3d">
-      <div id="walkOverlay"><div><h3 data-en="Walk mode">漫游模式</h3>
+      <div id="walkOverlay"><div><h3 data-en="Walk mode">Kävelytila</h3>
         <p id="wo1"></p>
         <p id="wo2"></p>
         <p id="wo3"></p></div></div>
       <div id="cross"></div>
       <div id="joy"><i></i></div>
-      <button class="btn primary" id="walkExit" data-en="Exit walk">退出漫游</button>
+      <button class="btn primary" id="walkExit" data-en="Exit walk">Poistu kävelystä</button>
       <div id="hint3d"></div>
     </div>
     <div class="scalebar" id="scalebar"><span id="sbText">1 m</span><div class="bar" id="sbBar"></div></div>
@@ -329,7 +329,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 
   <footer>
     <span class="only2d">X <b id="cx">—</b></span><span class="only2d">Y <b id="cy">—</b></span>
-    <span class="only2d"><span data-en="Scale">当前比例</span> <b id="ratio">—</b></span>
+    <span class="only2d"><span data-en="Scale">Nykyinen mittakaava</span> <b id="ratio">—</b></span>
     <span id="hover" class="only2d"></span>
     <span class="spacer"></span>
     <span id="tip"></span>
@@ -338,154 +338,154 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
 <div id="toast"></div>
 
 <script>
-/* ======================= 多语言（中文 / English，默认中文） ======================= */
+/* ======================= Kielet (suomi / English, oletuksena suomi) ======================= */
 const LANG_KEY = 'huxing-lang';
-let LANG = (() => { try { return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'zh'; } catch(e) { return 'zh'; } })();
-const tr = (zh, en) => LANG === 'en' ? en : zh;
-// 内置的房间 / 材料 / 家具名称存的是中文；英文界面下显示译名，用户自己改过的名称原样显示
+let LANG = (() => { try { return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'fi'; } catch(e) { return 'fi'; } })();
+const tr = (fi, en) => LANG === 'en' ? en : fi;
+// Sisäänrakennetut huoneiden / materiaalien / kalusteiden nimet on tallennettu suomeksi; englanninkielisessä käyttöliittymässä näytetään käännös, käyttäjän itse muokkaamat nimet näytetään sellaisenaan
 const NAMES_EN = {
-  '主卧室':'Master Bedroom', '主卫浴':'Master Bath', '小孩房':"Kids' Room", '客卫浴':'Guest Bath', '洗衣阳台':'Laundry Balcony',
-  '子女房':"Children's Room", '厨房':'Kitchen', '餐厅':'Dining', '过道':'Hallway', '客厅':'Living Room', '休闲阳台':'Leisure Balcony',
-  '主卧飘窗':'Master Bay Window', '子女房飘窗':"Children's Bay Window",
-  '橡木地板':'Oak Flooring', '胡桃木地板':'Walnut Flooring', '800 地砖':'800 Tile', '600 地砖':'600 Tile', '大理石':'Marble',
-  '300 防滑砖':'300 Anti-slip Tile', '水磨石':'Terrazzo', '满铺地毯':'Wall-to-wall Carpet',
-  '卧室':'Bedroom', '餐厨':'Dining & Kitchen', '卫浴':'Bathroom', '家电':'Appliances', '书房 · 休闲':'Study & Leisure',
-  '双人床 1.8m':'Double Bed 1.8m', '双人床 1.5m':'Double Bed 1.5m', '双人床':'Double Bed', '单人床':'Single Bed', '婴儿床':'Crib',
-  '床头柜':'Nightstand', '衣柜':'Wardrobe', '小衣柜':'Small Wardrobe', '梳妆台':'Dresser', '书桌':'Desk', '椅子':'Chair',
-  '书架':'Bookshelf', '飘窗垫':'Bay Cushion', '三人沙发':'3-Seat Sofa', '双人沙发':'Loveseat', '转角沙发':'Corner Sofa',
-  '单人沙发':'Armchair', '懒人沙发':'Beanbag', '茶几':'Coffee Table', '边几':'Side Table', '电视柜':'TV Stand', '地毯':'Rug',
-  '鞋柜':'Shoe Cabinet', '玄关柜':'Entry Cabinet', '落地灯':'Floor Lamp', '绿植':'Plant', '大绿植':'Large Plant',
-  '餐桌':'Dining Table', '六人餐桌':'6-Seat Dining Table', '圆桌':'Round Table', '餐椅':'Dining Chair', '岛台':'Kitchen Island',
-  '吧椅':'Bar Stool', '橱柜台面':'Kitchen Counter', '燃气灶':'Gas Stove', '水槽':'Sink', '冰箱':'Fridge', '餐边柜':'Sideboard',
-  '马桶':'Toilet', '浴室柜':'Vanity', '双盆浴室柜':'Double Vanity', '淋浴房':'Shower', '淋浴区':'Shower Area', '浴缸':'Bathtub',
-  '洗衣机':'Washer', '洗衣池':'Laundry Sink', '电热水器':'Water Heater', '储物柜':'Storage Cabinet', '65 寸电视':'65" TV',
-  '55 寸电视':'55" TV', '对开门冰箱':'French-door Fridge', '柜机空调':'Floor AC', '挂机空调':'Wall AC', '洗碗机':'Dishwasher',
-  '蒸烤箱高柜':'Oven Tower', '烘干机':'Dryer', '空气净化器':'Air Purifier', '长书桌':'Long Desk', '办公椅':'Office Chair',
-  '大书架':'Large Bookshelf', '立式钢琴':'Upright Piano', '跑步机':'Treadmill', '阅读椅':'Reading Chair', '茶桌':'Tea Table', '休闲椅':'Lounge Chair',
+  'Päämakuuhuone':'Master Bedroom', 'Pääkylpyhuone':'Master Bath', 'Lastenhuone':"Kids' Room", 'Vieraskylpyhuone':'Guest Bath', 'Pyykkiparveke':'Laundry Balcony',
+  'Nuortenhuone':"Children's Room", 'Keittiö':'Kitchen', 'Ruokailutila':'Dining', 'Käytävä':'Hallway', 'Olohuone':'Living Room', 'Oleskeluparveke':'Leisure Balcony',
+  'Päämakuuhuoneen erkkeri':'Master Bay Window', 'Nuortenhuoneen erkkeri':"Children's Bay Window",
+  'Tammiparketti':'Oak Flooring', 'Pähkinäparketti':'Walnut Flooring', '800 laatta':'800 Tile', '600 laatta':'600 Tile', 'Marmori':'Marble',
+  '300 liukumaton laatta':'300 Anti-slip Tile', 'Terrazzo':'Terrazzo', 'Kokolattiamatto':'Wall-to-wall Carpet',
+  'Makuuhuone':'Bedroom', 'Ruokailu ja keittiö':'Dining & Kitchen', 'Kylpyhuone':'Bathroom', 'Kodinkoneet':'Appliances', 'Työhuone · vapaa-aika':'Study & Leisure',
+  'Parisänky 1.8m':'Double Bed 1.8m', 'Parisänky 1.5m':'Double Bed 1.5m', 'Parisänky':'Double Bed', 'Yhden hengen sänky':'Single Bed', 'Vauvansänky':'Crib',
+  'Yöpöytä':'Nightstand', 'Vaatekaappi':'Wardrobe', 'Pieni vaatekaappi':'Small Wardrobe', 'Meikkipöytä':'Dresser', 'Työpöytä':'Desk', 'Tuoli':'Chair',
+  'Kirjahylly':'Bookshelf', 'Erkkeripenkin tyyny':'Bay Cushion', '3-istuttava sohva':'3-Seat Sofa', '2-istuttava sohva':'Loveseat', 'Kulmasohva':'Corner Sofa',
+  'Nojatuoli':'Armchair', 'Säkkituoli':'Beanbag', 'Sohvapöytä':'Coffee Table', 'Sivupöytä':'Side Table', 'TV-taso':'TV Stand', 'Matto':'Rug',
+  'Kenkäkaappi':'Shoe Cabinet', 'Eteiskaappi':'Entry Cabinet', 'Lattiavalaisin':'Floor Lamp', 'Kasvi':'Plant', 'Suuri kasvi':'Large Plant',
+  'Ruokapöytä':'Dining Table', '6 hengen ruokapöytä':'6-Seat Dining Table', 'Pyöreä pöytä':'Round Table', 'Ruokatuoli':'Dining Chair', 'Keittiösaareke':'Kitchen Island',
+  'Baarijakkara':'Bar Stool', 'Keittiötaso':'Kitchen Counter', 'Kaasuliesi':'Gas Stove', 'Allas':'Sink', 'Jääkaappi':'Fridge', 'Senkki':'Sideboard',
+  'WC-istuin':'Toilet', 'Pesukaappi':'Vanity', 'Kaksoispesukaappi':'Double Vanity', 'Suihkukaappi':'Shower', 'Suihkualue':'Shower Area', 'Kylpyamme':'Bathtub',
+  'Pyykinpesukone':'Washer', 'Pyykkiallas':'Laundry Sink', 'Sähkövesivaraaja':'Water Heater', 'Säilytyskaappi':'Storage Cabinet', '65" TV':'65" TV',
+  '55" TV':'55" TV', 'Kaappijääkaappi':'French-door Fridge', 'Lattia-ilmastointilaite':'Floor AC', 'Seinäilmastointilaite':'Wall AC', 'Astianpesukone':'Dishwasher',
+  'Uunikaappi':'Oven Tower', 'Kuivausrumpu':'Dryer', 'Ilmanpuhdistin':'Air Purifier', 'Pitkä työpöytä':'Long Desk', 'Työtuoli':'Office Chair',
+  'Suuri kirjahylly':'Large Bookshelf', 'Piano':'Upright Piano', 'Juoksumatto':'Treadmill', 'Lukutuoli':'Reading Chair', 'Teepöytä':'Tea Table', 'Lepotuoli':'Lounge Chair',
 };
 const nm = s => LANG === 'en' ? (NAMES_EN[s] ?? s) : s;
-// 静态文案：元素上写 data-en / data-en-title，中文原文首次切换时存进 dataset
+// Staattiset tekstit: elementeille kirjoitetaan data-en / data-en-title, suomenkielinen alkuperäisteksti tallennetaan datasettiin ensimmäisellä vaihdolla
 function applyStaticLang(){
-  document.documentElement.lang = tr('zh-CN', 'en');
-  document.title = tr('户型装修设计', 'Floor Plan Designer');
-  document.querySelectorAll('[data-en]').forEach(el => { el.dataset.zh ??= el.textContent; el.textContent = tr(el.dataset.zh, el.dataset.en); });
-  document.querySelectorAll('[data-en-title]').forEach(el => { el.dataset.zhTitle ??= el.title; el.title = tr(el.dataset.zhTitle, el.dataset.enTitle); });
-  document.getElementById('langBtn').textContent = tr('EN', '中文');
+  document.documentElement.lang = tr('fi', 'en');
+  document.title = tr('Kodin sisustussuunnittelu', 'Floor Plan Designer');
+  document.querySelectorAll('[data-en]').forEach(el => { el.dataset.fi ??= el.textContent; el.textContent = tr(el.dataset.fi, el.dataset.en); });
+  document.querySelectorAll('[data-en-title]').forEach(el => { el.dataset.fiTitle ??= el.title; el.title = tr(el.dataset.fiTitle, el.dataset.enTitle); });
+  document.getElementById('langBtn').textContent = tr('EN', 'FI');
 }
 
 /* ============================================================
- *  户型数据（单位 mm，原点 = 左侧外墙内皮 / 顶部外墙内皮）
- *  所有数值均按原始户型图尺寸标注推算：
- *  上：1580/240/2760/240/1540/240/3670 = 10270
- *  下：2180/240/2160/240/5450/240/1340 = 11850
- *  左：3370/1580/240/2770/240/2360 = 10560
- *  右：3370/240/2760/240/3950 = 10560
+ *  Pohjapiirroksen data (yksikkö mm, origo = vasemman ulkoseinän sisäpinta / ylemmän ulkoseinän sisäpinta)
+ *  Kaikki arvot on johdettu alkuperäisen pohjapiirroksen mittamerkinnöistä:
+ *  Ylä: 1580/240/2760/240/1540/240/3670 = 10270
+ *  Ala: 2180/240/2160/240/5450/240/1340 = 11850
+ *  Vasen: 3370/1580/240/2770/240/2360 = 10560
+ *  Oikea: 3370/240/2760/240/3950 = 10560
  * ============================================================ */
-// 墙体：[x0,y0,x1,y1,类型]  b=承重(黑) e=外墙 n=可拆非承重 low=矮墙
+// Seinät: [x0,y0,x1,y1,tyyppi]  b=kantava (musta) e=ulkoseinä n=purettava ei-kantava low=matala seinä
 const WALLS = [
-  // 顶部外墙
+  // Yläulkoseinä
   [1580,-240,2120,0,'b'],[1580,0,1820,300,'b'],[2120,-240,4580,0,'e'],[4580,-240,5140,0,'e'],
   [5760,-240,6050,0,'e'],[6050,-240,6600,0,'b'],[6360,0,6600,300,'b'],[6600,-240,9960,0,'e'],
   [9960,-240,10510,0,'b'],[10270,0,10510,300,'b'],
-  // 右侧外墙
+  // Oikea ulkoseinä
   [10270,300,10510,800,'e'],[10270,2600,10510,3090,'e'],[10270,3090,10510,4260,'b'],
   [10270,5740,10510,6370,'b'],[9960,6370,10510,6610,'b'],[10270,6610,10510,7400,'b'],
   [10270,9770,10510,10560,'b'],[9960,10560,10510,10800,'b'],
-  // 底部 / 阳台
+  // Alaosa / parveke
   [4580,10560,9960,10800,'e'],[10510,10560,12090,10800,'e'],[11850,9960,12090,10560,'e'],
-  // 客厅左墙（入户门两侧）
+  // Olohuoneen vasen seinä (ulko-oven molemmin puolin)
   [4580,9200,4820,10560,'e'],[4580,7960,4820,8310,'e'],
-  // 餐厅 / 厨房外墙
+  // Ruokailutilan / keittiön ulkoseinä
   [3620,7960,4580,8200,'e'],[2180,7960,3620,8200,'b'],[2180,7590,2420,7960,'b'],[2180,7400,2420,7590,'n'],
   [-240,7960,2180,8200,'e'],[-240,3610,0,7960,'e'],
-  // 洗衣阳台
+  // Pyykkiparveke
   [0,4950,200,5190,'n'],[200,4950,1275,5190,'low'],[1580,3370,2420,3825,'b'],
   [2180,4430,2420,5796,'n'],[2090,4950,2180,5190,'n'],
-  // 客卫
+  // Vieraskylpyhuone
   [2420,4950,4580,5190,'n'],[4580,3280,4820,4075,'n'],[4580,4860,4820,5190,'n'],[2420,3370,4580,3610,'n'],
-  // 小孩房 / 主卫
+  // Lastenhuone / Pääkylpyhuone
   [4580,0,4820,2400,'n'],[4820,2080,6360,2320,'n'],[6360,300,6600,1198,'n'],[6360,1983,6600,2400,'n'],
-  // 过道 / 主卧 / 子女房
+  // Käytävä / Päämakuuhuone / Nuortenhuone
   [6083,3370,6600,3707,'b'],[6360,3280,6600,3370,'n'],[6600,3370,9960,3610,'n'],[9960,3370,10270,3610,'b'],
   [6083,4600,6323,6610,'n'],[6323,6370,9960,6610,'n'],
 ];
-// 窗
+// Ikkunat
 const WINS = [
   [5140,-240,5760,0],[1580,300,1820,3370],[-240,3370,1580,3610],[2180,3825,2420,4430],
   [10510,6370,12090,6610],[11850,6610,12090,9960],
-  // 飘窗（主卧 / 子女房）
+  // Erkkeri-ikkunat (päämakuuhuone / nuortenhuone)
   [10510,660,11130,760],[11030,760,11130,2650],[10510,2650,11130,2750],
   [10510,4110,11130,4210],[11030,4210,11130,5785],[10510,5785,11130,5885],
 ];
-// 平开门：洞口、铰点、关闭方向、开启方向、门宽
+// Heiluriovet: aukko, sarana, sulkusuunta, avautumissuunta, oven leveys
 const DOORS = [
-  {name:'小孩房门',rect:[4580,2400,4820,3280],h:[4580,3280],c:[0,-1],o:[-1,0],len:880},
-  {name:'主卧门',rect:[6360,2400,6600,3280],h:[6600,3280],c:[0,-1],o:[1,0],len:880},
-  {name:'主卫门',rect:[6360,1198,6600,1983],h:[6360,1198],c:[0,1],o:[-1,0],len:785},
-  {name:'客卫门',rect:[4580,4075,4820,4860],h:[4580,4860],c:[0,-1],o:[-1,0],len:785},
-  {name:'子女房门',rect:[6083,3707,6323,4600],h:[6323,4600],c:[0,-1],o:[1,0],len:893},
-  {name:'入户门',rect:[4580,8310,4820,9200],h:[4820,9200],c:[0,-1],o:[1,0],len:890,entry:true},
+  {name:'Lastenhuoneen ovi',rect:[4580,2400,4820,3280],h:[4580,3280],c:[0,-1],o:[-1,0],len:880},
+  {name:'Päämakuuhuoneen ovi',rect:[6360,2400,6600,3280],h:[6600,3280],c:[0,-1],o:[1,0],len:880},
+  {name:'Pääkylpyhuoneen ovi',rect:[6360,1198,6600,1983],h:[6360,1198],c:[0,1],o:[-1,0],len:785},
+  {name:'Vieraskylpyhuoneen ovi',rect:[4580,4075,4820,4860],h:[4580,4860],c:[0,-1],o:[-1,0],len:785},
+  {name:'Nuortenhuoneen ovi',rect:[6083,3707,6323,4600],h:[6323,4600],c:[0,-1],o:[1,0],len:893},
+  {name:'Ulko-ovi',rect:[4580,8310,4820,9200],h:[4820,9200],c:[0,-1],o:[1,0],len:890,entry:true},
 ];
-// 推拉门
+// Liukuovet
 const SLIDES = [
   {rect:[10270,7400,10510,9770],v:true},
   {rect:[1275,4950,2090,5190],v:false},
 ];
 const R = (x0,y0,x1,y1) => [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 const ROOMS = [
-  {id:'master', name:'主卧室', poly:R(6600,0,10270,3370), mat:'wood', at:[8435,2420]},
-  {id:'mbath', name:'主卫浴', poly:R(4820,0,6360,2080), mat:'antislip', at:[5980,1780]},
-  {id:'kid', name:'小孩房', poly:R(1820,0,4580,3370), mat:'wood', at:[3380,2330]},
-  {id:'gbath', name:'客卫浴', poly:R(2420,3610,4580,4950), mat:'antislip', at:[3760,4620]},
-  {id:'laundry', name:'洗衣阳台', poly:R(0,3610,2180,4950), mat:'antislip', at:[1250,4330]},
-  {id:'child', name:'子女房', poly:R(6323,3610,10270,6370), mat:'wood', at:[8850,4850]},
-  {id:'kitchen', name:'厨房', poly:R(0,5190,2180,7960), mat:'tile600', at:[1300,6500]},
-  {id:'dining', name:'餐厅', poly:[[2420,5190],[4820,5190],[4820,7960],[2420,7960],[2420,7400],[2180,7400],[2180,5796],[2420,5796]], mat:'tile800', at:[3900,5520]},
-  {id:'hall', name:'过道', poly:[[4820,2320],[6360,2320],[6360,3370],[6083,3370],[6083,6610],[4820,6610]], mat:'tile800', at:[5450,4450]},
-  {id:'living', name:'客厅', poly:R(4820,6610,10270,10560), mat:'tile800', at:[7600,7560]},
-  {id:'balcony', name:'休闲阳台', poly:R(10510,6610,11850,10560), mat:'walnut', at:[11180,9450]},
-  {id:'bay1', name:'主卧飘窗', poly:[[10270,800],[10510,800],[10510,760],[11030,760],[11030,2650],[10510,2650],[10510,2600],[10270,2600]], mat:'marble', counted:false},
-  {id:'bay2', name:'子女房飘窗', poly:[[10270,4260],[10510,4260],[10510,4210],[11030,4210],[11030,5785],[10510,5785],[10510,5740],[10270,5740]], mat:'marble', counted:false},
+  {id:'master', name:'Päämakuuhuone', poly:R(6600,0,10270,3370), mat:'wood', at:[8435,2420]},
+  {id:'mbath', name:'Pääkylpyhuone', poly:R(4820,0,6360,2080), mat:'antislip', at:[5980,1780]},
+  {id:'kid', name:'Lastenhuone', poly:R(1820,0,4580,3370), mat:'wood', at:[3380,2330]},
+  {id:'gbath', name:'Vieraskylpyhuone', poly:R(2420,3610,4580,4950), mat:'antislip', at:[3760,4620]},
+  {id:'laundry', name:'Pyykkiparveke', poly:R(0,3610,2180,4950), mat:'antislip', at:[1250,4330]},
+  {id:'child', name:'Nuortenhuone', poly:R(6323,3610,10270,6370), mat:'wood', at:[8850,4850]},
+  {id:'kitchen', name:'Keittiö', poly:R(0,5190,2180,7960), mat:'tile600', at:[1300,6500]},
+  {id:'dining', name:'Ruokailutila', poly:[[2420,5190],[4820,5190],[4820,7960],[2420,7960],[2420,7400],[2180,7400],[2180,5796],[2420,5796]], mat:'tile800', at:[3900,5520]},
+  {id:'hall', name:'Käytävä', poly:[[4820,2320],[6360,2320],[6360,3370],[6083,3370],[6083,6610],[4820,6610]], mat:'tile800', at:[5450,4450]},
+  {id:'living', name:'Olohuone', poly:R(4820,6610,10270,10560), mat:'tile800', at:[7600,7560]},
+  {id:'balcony', name:'Oleskeluparveke', poly:R(10510,6610,11850,10560), mat:'walnut', at:[11180,9450]},
+  {id:'bay1', name:'Päämakuuhuoneen erkkeri', poly:[[10270,800],[10510,800],[10510,760],[11030,760],[11030,2650],[10510,2650],[10510,2600],[10270,2600]], mat:'marble', counted:false},
+  {id:'bay2', name:'Nuortenhuoneen erkkeri', poly:[[10270,4260],[10510,4260],[10510,4210],[11030,4210],[11030,5785],[10510,5785],[10510,5740],[10270,5740]], mat:'marble', counted:false},
 ];
 const MATS = {
-  wood:    {name:'橡木地板', price:320, sw:'#d8b88a'},
-  walnut:  {name:'胡桃木地板', price:380, sw:'#9b7250'},
-  tile800: {name:'800 地砖', price:220, sw:'#ebe6dc'},
-  tile600: {name:'600 地砖', price:160, sw:'#dfe3e1'},
-  marble:  {name:'大理石', price:650, sw:'#f1eee8'},
-  antislip:{name:'300 防滑砖', price:140, sw:'#d3d8d4'},
-  terrazzo:{name:'水磨石', price:280, sw:'#e6dfd3'},
-  carpet:  {name:'满铺地毯', price:200, sw:'#c9c3d3'},
+  wood:    {name:'Tammiparketti', price:320, sw:'#d8b88a'},
+  walnut:  {name:'Pähkinäparketti', price:380, sw:'#9b7250'},
+  tile800: {name:'800 laatta', price:220, sw:'#ebe6dc'},
+  tile600: {name:'600 laatta', price:160, sw:'#dfe3e1'},
+  marble:  {name:'Marmori', price:650, sw:'#f1eee8'},
+  antislip:{name:'300 liukumaton laatta', price:140, sw:'#d3d8d4'},
+  terrazzo:{name:'Terrazzo', price:280, sw:'#e6dfd3'},
+  carpet:  {name:'Kokolattiamatto', price:200, sw:'#c9c3d3'},
 };
-// 家具库：[类型, 名称, 宽, 深, 颜色]
+// Kalustekirjasto: [tyyppi, nimi, leveys, syvyys, väri]
 const LIB = [
-  {cat:'卧室', items:[
-    ['bed','双人床 1.8m',1800,2000,'#c9d6df'],['bed','双人床 1.5m',1500,2000,'#d8c7dc'],['bed','单人床',1200,2000,'#e8d5b5'],
-    ['crib','婴儿床',1250,700,'#efe3d0'],['nightstand','床头柜',450,400,'#e8dccb'],['wardrobe','衣柜',2000,600,'#efe6d8'],
-    ['wardrobe','小衣柜',1200,550,'#efe6d8'],['dresser','梳妆台',1000,450,'#efe6d8'],['desk','书桌',1200,600,'#e2cfb4'],
-    ['chair','椅子',450,480,'#cfc6b8'],['bookshelf','书架',800,300,'#e2cfb4'],['baycushion','飘窗垫',520,1800,'#e7dccd']]},
-  {cat:'客厅', items:[
-    ['sofa','三人沙发',2400,900,'#b7c4b0'],['sofa','双人沙发',1700,880,'#c3cbd6'],['cornersofa','转角沙发',2800,1700,'#b7c4b0'],
-    ['armchair','单人沙发',850,850,'#d6b99a'],['beanbag','懒人沙发',800,800,'#e0b98f'],['coffeetable','茶几',1300,650,'#e8dccb'],
-    ['sidetable','边几',500,500,'#d9c3a3'],['tvstand','电视柜',2400,400,'#e2cfb4'],['rug','地毯',2400,1700,'#d9cbb8'],
-    ['shoecab','鞋柜',1000,350,'#efe6d8'],['shoecab','玄关柜',1400,380,'#e6dccc'],['floorlamp','落地灯',450,450,'#3d3a34'],
-    ['plant','绿植',500,500,'#a9c39b'],['plant','大绿植',700,700,'#9dbb8c']]},
-  {cat:'餐厨', items:[
-    ['table','餐桌',1400,800,'#e2cfb4'],['table','六人餐桌',1800,900,'#d8c2a2'],['roundtable','圆桌',1000,1000,'#e2cfb4'],
-    ['chair','餐椅',450,480,'#cfc6b8'],['island','岛台',1800,900,'#e9e5de'],['barstool','吧椅',420,420,'#6b5d4c'],
-    ['counter','橱柜台面',1600,600,'#e9e5de'],['stove','燃气灶',750,450,'#dcdcdc'],['ksink','水槽',800,450,'#e1e6ea'],
-    ['fridge','冰箱',700,700,'#dfe4e8'],['cabinet','餐边柜',1600,400,'#efe6d8']]},
-  {cat:'卫浴', items:[
-    ['toilet','马桶',400,700,'#ffffff'],['vanity','浴室柜',800,500,'#eef1f3'],['vanity','双盆浴室柜',1200,500,'#eef1f3'],
-    ['shower','淋浴房',900,900,'#e4edf2'],['bathtub','浴缸',1600,750,'#eef3f6'],['washer','洗衣机',600,600,'#e6ebee'],
-    ['waterheater','电热水器',800,450,'#f4f4f2'],['cabinet','储物柜',1000,400,'#efe6d8']]},
-  {cat:'家电', items:[
-    ['tv','65 寸电视',1450,80,'#1d1d1f'],['tv','55 寸电视',1230,80,'#1d1d1f'],['fridge','对开门冰箱',910,700,'#c9ced3'],
-    ['aircon','柜机空调',500,380,'#f6f7f8'],['acwall','挂机空调',900,250,'#f6f7f8'],['dishwasher','洗碗机',600,600,'#c9ced3'],
-    ['ovencol','蒸烤箱高柜',600,600,'#efe6d8'],['dryer','烘干机',600,600,'#e6ebee'],['purifier','空气净化器',400,300,'#f4f4f2']]},
-  {cat:'书房 · 休闲', items:[
-    ['desk','长书桌',1600,700,'#d8c2a2'],['officechair','办公椅',620,620,'#4a4f55'],['bookshelf','大书架',1600,350,'#e2cfb4'],
-    ['piano','立式钢琴',1500,600,'#1f1d1b'],['treadmill','跑步机',800,1800,'#3a3a3c'],['armchair','阅读椅',750,800,'#c9a98a']]},
+  {cat:'Makuuhuone', items:[
+    ['bed','Parisänky 1.8m',1800,2000,'#c9d6df'],['bed','Parisänky 1.5m',1500,2000,'#d8c7dc'],['bed','Yhden hengen sänky',1200,2000,'#e8d5b5'],
+    ['crib','Vauvansänky',1250,700,'#efe3d0'],['nightstand','Yöpöytä',450,400,'#e8dccb'],['wardrobe','Vaatekaappi',2000,600,'#efe6d8'],
+    ['wardrobe','Pieni vaatekaappi',1200,550,'#efe6d8'],['dresser','Meikkipöytä',1000,450,'#efe6d8'],['desk','Työpöytä',1200,600,'#e2cfb4'],
+    ['chair','Tuoli',450,480,'#cfc6b8'],['bookshelf','Kirjahylly',800,300,'#e2cfb4'],['baycushion','Erkkeripenkin tyyny',520,1800,'#e7dccd']]},
+  {cat:'Olohuone', items:[
+    ['sofa','3-istuttava sohva',2400,900,'#b7c4b0'],['sofa','2-istuttava sohva',1700,880,'#c3cbd6'],['cornersofa','Kulmasohva',2800,1700,'#b7c4b0'],
+    ['armchair','Nojatuoli',850,850,'#d6b99a'],['beanbag','Säkkituoli',800,800,'#e0b98f'],['coffeetable','Sohvapöytä',1300,650,'#e8dccb'],
+    ['sidetable','Sivupöytä',500,500,'#d9c3a3'],['tvstand','TV-taso',2400,400,'#e2cfb4'],['rug','Matto',2400,1700,'#d9cbb8'],
+    ['shoecab','Kenkäkaappi',1000,350,'#efe6d8'],['shoecab','Eteiskaappi',1400,380,'#e6dccc'],['floorlamp','Lattiavalaisin',450,450,'#3d3a34'],
+    ['plant','Kasvi',500,500,'#a9c39b'],['plant','Suuri kasvi',700,700,'#9dbb8c']]},
+  {cat:'Ruokailu ja keittiö', items:[
+    ['table','Ruokapöytä',1400,800,'#e2cfb4'],['table','6 hengen ruokapöytä',1800,900,'#d8c2a2'],['roundtable','Pyöreä pöytä',1000,1000,'#e2cfb4'],
+    ['chair','Ruokatuoli',450,480,'#cfc6b8'],['island','Keittiösaareke',1800,900,'#e9e5de'],['barstool','Baarijakkara',420,420,'#6b5d4c'],
+    ['counter','Keittiötaso',1600,600,'#e9e5de'],['stove','Kaasuliesi',750,450,'#dcdcdc'],['ksink','Allas',800,450,'#e1e6ea'],
+    ['fridge','Jääkaappi',700,700,'#dfe4e8'],['cabinet','Senkki',1600,400,'#efe6d8']]},
+  {cat:'Kylpyhuone', items:[
+    ['toilet','WC-istuin',400,700,'#ffffff'],['vanity','Pesukaappi',800,500,'#eef1f3'],['vanity','Kaksoispesukaappi',1200,500,'#eef1f3'],
+    ['shower','Suihkukaappi',900,900,'#e4edf2'],['bathtub','Kylpyamme',1600,750,'#eef3f6'],['washer','Pyykinpesukone',600,600,'#e6ebee'],
+    ['waterheater','Sähkövesivaraaja',800,450,'#f4f4f2'],['cabinet','Säilytyskaappi',1000,400,'#efe6d8']]},
+  {cat:'Kodinkoneet', items:[
+    ['tv','65" TV',1450,80,'#1d1d1f'],['tv','55" TV',1230,80,'#1d1d1f'],['fridge','Kaappijääkaappi',910,700,'#c9ced3'],
+    ['aircon','Lattia-ilmastointilaite',500,380,'#f6f7f8'],['acwall','Seinäilmastointilaite',900,250,'#f6f7f8'],['dishwasher','Astianpesukone',600,600,'#c9ced3'],
+    ['ovencol','Uunikaappi',600,600,'#efe6d8'],['dryer','Kuivausrumpu',600,600,'#e6ebee'],['purifier','Ilmanpuhdistin',400,300,'#f4f4f2']]},
+  {cat:'Työhuone · vapaa-aika', items:[
+    ['desk','Pitkä työpöytä',1600,700,'#d8c2a2'],['officechair','Työtuoli',620,620,'#4a4f55'],['bookshelf','Suuri kirjahylly',1600,350,'#e2cfb4'],
+    ['piano','Piano',1500,600,'#1f1d1b'],['treadmill','Juoksumatto',800,1800,'#3a3a3c'],['armchair','Lukutuoli',750,800,'#c9a98a']]},
 ];
 const typeColor = t => { for (const c of LIB) for (const i of c.items) if (i[0]===t) return i[4]; return '#eee'; };
 
@@ -494,36 +494,36 @@ const uid = () => 'f' + Date.now().toString(36) + (_n++);
 const F = (type,name,cx,cy,w,d,rot=0,color) => ({id:uid(),type,name,cx,cy,w,d,rot,color:color||typeColor(type)});
 
 function defaultFurniture(){ return [
-  // 主卧
-  F('bed','双人床',8300,1000,1800,2000,0,'#c9d6df'), F('nightstand','床头柜',7150,220,450,400), F('nightstand','床头柜',9450,220,450,400),
-  F('wardrobe','衣柜',8800,3070,2400,600,180), F('baycushion','飘窗垫',10770,1705,520,1800),
-  // 主卫
-  F('shower','淋浴房',5270,450,900,900), F('toilet','马桶',5170,1500,400,700,270), F('vanity','浴室柜',6110,700,800,500,90),
-  // 小孩房
-  F('bed','单人床',2420,1000,1200,2000,0,'#e8d5b5'), F('desk','书桌',2120,2700,1200,600,270), F('chair','椅子',2700,2700,450,480,90),
-  F('wardrobe','衣柜',4280,1000,1600,600,90), F('bookshelf','书架',3500,150,800,300),
-  // 客卫
-  F('shower','淋浴区',2870,4280,900,1340), F('toilet','马桶',3560,3960,400,700), F('vanity','浴室柜',4150,3850,700,480),
-  // 洗衣阳台
-  F('washer','洗衣机',300,3960,600,600,270), F('vanity','洗衣池',250,4600,600,500,270),
-  // 厨房
-  F('counter','橱柜台面',300,6575,2770,600,270), F('counter','橱柜台面',1390,7660,1580,600,180),
-  F('stove','燃气灶',300,6200,750,450,270), F('ksink','水槽',1400,7680,800,450,180),
-  // 餐厅
-  F('fridge','冰箱',2770,5540,700,700), F('table','餐桌',3600,6650,1400,800,90),
-  F('chair','餐椅',2940,6320,450,480,270), F('chair','餐椅',2940,6980,450,480,270),
-  F('chair','餐椅',4260,6320,450,480,90), F('chair','餐椅',4260,6980,450,480,90),
-  F('cabinet','餐边柜',3500,7785,1600,350,180),
-  // 客厅
-  F('rug','地毯',7600,8950,2600,1800), F('tvstand','电视柜',7600,6810,2400,400), F('sofa','三人沙发',7600,10110,3000,900,180),
-  F('coffeetable','茶几',7600,8900,1300,650), F('armchair','单人沙发',9500,8900,850,850,90),
-  F('shoecab','鞋柜',4995,9900,1000,350,270), F('plant','绿植',9950,10250,500,500), F('plant','绿植',5250,7050,500,500),
-  // 子女房
-  F('bed','双人床',7323,5500,1500,2000,270,'#d8c7dc'), F('wardrobe','衣柜',8500,3910,2000,600),
-  F('desk','书桌',9500,6070,1200,600,180), F('chair','椅子',9500,5480,450,480), F('baycushion','飘窗垫',10770,4997,520,1575),
-  // 休闲阳台
-  F('roundtable','茶桌',11180,8200,600,600), F('armchair','休闲椅',11180,7520,750,750,0,'#d6b99a'),
-  F('armchair','休闲椅',11180,8880,750,750,180,'#d6b99a'), F('plant','绿植',11550,10250,500,500),
+  // Päämakuuhuone
+  F('bed','Parisänky',8300,1000,1800,2000,0,'#c9d6df'), F('nightstand','Yöpöytä',7150,220,450,400), F('nightstand','Yöpöytä',9450,220,450,400),
+  F('wardrobe','Vaatekaappi',8800,3070,2400,600,180), F('baycushion','Erkkeripenkin tyyny',10770,1705,520,1800),
+  // Pääkylpyhuone
+  F('shower','Suihkukaappi',5270,450,900,900), F('toilet','WC-istuin',5170,1500,400,700,270), F('vanity','Pesukaappi',6110,700,800,500,90),
+  // Lastenhuone
+  F('bed','Yhden hengen sänky',2420,1000,1200,2000,0,'#e8d5b5'), F('desk','Työpöytä',2120,2700,1200,600,270), F('chair','Tuoli',2700,2700,450,480,90),
+  F('wardrobe','Vaatekaappi',4280,1000,1600,600,90), F('bookshelf','Kirjahylly',3500,150,800,300),
+  // Vieraskylpyhuone
+  F('shower','Suihkualue',2870,4280,900,1340), F('toilet','WC-istuin',3560,3960,400,700), F('vanity','Pesukaappi',4150,3850,700,480),
+  // Pyykkiparveke
+  F('washer','Pyykinpesukone',300,3960,600,600,270), F('vanity','Pyykkiallas',250,4600,600,500,270),
+  // Keittiö
+  F('counter','Keittiötaso',300,6575,2770,600,270), F('counter','Keittiötaso',1390,7660,1580,600,180),
+  F('stove','Kaasuliesi',300,6200,750,450,270), F('ksink','Allas',1400,7680,800,450,180),
+  // Ruokailutila
+  F('fridge','Jääkaappi',2770,5540,700,700), F('table','Ruokapöytä',3600,6650,1400,800,90),
+  F('chair','Ruokatuoli',2940,6320,450,480,270), F('chair','Ruokatuoli',2940,6980,450,480,270),
+  F('chair','Ruokatuoli',4260,6320,450,480,90), F('chair','Ruokatuoli',4260,6980,450,480,90),
+  F('cabinet','Senkki',3500,7785,1600,350,180),
+  // Olohuone
+  F('rug','Matto',7600,8950,2600,1800), F('tvstand','TV-taso',7600,6810,2400,400), F('sofa','3-istuttava sohva',7600,10110,3000,900,180),
+  F('coffeetable','Sohvapöytä',7600,8900,1300,650), F('armchair','Nojatuoli',9500,8900,850,850,90),
+  F('shoecab','Kenkäkaappi',4995,9900,1000,350,270), F('plant','Kasvi',9950,10250,500,500), F('plant','Kasvi',5250,7050,500,500),
+  // Nuortenhuone
+  F('bed','Parisänky',7323,5500,1500,2000,270,'#d8c7dc'), F('wardrobe','Vaatekaappi',8500,3910,2000,600),
+  F('desk','Työpöytä',9500,6070,1200,600,180), F('chair','Tuoli',9500,5480,450,480), F('baycushion','Erkkeripenkin tyyny',10770,4997,520,1575),
+  // Oleskeluparveke
+  F('roundtable','Teepöytä',11180,8200,600,600), F('armchair','Lepotuoli',11180,7520,750,750,0,'#d6b99a'),
+  F('armchair','Lepotuoli',11180,8880,750,750,180,'#d6b99a'), F('plant','Kasvi',11550,10250,500,500),
 ];}
 
 function defaultState(){
@@ -544,15 +544,15 @@ function fixState(s){
 }
 
 const PX_MM = 25.4 / 96;                       // 1 CSS px = 0.2646 mm
-const COARSE = matchMedia('(pointer:coarse)').matches;   // iPad / 手机等触屏为主的设备
-const TAP = COARSE ? 9 : 4;                    // 手指按下后移动超过该像素才算拖动
+const COARSE = matchMedia('(pointer:coarse)').matches;   // iPad / puhelin ym. ensisijaisesti kosketusnäytölliset laitteet
+const TAP = COARSE ? 9 : 4;                    // sormen on liikuttava yli tämän pikselimäärän, jotta se lasketaan vedoksi
 const narrow = () => matchMedia('(max-width:1100px)').matches;
 const BOUNDS = {x:-1850, y:-1750, w:15600, h:14100};
 const $ = s => document.querySelector(s);
 const svg = $('#plan');
 
 
-/* ======================= 状态 / 历史 / 存储 ======================= */
+/* ======================= Tila / historia / tallennus ======================= */
 let state = load() || defaultState();
 const ui = {tool:'select', sel:null, mA:null, mCur:null,
   layers:{dims:true, labels:true, furn:true, grid:false, bearing:false, wallSnap:true}};
@@ -563,12 +563,12 @@ function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } cat
 const snap = () => JSON.stringify(state);
 function commit(before){ undoStack.push(before); if (undoStack.length > 150) undoStack.shift(); redoStack.length = 0; save(); }
 function mutate(fn){ const b = snap(); fn(); commit(b); renderAll(); }
-function undo(){ if (!undoStack.length) return toast(tr('没有可撤销的操作', 'Nothing to undo')); redoStack.push(snap()); state = JSON.parse(undoStack.pop()); validateSel(); save(); renderAll(); }
+function undo(){ if (!undoStack.length) return toast(tr('Ei kumottavaa', 'Nothing to undo')); redoStack.push(snap()); state = JSON.parse(undoStack.pop()); validateSel(); save(); renderAll(); }
 function redo(){ if (!redoStack.length) return; undoStack.push(snap()); state = JSON.parse(redoStack.pop()); validateSel(); save(); renderAll(); }
 function validateSel(){ if (ui.sel?.kind==='furn' && !getF(ui.sel.id)) ui.sel = null; }
 const getF = id => state.furniture.find(f => f.id === id);
 
-/* ======================= 几何工具 ======================= */
+/* ======================= Geometriatyökalut ======================= */
 const area = poly => Math.abs(poly.reduce((a,p,i) => { const q = poly[(i+1)%poly.length]; return a + p[0]*q[1] - q[0]*p[1]; }, 0)) / 2 / 1e6;
 const perim = poly => poly.reduce((a,p,i) => { const q = poly[(i+1)%poly.length]; return a + Math.hypot(q[0]-p[0], q[1]-p[1]); }, 0) / 1000;
 const bbox = poly => { const xs = poly.map(p=>p[0]), ys = poly.map(p=>p[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; };
@@ -577,7 +577,7 @@ const fmt = (n, d=2) => n.toFixed(d);
 const norm = a => ((Math.round(a) % 360) + 360) % 360;
 function snapRects(){ return WALLS.filter((w,i) => !state.demolished.includes('w'+i)).concat(WINS); }
 
-/* ======================= 颜色 / 材质图案 ======================= */
+/* ======================= Värit / materiaalikuviot ======================= */
 function hex2rgb(h){ h = h.replace('#',''); if (h.length===3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
 function shade(h,k){ const f = v => Math.max(0,Math.min(255,Math.round(k>1 ? v+(255-v)*(k-1)*2 : v*k))); return '#'+hex2rgb(h).map(v=>f(v).toString(16).padStart(2,'0')).join(''); }
 
@@ -604,7 +604,7 @@ function buildDefs(){
       <path d="M500 0V1000M0 500H1000" stroke="#e5dfd3" stroke-width="8"/><path d="M0 0V1000M0 0H1000" stroke="#d8d0c1" stroke-width="14"/></pattern>`;
 }
 
-/* ======================= 家具图例 ======================= */
+/* ======================= Kalustesymbolit ======================= */
 const ST = 'stroke="#3d3a34" stroke-width="1" vector-effect="non-scaling-stroke"';
 const rc = (x,y,w,h,f,ex='') => `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${Math.max(0,h)}" fill="${f}" ${ST} ${ex}/>`;
 const ec = (cx,cy,rx,ry,f,ex='') => `<ellipse cx="${cx}" cy="${cy}" rx="${Math.max(0,rx)}" ry="${Math.max(0,ry)}" fill="${f}" ${ST} ${ex}/>`;
@@ -713,7 +713,7 @@ function furnSVG(t,w,d,c){
   }
 }
 
-/* ======================= 渲染 ======================= */
+/* ======================= Piirto ======================= */
 const NOLABEL = ['plant','floorlamp','sidetable','barstool','beanbag'];
 function renderRooms(){
   let s = '';
@@ -766,9 +766,9 @@ function renderOpenings(){
     if (v){ const L = y1-y0, m = (x0+x1)/2; s += `<rect x="${m-45}" y="${y0}" width="40" height="${L*.55}" fill="#fff" ${DS}/><rect x="${m+5}" y="${y1-L*.55}" width="40" height="${L*.55}" fill="#fff" ${DS}/>`; }
     else { const L = x1-x0, m = (y0+y1)/2; s += `<rect x="${x0}" y="${m-45}" width="${L*.55}" height="40" fill="#fff" ${DS}/><rect x="${x1-L*.55}" y="${m+5}" width="${L*.55}" height="40" fill="#fff" ${DS}/>`; }
   });
-  // 入户标识
+  // Sisäänkäynnin merkintä
   s += `<path d="M3350 8755H4350M4150 8600L4400 8755L4150 8910" fill="none" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke"/>
-        <text x="3380" y="8600" font-size="200" fill="#b5653a">${tr('入户','Entry')}</text>`;
+        <text x="3380" y="8600" font-size="200" fill="#b5653a">${tr('Sisäänkäynti','Entry')}</text>`;
   $('#gOpen').innerHTML = s;
 }
 
@@ -830,16 +830,16 @@ function renderSel(){
   if (ui.sel?.kind === 'furn'){
     const f = getF(ui.sel.id);
     if (f){
-      // 触屏上手柄更大、离家具更远，并各带一圈透明的大热区
+      // kosketusnäytöllä kahvat ovat suurempia ja kauempana kalusteesta, kullakin läpinäkyvä suuri kosketusalue
       const p = 5*k, A = 'stroke="#b5653a" vector-effect="non-scaling-stroke"', hs = COARSE ? 1.7 : 1, ro = (COARSE ? 40 : 26)*k, hit = (COARSE ? 24 : 11)*k;
       const sx = f.w/2+p, sy = f.d/2+p;
       s += `<g transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">
         <rect x="${-f.w/2-p}" y="${-f.d/2-p}" width="${f.w+2*p}" height="${f.d+2*p}" fill="none" ${A} stroke-width="1.5" stroke-dasharray="5 3" pointer-events="none"/>
         <line x1="0" y1="${-f.d/2-p}" x2="0" y2="${-f.d/2-ro}" ${A} stroke-width="1" pointer-events="none"/>
         <circle data-handle="rot" cx="0" cy="${-f.d/2-ro}" r="${hit}" fill="transparent"/>
-        <circle data-handle="rot" cx="0" cy="${-f.d/2-ro}" r="${6*hs*k}" fill="#fff" ${A} stroke-width="1.5"><title>${tr('拖动旋转（Shift 自由角度）','Drag to rotate (Shift for free angle)')}</title></circle>
+        <circle data-handle="rot" cx="0" cy="${-f.d/2-ro}" r="${6*hs*k}" fill="#fff" ${A} stroke-width="1.5"><title>${tr('Käännä vetämällä (Shift = vapaa kulma)','Drag to rotate (Shift for free angle)')}</title></circle>
         <circle data-handle="size" cx="${sx}" cy="${sy}" r="${hit}" fill="transparent"/>
-        <rect data-handle="size" x="${sx-5*hs*k}" y="${sy-5*hs*k}" width="${10*hs*k}" height="${10*hs*k}" fill="#b5653a"><title>${tr('拖动调整尺寸','Drag to resize')}</title></rect></g>`;
+        <rect data-handle="size" x="${sx-5*hs*k}" y="${sy-5*hs*k}" width="${10*hs*k}" height="${10*hs*k}" fill="#b5653a"><title>${tr('Muuta kokoa vetämällä','Drag to resize')}</title></rect></g>`;
       const {hh} = aabb(f);
       s += `<text x="${f.cx}" y="${f.cy+hh+24*k}" font-size="${12*k}" text-anchor="middle" fill="#b5653a" font-weight="600" pointer-events="none"
         stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${f.w} × ${f.d}</text>`;
@@ -858,12 +858,12 @@ function renderAll(){
 
 function updateHeader(){
   const tot = ROOMS.filter(r => r.counted !== false).reduce((a,r) => a + area(r.poly), 0);
-  $('#subtitle').textContent = tr(`套内使用面积约 ${fmt(tot)} m² · 尺寸单位 mm · 原图比例 1:60`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm · Original scale 1:60`);
+  $('#subtitle').textContent = tr(`Nettopinta-ala noin ${fmt(tot)} m² · Mitat mm · Alkuperäinen mittakaava 1:60`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm · Original scale 1:60`);
   $('#undo').disabled = !undoStack.length; $('#redo').disabled = !redoStack.length;
   $('#undo').style.opacity = undoStack.length ? 1 : .4; $('#redo').style.opacity = redoStack.length ? 1 : .4;
 }
 
-/* ======================= 右侧面板 ======================= */
+/* ======================= Oikea paneeli ======================= */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function renderPanel(){
@@ -889,25 +889,25 @@ function overviewPanel(){
   const dem = state.demolished.map(id => WALLS[+id.slice(1)]);
   const demLen = dem.reduce((a,w) => a + Math.max(w[2]-w[0], w[3]-w[1]), 0) / 1000;
   return `
-  <section><h3>${tr('房间面积','Room Areas')} <small>${tr('点击查看 / 更换地面','Click to view / change flooring')}</small></h3>
+  <section><h3>${tr('Huoneiden pinta-alat','Room Areas')} <small>${tr('Napsauta nähdäksesi / vaihtaaksesi lattian','Click to view / change flooring')}</small></h3>
     <table>${rows}</table>
-    <div class="total"><span>${tr('套内使用面积','Net floor area')}</span><b>${fmt(tot)} m²</b></div>
-    <div class="muted" style="font-size:11px;margin-top:4px">${tr('* 飘窗不计入使用面积；面积按墙体内净尺寸计算','* Bay windows are excluded; areas use net inner wall dimensions')}</div></section>
-  <section><h3>${tr('地面材料估算','Flooring Estimate')} <small>${tr('含 5% 损耗','incl. 5% waste')}</small></h3>
+    <div class="total"><span>${tr('Nettopinta-ala','Net floor area')}</span><b>${fmt(tot)} m²</b></div>
+    <div class="muted" style="font-size:11px;margin-top:4px">${tr('* Erkkereitä ei lasketa käyttöpinta-alaan; alat lasketaan seinien sisämitoista','* Bay windows are excluded; areas use net inner wall dimensions')}</div></section>
+  <section><h3>${tr('Lattiamateriaalien arvio','Flooring Estimate')} <small>${tr('sis. 5 % hukka','incl. 5% waste')}</small></h3>
     <table>${matRows}</table>
-    <div class="total"><span>${tr('地面材料合计','Flooring total')}</span><b>¥${Math.round(cost).toLocaleString()}</b></div></section>
-  <section><h3>${tr('方案统计','Plan Stats')}</h3>
-    <div class="stats"><div><small>${tr('家具数量','Furniture')}</small><span class="big">${state.furniture.length}</span></div>
-      <div><small>${tr('拆除墙体','Walls removed')}</small><span class="big">${fmt(demLen,1)}</span> m</div></div>
-    <div class="actions"><button class="btn" id="clearMeasure">${tr('清除测量','Clear measures')} (${state.measures.length})</button>
-      <button class="btn danger" id="clearFurn">${tr('清空布置','Clear layout')}</button></div></section>
-  ${COARSE ? tr(`<section><h3>触屏操作</h3><div class="kbd">
-    <kbd>单指拖动</kbd><span>空白处平移画面</span><kbd>双指</kbd><span>捏合缩放、拖动平移</span>
-    <kbd>家具库</kbd><span>点一下放到画面中央，或按住向右拖到指定位置</span>
-    <kbd>点家具</kbd><span>选中后拖动移动；拖顶部圆点旋转、右下方块改尺寸</span>
-    <kbd>工具条</kbd><span>选中后底部可旋转 / 复制 / 删除</span>
-    <kbd>测量</kbd><span>按住拖出一条线，或依次点两点</span>
-    <kbd>3D 漫游</kbd><span>左下摇杆移动，拖动屏幕转向，点门开关</span>
+    <div class="total"><span>${tr('Lattiamateriaalit yhteensä','Flooring total')}</span><b>¥${Math.round(cost).toLocaleString()}</b></div></section>
+  <section><h3>${tr('Suunnitelman tilastot','Plan Stats')}</h3>
+    <div class="stats"><div><small>${tr('Kalusteita','Furniture')}</small><span class="big">${state.furniture.length}</span></div>
+      <div><small>${tr('Puretut seinät','Walls removed')}</small><span class="big">${fmt(demLen,1)}</span> m</div></div>
+    <div class="actions"><button class="btn" id="clearMeasure">${tr('Poista mittaukset','Clear measures')} (${state.measures.length})</button>
+      <button class="btn danger" id="clearFurn">${tr('Tyhjennä sisustus','Clear layout')}</button></div></section>
+  ${COARSE ? tr(`<section><h3>Kosketusohjaus</h3><div class="kbd">
+    <kbd>Yksi sormi</kbd><span>Panoroi vetämällä tyhjästä kohdasta</span><kbd>Kaksi sormea</kbd><span>Nipistä zoomataksesi, vedä panoroidaksesi</span>
+    <kbd>Kirjasto</kbd><span>Napauta lisätäksesi keskelle tai vedä oikealle haluamaasi kohtaan</span>
+    <kbd>Napauta kalustetta</kbd><span>Valitse ja vedä siirtääksesi; käännä yläpisteestä, muuta kokoa oikean alakulman neliöstä</span>
+    <kbd>Työkalupalkki</kbd><span>Valinnan jälkeen alareunassa: kierrä / kopioi / poista</span>
+    <kbd>Mittaus</kbd><span>Vedä viiva tai napauta kaksi pistettä</span>
+    <kbd>3D-kävely</kbd><span>Vasemman alakulman sauva liikuttaa, vedä kääntääksesi katsetta, napauta ovea avataksesi</span>
   </div></section>`, `<section><h3>Touch Controls</h3><div class="kbd">
     <kbd>1-finger drag</kbd><span>Pan on empty space</span><kbd>2 fingers</kbd><span>Pinch to zoom, drag to pan</span>
     <kbd>Library</kbd><span>Tap to place at center, or hold and drag right to a spot</span>
@@ -916,10 +916,10 @@ function overviewPanel(){
     <kbd>Measure</kbd><span>Hold and drag a line, or tap two points</span>
     <kbd>3D walk</kbd><span>Joystick moves, drag to look, tap doors to open</span>
   </div></section>`) : ''}
-  ${tr(`<section><h3>键盘快捷键</h3><div class="kbd">
-    <kbd>拖拽</kbd><span>左侧家具拖入平面图</span><kbd>V</kbd><span>选择 / 移动</span><kbd>M</kbd><span>测量（Shift 水平/垂直）</span>
-    <kbd>X</kbd><span>拆改非承重墙（黑色为承重墙）</span><kbd>R</kbd><span>旋转 90°（Shift 反向）</span><kbd>方向键</kbd><span>微调 10mm（Shift 100mm）</span>
-    <kbd>⌘/Ctrl D</kbd><span>复制</span><kbd>Delete</kbd><span>删除</span><kbd>⌘/Ctrl Z</kbd><span>撤销</span><kbd>T</kbd><span>切换 2D / 3D</span><kbd>F</kbd><span>适应窗口</span><kbd>Esc</kbd><span>取消选择</span>
+  ${tr(`<section><h3>Pikanäppäimet</h3><div class="kbd">
+    <kbd>Vedä</kbd><span>Vedä kaluste vasemmalta pohjapiirrokseen</span><kbd>V</kbd><span>Valitse / siirrä</span><kbd>M</kbd><span>Mittaa (Shift = vaaka/pysty)</span>
+    <kbd>X</kbd><span>Pura ei-kantavia seiniä (mustat ovat kantavia)</span><kbd>R</kbd><span>Kierrä 90° (Shift = vastakkaiseen suuntaan)</span><kbd>Nuolet</kbd><span>Hienosäätö 10 mm (Shift 100 mm)</span>
+    <kbd>⌘/Ctrl D</kbd><span>Kopioi</span><kbd>Delete</kbd><span>Poista</span><kbd>⌘/Ctrl Z</kbd><span>Kumoa</span><kbd>T</kbd><span>Vaihda 2D / 3D</span><kbd>F</kbd><span>Sovita ikkunaan</span><kbd>Esc</kbd><span>Poista valinta</span>
   </div></section>`, `<section><h3>Keyboard Shortcuts</h3><div class="kbd">
     <kbd>Drag</kbd><span>Drag furniture onto the plan</span><kbd>V</kbd><span>Select / move</span><kbd>M</kbd><span>Measure (Shift: horizontal/vertical)</span>
     <kbd>X</kbd><span>Demolish non-bearing walls (black = bearing)</span><kbd>R</kbd><span>Rotate 90° (Shift reverses)</span><kbd>Arrows</kbd><span>Nudge 10mm (Shift 100mm)</span>
@@ -932,15 +932,15 @@ function bindOverview(){
   $('#clearFurn').onclick = clearLayout;
 }
 
-// 底部浮动工具条：触屏没有键盘，旋转 / 复制 / 删除都放在这里
+// alareunan kelluva työkalupalkki: kosketusnäytöllä ei ole näppäimistöä, joten kierto / kopiointi / poisto ovat täällä
 function renderFab(){
   const fab = $('#fab'), f = ui.sel?.kind === 'furn' && getF(ui.sel.id), r = ui.sel?.kind === 'room' && ROOMS.find(r => r.id === ui.sel.id);
   if (!f && !r){ fab.classList.remove('show'); return; }
   fab.innerHTML = f
-    ? `<span class="name">${esc(nm(f.name))}</span><button class="btn" data-a="rotL">↺</button><button class="btn" data-a="rotR">↻ ${tr('旋转','Rotate')}</button>
-       <button class="btn" data-a="dup">${tr('复制','Duplicate')}</button><button class="btn danger" data-a="del">${tr('删除','Delete')}</button><span class="sep"></span>
-       <button class="btn narrow-only" data-a="prop">${tr('属性','Properties')}</button><button class="btn" data-a="done">${tr('完成','Done')}</button>`
-    : `<span class="name">${esc(nm(state.rooms[r.id].name))}</span><button class="btn narrow-only" data-a="prop">${tr('地面 / 属性','Floor / Properties')}</button><button class="btn" data-a="done">${tr('完成','Done')}</button>`;
+    ? `<span class="name">${esc(nm(f.name))}</span><button class="btn" data-a="rotL">↺</button><button class="btn" data-a="rotR">↻ ${tr('Kierrä','Rotate')}</button>
+       <button class="btn" data-a="dup">${tr('Kopioi','Duplicate')}</button><button class="btn danger" data-a="del">${tr('Poista','Delete')}</button><span class="sep"></span>
+       <button class="btn narrow-only" data-a="prop">${tr('Ominaisuudet','Properties')}</button><button class="btn" data-a="done">${tr('Valmis','Done')}</button>`
+    : `<span class="name">${esc(nm(state.rooms[r.id].name))}</span><button class="btn narrow-only" data-a="prop">${tr('Lattia / ominaisuudet','Floor / Properties')}</button><button class="btn" data-a="done">${tr('Valmis','Done')}</button>`;
   fab.classList.add('show');
   fab.querySelectorAll('[data-a]').forEach(b => b.onclick = () => ({
     rotL:() => rotateSel(-90), rotR:() => rotateSel(90), dup:duplicateSel, del:deleteSel,
@@ -950,14 +950,14 @@ function renderFab(){
 
 function clearLayout(){
   const n = state.furniture.length;
-  if (!n) return toast(tr('当前没有布置任何家具', 'There is no furniture to clear'));
-  if (!confirm(tr(`确定清空全部 ${n} 件家具 / 家电吗？\n墙体、地面材料和测量线会保留，可点「撤销」恢复。`, `Remove all ${n} furniture / appliance items?\nWalls, flooring and measurements are kept. You can Undo this.`))) return;
+  if (!n) return toast(tr('Ei tyhjennettäviä kalusteita', 'There is no furniture to clear'));
+  if (!confirm(tr(`Poistetaanko kaikki ${n} kalustetta / laitetta?\nSeinät, lattiamateriaalit ja mittaviivat säilyvät. Voit palauttaa ne painamalla Kumoa.`, `Remove all ${n} furniture / appliance items?\nWalls, flooring and measurements are kept. You can Undo this.`))) return;
   ui.sel = null; mutate(() => state.furniture = []);
-  toast(tr('已清空布置，可点「撤销」恢复', 'Layout cleared — Undo to restore'));
+  toast(tr('Sisustus tyhjennetty — Kumoa palauttaa sen', 'Layout cleared — Undo to restore'));
 }
 
-/* 侧栏开合：which = 'lib' | 'panel' | null，open 不传则切换。
- * 宽屏：侧栏在布局中收起 / 展开（记住选择）；窄屏：侧栏是浮层抽屉，一次只开一个，which = null 表示全部关闭 */
+/* Sivupalkin avaus/sulku: which = 'lib' | 'panel' | null, open puuttuessa vaihdetaan tilaa.
+ * Leveä näyttö: sivupalkki piilotetaan / näytetään asettelussa (valinta muistetaan); kapea näyttö: sivupalkki on kelluva laatikko, vain yksi auki kerrallaan, which = null sulkee kaikki */
 const PANES = 'huxing-panes';
 const panes = (() => { try { return JSON.parse(localStorage.getItem(PANES)) || {}; } catch(e) { return {}; } })();
 function drawer(which, open){
@@ -979,28 +979,28 @@ function syncPaneBtns(){
   const els = {lib:$('aside.lib'), panel:$('aside.right')}, n = narrow();
   const vis = k => n ? els[k].classList.contains('open') : !panes[k === 'lib' ? 'hideLib' : 'hidePanel'];
   $('#tgLib').classList.toggle('on', vis('lib')); $('#tgPanel').classList.toggle('on', vis('panel'));
-  $('#tgLib').title = vis('lib') ? tr('收起家具库 ( [ )', 'Hide library ( [ )') : tr('展开家具库 ( [ )', 'Show library ( [ )');
-  $('#tgPanel').title = vis('panel') ? tr('收起属性面板 ( ] )', 'Hide properties ( ] )') : tr('展开属性面板 ( ] )', 'Show properties ( ] )');
-  $('#stage').classList.toggle('drawer-panel', n && vis('panel'));   // 属性抽屉盖住画面时让出底部工具条
+  $('#tgLib').title = vis('lib') ? tr('Piilota kirjasto ( [ )', 'Hide library ( [ )') : tr('Näytä kirjasto ( [ )', 'Show library ( [ )');
+  $('#tgPanel').title = vis('panel') ? tr('Piilota ominaisuudet ( ] )', 'Hide properties ( ] )') : tr('Näytä ominaisuudet ( ] )', 'Show properties ( ] )');
+  $('#stage').classList.toggle('drawer-panel', n && vis('panel'));   // kun ominaisuuslaatikko peittää näkymän, alapalkki väistyy
 }
 function closeDrawers(){ if (narrow()) drawer(null); }
 
 function roomPanel(r){
   const st = state.rooms[r.id], a = area(r.poly), [x0,y0,x1,y1] = bbox(r.poly), inside = state.furniture.filter(f => f.cx>x0&&f.cx<x1&&f.cy>y0&&f.cy<y1);
   const mats = Object.entries(MATS).map(([k,m]) => `<button class="mat ${k===st.mat?'on':''}" data-mat="${k}"><i style="background:${m.sw}"></i><span>${nm(m.name)}<small>¥${m.price}/m²</small></span></button>`).join('');
-  return `<section><h3>${tr('房间','Room')}</h3>
-    <div class="form"><label class="full">${tr('名称','Name')}<input id="rName" value="${esc(nm(st.name))}"></label></div>
+  return `<section><h3>${tr('Huone','Room')}</h3>
+    <div class="form"><label class="full">${tr('Nimi','Name')}<input id="rName" value="${esc(nm(st.name))}"></label></div>
     <div class="stats" style="margin-top:10px">
-      <div><small>${tr('使用面积','Floor area')}</small><span class="big">${fmt(a)}</span> m²</div>
-      <div><small>${tr('周长','Perimeter')}</small><span class="big">${fmt(perim(r.poly),1)}</span> m</div>
-      <div><small>${tr('开间','Width')}</small><span class="big">${x1-x0}</span> mm</div>
-      <div><small>${tr('进深','Depth')}</small><span class="big">${y1-y0}</span> mm</div></div>
-    <div class="muted">${tr(`墙面面积（层高 2.8m，未扣门窗）约 ${fmt(perim(r.poly)*2.8,1)} m²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(perim(r.poly)*2.8,1)} m²`)}</div></section>
-  <section><h3>${tr('地面材料','Flooring')}</h3><div class="mats">${mats}</div>
-    <div class="total"><span>${tr('材料估价','Estimated cost')}</span><b>¥${Math.round(a*MATS[st.mat].price*1.05).toLocaleString()}</b></div></section>
-  <section><h3>${tr('房间内家具','Furniture in room')} <small>${tr(`${inside.length} 件`, `${inside.length} items`)}</small></h3>
-    <table>${inside.map(f => `<tr class="click" data-fid="${f.id}"><td>${esc(nm(f.name))}</td><td class="r muted">${f.w}×${f.d}</td></tr>`).join('') || `<tr><td class="muted">${tr('暂无','None')}</td></tr>`}</table>
-    <div class="actions"><button class="btn" id="back">${tr('← 返回总览','← Back to overview')}</button></div></section>`;
+      <div><small>${tr('Pinta-ala','Floor area')}</small><span class="big">${fmt(a)}</span> m²</div>
+      <div><small>${tr('Piiri','Perimeter')}</small><span class="big">${fmt(perim(r.poly),1)}</span> m</div>
+      <div><small>${tr('Leveys','Width')}</small><span class="big">${x1-x0}</span> mm</div>
+      <div><small>${tr('Syvyys','Depth')}</small><span class="big">${y1-y0}</span> mm</div></div>
+    <div class="muted">${tr(`Seinäpinta-ala (kattokorkeus 2,8 m, aukkoja ei vähennetty) noin ${fmt(perim(r.poly)*2.8,1)} m²`, `Wall area (2.8m ceiling, openings not deducted) ≈ ${fmt(perim(r.poly)*2.8,1)} m²`)}</div></section>
+  <section><h3>${tr('Lattiamateriaali','Flooring')}</h3><div class="mats">${mats}</div>
+    <div class="total"><span>${tr('Arvioitu hinta','Estimated cost')}</span><b>¥${Math.round(a*MATS[st.mat].price*1.05).toLocaleString()}</b></div></section>
+  <section><h3>${tr('Kalusteet huoneessa','Furniture in room')} <small>${tr(`${inside.length} kpl`, `${inside.length} items`)}</small></h3>
+    <table>${inside.map(f => `<tr class="click" data-fid="${f.id}"><td>${esc(nm(f.name))}</td><td class="r muted">${f.w}×${f.d}</td></tr>`).join('') || `<tr><td class="muted">${tr('Ei mitään','None')}</td></tr>`}</table>
+    <div class="actions"><button class="btn" id="back">${tr('← Takaisin yleisnäkymään','← Back to overview')}</button></div></section>`;
 }
 function bindRoomPanel(){
   const id = ui.sel.id;
@@ -1011,23 +1011,23 @@ function bindRoomPanel(){
 }
 
 function furnPanel(f){
-  return `<section><h3>${tr('家具属性','Furniture')}</h3>
+  return `<section><h3>${tr('Kaluste','Furniture')}</h3>
     <div class="form">
-      <label class="full">${tr('名称','Name')}<input id="fName" value="${esc(nm(f.name))}"></label>
-      <label>${tr('宽','Width')} (mm)<input type="number" id="fW" value="${f.w}" min="50" step="10"></label>
-      <label>${tr('深','Depth')} (mm)<input type="number" id="fD" value="${f.d}" min="50" step="10"></label>
-      <label>${tr('中心','Center')} X (mm)<input type="number" id="fX" value="${Math.round(f.cx)}" step="10"></label>
-      <label>${tr('中心','Center')} Y (mm)<input type="number" id="fY" value="${Math.round(f.cy)}" step="10"></label>
-      <label>${tr('旋转','Rotation')} (°)<input type="number" id="fR" value="${f.rot}" step="15"></label>
-      <label>${tr('颜色','Color')}<input type="color" id="fC" value="${f.color}"></label>
+      <label class="full">${tr('Nimi','Name')}<input id="fName" value="${esc(nm(f.name))}"></label>
+      <label>${tr('Leveys','Width')} (mm)<input type="number" id="fW" value="${f.w}" min="50" step="10"></label>
+      <label>${tr('Syvyys','Depth')} (mm)<input type="number" id="fD" value="${f.d}" min="50" step="10"></label>
+      <label>${tr('Keskipiste','Center')} X (mm)<input type="number" id="fX" value="${Math.round(f.cx)}" step="10"></label>
+      <label>${tr('Keskipiste','Center')} Y (mm)<input type="number" id="fY" value="${Math.round(f.cy)}" step="10"></label>
+      <label>${tr('Kierto','Rotation')} (°)<input type="number" id="fR" value="${f.rot}" step="15"></label>
+      <label>${tr('Väri','Color')}<input type="color" id="fC" value="${f.color}"></label>
     </div>
-    <div class="muted" style="margin-top:8px">${tr('占地面积','Footprint')} ${fmt(f.w*f.d/1e6)} m²</div>
+    <div class="muted" style="margin-top:8px">${tr('Pohja-ala','Footprint')} ${fmt(f.w*f.d/1e6)} m²</div>
     <div class="actions">
-      <button class="btn" id="aRot">${tr('旋转 90°','Rotate 90°')}</button><button class="btn" id="aDup">${tr('复制','Duplicate')}</button>
-      <button class="btn" id="aTop">${tr('置于顶层','Bring to front')}</button><button class="btn" id="aBot">${tr('置于底层','Send to back')}</button>
-      <button class="btn danger" id="aDel">${tr('删除','Delete')}</button><button class="btn" id="back">${tr('← 返回','← Back')}</button>
+      <button class="btn" id="aRot">${tr('Kierrä 90°','Rotate 90°')}</button><button class="btn" id="aDup">${tr('Kopioi','Duplicate')}</button>
+      <button class="btn" id="aTop">${tr('Tuo etualalle','Bring to front')}</button><button class="btn" id="aBot">${tr('Vie taka-alalle','Send to back')}</button>
+      <button class="btn danger" id="aDel">${tr('Poista','Delete')}</button><button class="btn" id="back">${tr('← Takaisin','← Back')}</button>
     </div></section>
-  <section class="muted" style="font-size:12px">${tr('拖动家具移动；拖动上方圆点旋转；拖动右下角方块调整尺寸。开启「贴墙吸附」后靠近墙面会自动贴齐。', 'Drag to move; drag the top dot to rotate; drag the bottom-right square to resize. With "Wall snap" on, items snap flush to nearby walls.')}</section>`;
+  <section class="muted" style="font-size:12px">${tr('Siirrä kalustetta vetämällä; käännä yläpisteestä; muuta kokoa oikean alakulman neliöstä. Kun "Seinäkiinnitys" on päällä, kalusteet kiinnittyvät lähellä oleviin seiniin.', 'Drag to move; drag the top dot to rotate; drag the bottom-right square to resize. With "Wall snap" on, items snap flush to nearby walls.')}</section>`;
 }
 function bindFurnPanel(f){
   const upd = (fn) => mutate(() => { const g = getF(f.id); if (g) fn(g); });
@@ -1045,7 +1045,7 @@ function bindFurnPanel(f){
   $('#back').onclick = () => select(null);
 }
 
-/* ======================= 操作 ======================= */
+/* ======================= Toiminnot ======================= */
 function select(sel){ ui.sel = sel; renderSel(); renderPanel(); }
 function rotateSel(d){ if (ui.sel?.kind==='furn') mutate(() => { const f = getF(ui.sel.id); f.rot = norm(f.rot + d); }); }
 function deleteSel(){ if (ui.sel?.kind==='furn'){ const id = ui.sel.id; ui.sel = null; mutate(() => state.furniture = state.furniture.filter(f => f.id !== id)); } }
@@ -1054,7 +1054,7 @@ function duplicateSel(){
   const f = getF(ui.sel.id), n = {...f, id:uid(), cx:f.cx+200, cy:f.cy+200};
   ui.sel = {kind:'furn', id:n.id}; mutate(() => state.furniture.push(n));
 }
-// 新放下的家具若压在墙 / 窗上，沿穿透较浅的方向推出来，刚好贴墙
+// jos uusi kaluste osuu seinän / ikkunan päälle, se työnnetään matalamman läpäisyn suuntaan ulos seinää vasten
 function pushOut(f){
   for (let n = 0; n < 4; n++){
     let moved = false;
@@ -1073,15 +1073,15 @@ function addItem(it, x, y){
   pushOut(f);
   ui.sel = {kind:'furn', id:f.id};
   mutate(() => type==='rug' ? state.furniture.unshift(f) : state.furniture.push(f));
-  toast(tr(`已添加「${name}」${w}×${d}`, `Added "${nm(name)}" ${w}×${d}`));
+  toast(tr(`Lisätty "${name}" ${w}×${d}`, `Added "${nm(name)}" ${w}×${d}`));
 }
 function toggleWall(id){
   const w = WALLS[+id.slice(1)];
-  if (w[4]==='b') return toast(tr('承重墙（黑色）不可拆除', 'Load-bearing walls (black) cannot be removed'));
-  if (w[4]==='e') return toast(tr('外墙属于建筑外围护结构，不建议拆除', 'Exterior walls are part of the building envelope and should not be removed'));
+  if (w[4]==='b') return toast(tr('Kantavia seiniä (mustat) ei voi purkaa', 'Load-bearing walls (black) cannot be removed'));
+  if (w[4]==='e') return toast(tr('Ulkoseinät kuuluvat rakennuksen vaippaan, eikä niitä suositella purettavaksi', 'Exterior walls are part of the building envelope and should not be removed'));
   const on = state.demolished.includes(id);
   mutate(() => state.demolished = on ? state.demolished.filter(x => x!==id) : [...state.demolished, id]);
-  toast(on ? tr('已恢复墙体', 'Wall restored') : tr(`已标记拆除 ${Math.max(w[2]-w[0], w[3]-w[1])} mm 墙体`, `Marked ${Math.max(w[2]-w[0], w[3]-w[1])} mm of wall for removal`));
+  toast(on ? tr('Seinä palautettu', 'Wall restored') : tr(`Merkitty purettavaksi ${Math.max(w[2]-w[0], w[3]-w[1])} mm seinää`, `Marked ${Math.max(w[2]-w[0], w[3]-w[1])} mm of wall for removal`));
 }
 
 function setTool(t){
@@ -1093,13 +1093,13 @@ function setTool(t){
 }
 function syncModeHint(){
   const hints = {select:'',
-    measure:COARSE ? tr('按住拖出测量线，或依次点两点 · 靠近墙面自动吸附 · 点「选择」退出', 'Hold and drag a line, or tap two points · snaps to walls · tap "Select" to exit')
-      : tr('点击两点（或按住拖动）测量距离 · 靠近墙面自动吸附 · Shift 锁定水平/垂直 · Esc 取消', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
-    demolish:tr('点击灰色非承重墙标记拆除，再次点击恢复 · 黑色承重墙不可拆', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed')};
+    measure:COARSE ? tr('Vedä mittaviiva tai napauta kaksi pistettä · kiinnittyy seiniin · poistu napauttamalla "Valitse"', 'Hold and drag a line, or tap two points · snaps to walls · tap "Select" to exit')
+      : tr('Napsauta kahta pistettä (tai vedä) mitataksesi etäisyyden · kiinnittyy seiniin · Shift lukitsee vaaka-/pystysuuntaan · Esc peruu', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
+    demolish:tr('Napsauta harmaata ei-kantavaa seinää merkitäksesi sen purettavaksi, napsauta uudelleen palauttaaksesi · mustia kantavia seiniä ei voi purkaa', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed')};
   const h = $('#modehint'); h.textContent = hints[ui.tool]; h.classList.toggle('show', !!hints[ui.tool]);
 }
 
-/* ======================= 视图 ======================= */
+/* ======================= Näkymä ======================= */
 function applyView(){
   const W = svg.clientWidth, H = svg.clientHeight;
   svg.setAttribute('viewBox', `${view.x0} ${view.y0} ${W/view.s} ${H/view.s}`);
@@ -1129,7 +1129,7 @@ function toMM(e){
   return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
-/* ======================= 吸附 ======================= */
+/* ======================= Kiinnitys ======================= */
 const grid = () => 10;
 function snapMove(f, cx, cy){
   let nx = Math.round(cx/grid())*grid(), ny = Math.round(cy/grid())*grid();
@@ -1153,15 +1153,15 @@ function snapPoint(p, shift){
   return {x, y};
 }
 
-/* ======================= 指针交互 ======================= */
+/* ======================= Osoittimen käsittely ======================= */
 let drag = null, pinch = null;
-const touches = new Map();                     // 当前按在平面图上的手指
+const touches = new Map();                     // sormet, jotka ovat tällä hetkellä pohjapiirroksen päällä
 const svgXY = (x, y) => { const r = svg.getBoundingClientRect(); return [x - r.left, y - r.top]; };
 function pinchInfo(){
   const [a, b] = [...touches.values()];
   return {d:Math.max(1, Math.hypot(b.x-a.x, b.y-a.y)), c:svgXY((a.x+b.x)/2, (a.y+b.y)/2)};
 }
-// 结束当前拖动：移动过的家具记入撤销栈
+// päätetään nykyinen veto: siirretty kaluste kirjataan kumoamishistoriaan
 function endDrag(cancel){
   const d = drag; drag = null; svg.classList.remove('panning');
   if (!d) return;
@@ -1170,7 +1170,7 @@ function endDrag(cancel){
     if (d.moved && ui.mA && ui.mCur && Math.hypot(ui.mCur.x-ui.mA.x, ui.mCur.y-ui.mA.y) > 20){
       const a = ui.mA, b = ui.mCur; ui.mA = ui.mCur = null; mutate(() => state.measures.push({a, b}));
     }
-    renderMeasure(); return;                   // 没拖动：保留起点，等第二次点击
+    renderMeasure(); return;                   // ei vetoa: säilytetään alkupiste ja odotetaan toista napsautusta
   }
   if (d.kind === 'pan'){
     if (!cancel && !d.moved && ui.tool === 'select') select(d.room ? {kind:'room', id:d.room} : null);
@@ -1185,7 +1185,7 @@ svg.addEventListener('pointerdown', e => {
   if (e.pointerType !== 'mouse'){
     touches.set(e.pointerId, {x:e.clientX, y:e.clientY});
     svg.setPointerCapture(e.pointerId);
-    if (touches.size >= 2){                    // 第二根手指落下：取消单指操作，进入双指缩放 / 平移
+    if (touches.size >= 2){                    // toinen sormi alas: perutaan yhden sormen toiminto ja siirrytään kahden sormen zoomaukseen / panorointiin
       endDrag(drag?.kind === 'measure' || drag?.kind === 'pan');
       const {d, c} = pinchInfo();
       pinch = {d, c, s:view.s, px:view.x0 + c[0]/view.s, py:view.y0 + c[1]/view.s};
@@ -1243,7 +1243,7 @@ svg.addEventListener('pointermove', e => {
     view.x0 = drag.x0 - (e.clientX-drag.sx)/view.s; view.y0 = drag.y0 - (e.clientY-drag.sy)/view.s; applyView(); return;
   }
   const f = getF(drag.id); if (!f) return;
-  if (!drag.moved && !far) return;             // 轻点家具不应让它抖动一下
+  if (!drag.moved && !far) return;             // kevyt napautus ei saa saada kalustetta värähtämään
   drag.moved = true;
   if (drag.kind === 'move'){
     [f.cx, f.cy] = snapMove(f, p.x-drag.ox, p.y-drag.oy);
@@ -1263,12 +1263,12 @@ svg.addEventListener('pointermove', e => {
 
 function onPointerEnd(e){
   touches.delete(e.pointerId);
-  if (pinch){ if (touches.size < 2) pinch = null; return; }   // 双指结束后，剩下的手指不再触发操作
+  if (pinch){ if (touches.size < 2) pinch = null; return; }   // kahden sormen eleen jälkeen jäljelle jäävä sormi ei enää käynnistä toimintoa
   endDrag(e.type === 'pointercancel');
 }
 svg.addEventListener('pointerup', onPointerEnd);
 svg.addEventListener('pointercancel', onPointerEnd);
-// 阻止 iPad Safari 把双指手势当成整页缩放
+// estetään iPad Safaria tulkitsemasta kahden sormen elettä koko sivun zoomaukseksi
 ['gesturestart','gesturechange','gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault()));
 
 svg.addEventListener('wheel', e => {
@@ -1280,7 +1280,7 @@ svg.addEventListener('dblclick', e => { if (ui.tool==='select' && e.target.close
 svg.addEventListener('contextmenu', e => { if (ui.tool==='measure'){ e.preventDefault(); ui.mA = null; renderMeasure(); } });
 
 
-/* ======================= 键盘 ======================= */
+/* ======================= Näppäimet ======================= */
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,select,textarea')) return;
   if (window.View3D?.walking()) return;
@@ -1308,14 +1308,14 @@ document.addEventListener('keydown', e => {
   else if (k === '-') zoomCenter(.8);
 });
 
-/* ======================= 家具库 ======================= */
+/* ======================= Kalustekirjasto ======================= */
 function buildLib(){
   $('#lib').innerHTML = LIB.map((c,ci) => `<h4>${nm(c.cat)}</h4><div class="lib-grid">${c.items.map((it,ii) => {
     const [t,n,w,d,col] = it, pad = Math.max(w,d)*.08;
-    return `<div class="item" data-key="${ci}:${ii}" title="${tr('点击添加，或拖到平面图中的指定位置', 'Click to add, or drag onto the plan')}">
+    return `<div class="item" data-key="${ci}:${ii}" title="${tr('Napsauta lisätäksesi tai vedä haluamaasi kohtaan pohjapiirroksessa', 'Click to add, or drag onto the plan')}">
       <svg viewBox="${-w/2-pad} ${-d/2-pad} ${w+2*pad} ${d+2*pad}">${furnSVG(t,w,d,col)}</svg><b>${esc(nm(n))}</b><small>${w}×${d}</small></div>`;
   }).join('')}</div>`).join('') + `<div class="hint">${tr(
-    `家具按真实尺寸（mm）绘制。${COARSE ? '点一下放到画面中央，或按住向右拖到平面图 / 3D 地面上的指定位置（上下滑动为滚动列表）。' : '点击添加到画面中央，或直接拖到平面图 / 3D 地面上。'}添加后可在右侧修改宽深与颜色。`,
+    `Kalusteet piirretään todellisessa koossa (mm). ${COARSE ? 'Napauta lisätäksesi keskelle tai vedä oikealle pohjapiirroksen / 3D-lattian haluamaasi kohtaan (pystysuuntainen pyyhkäisy vierittää listaa).' : 'Napsauta lisätäksesi keskelle tai vedä suoraan pohjapiirrokseen / 3D-lattialle.'} Lisäyksen jälkeen voit muokata leveyttä, syvyyttä ja väriä oikealla.`,
     `Furniture is drawn at real size (mm). ${COARSE ? 'Tap to place at the center, or hold and drag right onto the plan / 3D floor (swipe up/down to scroll).' : 'Click to add at the center, or drag onto the plan / 3D floor.'} Edit size and color in the right panel afterwards.`)}</div>`;
   document.querySelectorAll('.item').forEach(el => el.addEventListener('pointerdown', e => {
     if (e.button) return;
@@ -1324,10 +1324,10 @@ function buildLib(){
 }
 const itemOf = el => { const [ci, ii] = el.dataset.key.split(':').map(Number); return LIB[ci].items[ii]; };
 
-// 家具库拖放：用 pointer 事件实现（iPad 上 HTML5 拖放不可靠）。
-// 列表设置了 touch-action:pan-y，竖向滑动交给浏览器滚动（会触发 pointercancel），横向拖动才开始拖放。
+// Kalustekirjaston veto ja pudotus: toteutettu pointer-tapahtumilla (HTML5-veto ei ole luotettava iPadilla).
+// Listalla on touch-action:pan-y, joten pystysuuntaisen pyyhkäisyn selain vierittää (laukaisee pointercancelin) ja vain vaakasuuntainen veto aloittaa pudotuksen.
 let libDrag = null;
-// 屏幕坐标 → 户型坐标（mm）。2D 取平面图坐标，3D 取射线与地面的交点；s = 该处每 mm 的屏幕像素数
+// Näyttökoordinaatit → pohjapiirroksen koordinaatit (mm). 2D:ssä pohjapiirroksen koordinaatit, 3D:ssä säteen ja lattian leikkauspiste; s = näytön pikseleitä per mm kyseisessä kohdassa
 function dropPoint(x, y){
   const r = $('#stage').getBoundingClientRect();
   if (x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
@@ -1344,11 +1344,11 @@ addEventListener('pointermove', e => {
     g.innerHTML = `<svg viewBox="${-it[2]/2} ${-it[3]/2} ${it[2]} ${it[3]}">${furnSVG(it[0],it[2],it[3],it[4])}</svg>`;
     document.body.appendChild(g); libDrag.el.classList.add('dragging');
   }
-  // 幽灵图按落点处的比例显示真实大小（3D 中近大远小）
+  // haamukuva näytetään todellisessa koossa pudotuskohdan mittakaavassa (3D:ssä lähellä suurempi, kaukana pienempi)
   const g = libDrag.ghost, s = Math.max(dropPoint(e.clientX, e.clientY)?.s || (is3D() ? .05 : view.s), .02);
   Object.assign(g.style, {width:Math.max(28, it[2]*s)+'px', height:Math.max(20, it[3]*s)+'px', left:e.clientX+'px', top:e.clientY+'px'});
   const lib = $('aside.lib');
-  if (narrow() && lib.classList.contains('open') && e.clientX > lib.getBoundingClientRect().right) drawer(null);   // 拖出抽屉后自动收起
+  if (narrow() && lib.classList.contains('open') && e.clientX > lib.getBoundingClientRect().right) drawer(null);   // laatikko sulkeutuu automaattisesti vedettäessä sen ulkopuolelle
 });
 function endLibDrag(e, ok){
   if (!libDrag || e.pointerId !== libDrag.id) return;
@@ -1359,11 +1359,11 @@ function endLibDrag(e, ok){
     if (!ok) return;
     const p = dropPoint(e.clientX, e.clientY);
     if (p) addItem(d.it, p.x, p.y);
-    else if (is3D() && e.clientX > $('#stage').getBoundingClientRect().left) toast(tr('请拖到地面上', 'Drop it on the floor'));
+    else if (is3D() && e.clientX > $('#stage').getBoundingClientRect().left) toast(tr('Pudota lattialle', 'Drop it on the floor'));
     return;
   }
   if (!ok) return;
-  // 轻点：放到选中房间中心，否则放到画面中心（3D 取屏幕中心对应的地面位置）
+  // napautus: sijoitetaan valitun huoneen keskelle, muuten näkymän keskelle (3D:ssä näytön keskikohtaa vastaava lattiakohta)
   let p = null;
   if (ui.sel?.kind === 'room'){ const b = bbox(ROOMS.find(r => r.id===ui.sel.id).poly); p = {x:(b[0]+b[2])/2, y:(b[1]+b[3])/2}; }
   else if (is3D()){ const r = $('#stage').getBoundingClientRect(); p = window.View3D.groundAt(r.left + r.width/2, r.top + r.height/2); }
@@ -1374,7 +1374,7 @@ function endLibDrag(e, ok){
 addEventListener('pointerup', e => endLibDrag(e, true));
 addEventListener('pointercancel', e => endLibDrag(e, false));
 
-/* ======================= 导入导出 ======================= */
+/* ======================= Tuonti ja vienti ======================= */
 function download(name, blob){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
 function exportPNG(){
   if (is3D()) return window.View3D.shot();
@@ -1390,26 +1390,26 @@ function exportPNG(){
   img.onload = () => {
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     cv.getContext('2d').drawImage(img, 0, 0, W, H);
-    cv.toBlob(b => download(tr('户型装修方案', 'floor-plan-design') + '.png', b));
+    cv.toBlob(b => download(tr('sisustussuunnitelma', 'floor-plan-design') + '.png', b));
   };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
 }
 
-/* ======================= 杂项 ======================= */
+/* ======================= Sekalaista ======================= */
 let toastT;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
 
-/* ======================= 2D / 3D 切换 ======================= */
+/* ======================= 2D / 3D -vaihto ======================= */
 let viewMode = '2d', switching = false;
 const is3D = () => viewMode === '3d';
 const TIPS = () => COARSE
-  ? {'2d':tr('点或拖动家具库添加 · 单指拖动平移 · 双指缩放 · 选中家具后底部工具条可旋转 / 复制 / 删除', 'Tap or drag from the library · 1 finger pans · pinch zooms · bottom bar rotates / duplicates / deletes'),
-     '3d':tr('单指旋转 · 双指缩放 / 平移 · 点家具或地面编辑 · 点门开关', '1 finger orbits · 2 fingers zoom / pan · tap furniture or floor to edit · tap doors to open')}
-  : {'2d':tr('拖动左侧家具到平面图 · 滚轮缩放 · 拖动空白处平移 · T 切换 3D', 'Drag furniture onto the plan · scroll to zoom · drag empty space to pan · T for 3D'),
-     '3d':tr('3D 场景与平面方案实时同步 · 右侧面板修改会立即生效 · T 返回 2D', '3D stays in sync with the plan · panel edits apply instantly · T for 2D')};
+  ? {'2d':tr('Napauta tai vedä kirjastosta · yksi sormi panoroi · nipistä zoomataksesi · valitun kalusteen alapalkki kiertää / kopioi / poistaa', 'Tap or drag from the library · 1 finger pans · pinch zooms · bottom bar rotates / duplicates / deletes'),
+     '3d':tr('Yksi sormi kiertää · kaksi sormea zoomaa / panoroi · napauta kalustetta tai lattiaa muokataksesi · napauta ovea avataksesi', '1 finger orbits · 2 fingers zoom / pan · tap furniture or floor to edit · tap doors to open')}
+  : {'2d':tr('Vedä kaluste pohjapiirrokseen · vieritä zoomataksesi · vedä tyhjästä panoroidaksesi · T = 3D', 'Drag furniture onto the plan · scroll to zoom · drag empty space to pan · T for 3D'),
+     '3d':tr('3D pysyy synkronoituna pohjapiirroksen kanssa · paneelin muutokset tulevat heti voimaan · T = 2D', '3D stays in sync with the plan · panel edits apply instantly · T for 2D')};
 async function setView(m){
   if (m === viewMode || switching) return;
-  if (!window.View3D) return toast(tr('3D 引擎仍在加载或加载失败（需要联网加载 three.js）', '3D engine is still loading or failed to load (three.js needs a network connection)'));
+  if (!window.View3D) return toast(tr('3D-moottori latautuu vielä tai lataus epäonnistui (three.js vaatii verkkoyhteyden)', '3D engine is still loading or failed to load (three.js needs a network connection)'));
   switching = true; document.body.classList.add('busy');
   viewMode = m;
   if (m === '3d'){ if (ui.tool !== 'select') setTool('select'); ui.mA = null; document.body.classList.add('m3d'); await window.View3D.enter(); }
@@ -1429,51 +1429,51 @@ document.querySelectorAll('#layers .btn').forEach(b => b.onclick = () => {
 $('#zoomIn').onclick = () => zoomCenter(1.25);
 $('#zoomOut').onclick = () => zoomCenter(.8);
 $('#fit').onclick = fitView;
-$('#s60').onclick = () => { setRatio(60); toast(tr('已按 1:60 显示（与原始户型图同比例）', 'Showing at 1:60 (same scale as the original plan)')); };
+$('#s60').onclick = () => { setRatio(60); toast(tr('Näytetään mittakaavassa 1:60 (sama kuin alkuperäisessä piirroksessa)', 'Showing at 1:60 (same scale as the original plan)')); };
 $('#s100').onclick = () => setRatio(100);
 $('#undo').onclick = undo; $('#redo').onclick = redo;
 $('#clearAll').onclick = clearLayout;
 
-/* 全屏：标准 API + Safari（iPad）的 webkit 前缀版本 */
+/* Koko näyttö: standardi-API + Safarin (iPad) webkit-etuliitteellinen versio */
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
 function toggleFullscreen(){
   const de = document.documentElement;
   if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   else {
     const req = de.requestFullscreen || de.webkitRequestFullscreen;
-    if (!req) return toast(tr('当前浏览器不支持网页全屏，可在 Safari 中「添加到主屏幕」后以全屏方式打开', 'Fullscreen is not supported here — in Safari, use "Add to Home Screen" to open it fullscreen'));
-    Promise.resolve(req.call(de)).catch(() => toast(tr('无法进入全屏', 'Could not enter fullscreen')));
+    if (!req) return toast(tr('Selain ei tue koko näytön tilaa — Safarissa voit käyttää "Lisää Koti-valikkoon" ja avata sivun koko näytöllä', 'Fullscreen is not supported here — in Safari, use "Add to Home Screen" to open it fullscreen'));
+    Promise.resolve(req.call(de)).catch(() => toast(tr('Koko näyttöön siirtyminen epäonnistui', 'Could not enter fullscreen')));
   }
 }
 function syncFullscreen(){
   const on = !!fsEl(), b = $('#fullscreen');
-  b.textContent = '⛶ ' + (on ? tr('退出全屏', 'Exit fullscreen') : tr('全屏', 'Fullscreen'));
-  b.title = (on ? tr('退出全屏', 'Exit fullscreen') : tr('全屏', 'Fullscreen')) + ' (Shift+F)';
+  b.textContent = '⛶ ' + (on ? tr('Poistu koko näytöstä', 'Exit fullscreen') : tr('Koko näyttö', 'Fullscreen'));
+  b.title = (on ? tr('Poistu koko näytöstä', 'Exit fullscreen') : tr('Koko näyttö', 'Fullscreen')) + ' (Shift+F)';
 }
 $('#fullscreen').onclick = toggleFullscreen;
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(t => document.addEventListener(t, syncFullscreen));
-// 已从主屏幕以独立 App 方式打开时本就是全屏，隐藏按钮
+// kun avattu kotinäytöltä erillisenä sovelluksena, se on jo koko näytöllä, joten painike piilotetaan
 if (navigator.standalone || matchMedia('(display-mode: standalone)').matches) $('#fullscreen').hidden = true;
 $('#tgLib').onclick = () => drawer('lib');
 $('#tgPanel').onclick = () => drawer('panel');
-// 触屏上点菜单以外的地方收起「文件」菜单
+// kosketusnäytöllä valikon ulkopuolelle napauttaminen sulkee Tiedosto-valikon
 document.addEventListener('pointerdown', e => { const m = $('details.menu'); if (m.open && !m.contains(e.target)) m.open = false; });
 matchMedia('(max-width:1100px)').addEventListener('change', () => drawer(null));
-drawer(null);                                  // 恢复上次的面板收起状态
+drawer(null);                                  // palautetaan paneelien edellinen piilotustila
 $('#exportPng').onclick = exportPNG;
-$('#exportJson').onclick = () => download(tr('户型装修方案', 'floor-plan-design') + '.json', new Blob([JSON.stringify(state, null, 2)], {type:'application/json'}));
+$('#exportJson').onclick = () => download(tr('sisustussuunnitelma', 'floor-plan-design') + '.json', new Blob([JSON.stringify(state, null, 2)], {type:'application/json'}));
 $('#importJson').onclick = () => $('#fileIn').click();
 $('#fileIn').onchange = e => {
   const file = e.target.files[0]; if (!file) return;
   file.text().then(txt => {
-    try { const s = JSON.parse(txt); if (!Array.isArray(s.furniture)) throw 0; const b = snap(); state = fixState(s); ui.sel = null; commit(b); renderAll(); toast(tr('方案已导入', 'Plan imported')); }
-    catch(err){ toast(tr('文件格式不正确', 'Invalid file format')); }
+    try { const s = JSON.parse(txt); if (!Array.isArray(s.furniture)) throw 0; const b = snap(); state = fixState(s); ui.sel = null; commit(b); renderAll(); toast(tr('Suunnitelma tuotu', 'Plan imported')); }
+    catch(err){ toast(tr('Virheellinen tiedostomuoto', 'Invalid file format')); }
   });
   e.target.value = '';
 };
-$('#reset').onclick = () => { if (confirm(tr('恢复为默认设计方案？（可撤销）', 'Reset to the default design? (undoable)'))){ const b = snap(); state = defaultState(); ui.sel = null; commit(b); renderAll(); } };
-// 横竖屏切换、表头换行等都会改变画布尺寸；尺寸从 0 恢复（如首次布局）时重新适应窗口
-// 其余尺寸变化（收起 / 展开面板等）保持画面中心不动
+$('#reset').onclick = () => { if (confirm(tr('Palautetaanko oletussuunnitelma? (voi kumota)', 'Reset to the default design? (undoable)'))){ const b = snap(); state = defaultState(); ui.sel = null; commit(b); renderAll(); } };
+// Näytön suunnan vaihto, otsikkorivin rivitys ym. muuttavat piirtoalueen kokoa; kun koko palautuu nollasta (esim. ensimmäinen asettelu), sovitetaan ikkunaan uudelleen
+// muissa kokomuutoksissa (paneelien piilotus / näyttö ym.) näkymän keskikohta pysyy paikallaan
 let lastW = 0, lastH = 0;
 new ResizeObserver(() => {
   const w = svg.clientWidth, h = svg.clientHeight; if (!w) return;
@@ -1489,7 +1489,7 @@ function setLang(l){
   $('#tip').textContent = TIPS()[viewMode];
   window.View3D?.relang();
 }
-$('#langBtn').onclick = () => setLang(LANG === 'en' ? 'zh' : 'en');
+$('#langBtn').onclick = () => setLang(LANG === 'en' ? 'fi' : 'en');
 
 applyStaticLang(); syncFullscreen();
 buildDefs(); buildLib(); renderOpenings(); renderDims();
@@ -1498,10 +1498,10 @@ fitView(); renderAll();
 </script>
 <script type="module">
 /* ============================================================
- *  3D 场景（three.js）—— 与 2D 共用 state / ui，切换时带过渡动画：
- *  2D → 3D：3D 相机先以正俯视对齐当前 2D 视口（比例、位置一致），
- *           交叉淡入后镜头倾斜环绕、墙体从地面升起、家具随后立起；
- *  3D → 2D：反向——家具收起、墙体下沉、镜头回到正俯视并淡出到平面图。
+ *  3D-näkymä (three.js) — jakaa state / ui:n 2D:n kanssa, vaihdossa siirtymäanimaatio:
+ *  2D → 3D: 3D-kamera asettuu ensin suoraan ylhäältä nykyisen 2D-näkymän kohdalle (sama mittakaava ja sijainti),
+ *           ristiinhäivytyksen jälkeen kamera kallistuu ja kiertää, seinät nousevat lattiasta ja kalusteet nousevat perässä;
+ *  3D → 2D: päinvastoin — kalusteet laskeutuvat, seinät vajoavat, kamera palaa suoraan ylhäältä ja häivyttää pohjapiirrokseen.
  * ============================================================ */
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -1511,7 +1511,7 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 
 const stage = $('#stage'), host = $('#view3d');
-const OX = 6000, OY = 5300, H = 2.8, FOV = 45;       // 户型中心放在世界原点，层高 2.8 m
+const OX = 6000, OY = 5300, H = 2.8, FOV = 45;       // asunnon keskipiste maailman origossa, kattokorkeus 2,8 m
 const wx = x => (x - OX) / 1000, wz = y => (y - OY) / 1000, M = v => v / 1000;
 const SW = () => stage.clientWidth, SH = () => stage.clientHeight;
 const opt = {cut:2.8, furn:true, labels:true, night:false, hour:10, mode:'orbit'};
@@ -1522,7 +1522,7 @@ let archFloor, archUp, furnG, labelG, lampG, colliders = [], selKey = null, selH
 let sigArch = '', sigFurn = '', sigLabels = '', grow = 1, furnGrow = 1;
 const doors = [], keys = {};
 
-/* ======================= 初始化 ======================= */
+/* ======================= Alustus ======================= */
 function init(){
   if (inited) return; inited = true;
   renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
@@ -1546,7 +1546,7 @@ function init(){
 
   hemi = new THREE.HemisphereLight(0xfff8ee, 0xb9a88f, 1.1);
   sun = new THREE.DirectionalLight(0xfff1dd, 2.6);
-  sun.castShadow = true; sun.shadow.mapSize.setScalar(COARSE ? 2048 : 4096);   // 平板 GPU 用小一点的阴影贴图
+  sun.castShadow = true; sun.shadow.mapSize.setScalar(COARSE ? 2048 : 4096);   // tablettien GPU:lle pienempi varjokartta
   Object.assign(sun.shadow.camera, {left:-11, right:11, top:11, bottom:-11, near:1, far:60});
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
   ground = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({color:0xf2eee7, roughness:1}));
@@ -1571,8 +1571,8 @@ function init(){
   });
   cv.addEventListener('pointercancel', e => { if (look?.id === e.pointerId) look = null; });
 
-  // 按住已选中的家具拖动：沿地面摆放（与 2D 共用网格和贴墙吸附）。
-  // 在父元素上用捕获阶段监听，赶在 OrbitControls 之前关掉它，避免同时旋转镜头
+  // valitun kalusteen vetäminen: asetus lattialle (jakaa ruudukon ja seinäkiinnityksen 2D:n kanssa).
+  // kuunnellaan vanhemmassa elementissä sieppausvaiheessa ja pysäytetään ennen OrbitControlsia, jotta kamera ei kierry samanaikaisesti
   let fdrag = null;
   host.addEventListener('pointerdown', e => {
     if (e.target !== cv || !e.isPrimary || anim || opt.mode !== 'orbit' || ui.sel?.kind !== 'furn') return;
@@ -1587,7 +1587,7 @@ function init(){
     const f = getF(fdrag.id), g = groundAt(e.clientX, e.clientY); if (!f || !g) return;
     fdrag.moved = true; cv.style.cursor = 'grabbing';
     [f.cx, f.cy] = snapMove(f, g.x - fdrag.ox, g.y - fdrag.oy);
-    furnG.children.find(o => o.userData.fid === f.id)?.position.set(wx(f.cx), 0, wz(f.cy));   // 拖动中只挪模型，松手再整体同步
+    furnG.children.find(o => o.userData.fid === f.id)?.position.set(wx(f.cx), 0, wz(f.cy));   // vedettäessä siirretään vain mallia, synkronointi vasta päästettäessä irti
   });
   const endF = e => {
     if (!fdrag || e.pointerId !== fdrag.pid) return;
@@ -1600,7 +1600,7 @@ function init(){
     const tap = downAt && Math.hypot(e.clientX-downAt[0], e.clientY-downAt[1]) <= TAP;
     if (look?.id === e.pointerId){
       look = null;
-      if (tap){ const h = pick(e); if (h?.door && h.dist < 3.5) h.door.open = !h.door.open; }   // 漫游时点门开关
+      if (tap){ const h = pick(e); if (h?.door && h.dist < 3.5) h.door.open = !h.door.open; }   // kävelyssä oven avaus/sulku napauttamalla
       return;
     }
     if (anim || opt.mode !== 'orbit' || !tap) return;
@@ -1617,14 +1617,14 @@ function init(){
   bindUI();
 }
 
-/* ======================= 材质 ======================= */
+/* ======================= Materiaalit ======================= */
 const matCache = new Map();
 let envTex = null, envK = 1;
 function mat(color, o = {}){
   const key = color + JSON.stringify(o);
   if (!matCache.has(key)){
     const m = new THREE.MeshStandardMaterial({color, roughness:.7, ...o});
-    // 金属 / 光滑表面挂环境反射，墙面等哑光材质不挂，避免整体变亮
+    // metalli- / kiiltäville pinnoille ympäristöheijastus, mattapinnoille (esim. seinät) ei, jotta kokonaisuus ei kirkastu
     if (envTex && (m.metalness > 0 || m.roughness < .4)){ m.envMap = envTex; m.userData.env = m.metalness > .5 ? 1 : .5; m.envMapIntensity = m.userData.env*envK; }
     matCache.set(key, m);
   }
@@ -1632,7 +1632,7 @@ function mat(color, o = {}){
 }
 function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const rgbK = (hex, k) => { const n = parseInt(hex.slice(1), 16); const f = v => Math.max(0, Math.min(255, Math.round(v*k))); return `rgb(${f(n>>16&255)},${f(n>>8&255)},${f(n&255)})`; };
-// 地面贴图按真实尺寸平铺（UV 单位 = 米）
+// lattiatekstuurit toistuvat todellisessa koossa (UV-yksikkö = metri)
 const TEX = {
   wood:{sx:1.8, sy:.36, base:'#d6b58a', rough:.55}, walnut:{sx:1.8, sy:.36, base:'#9a6f4b', rough:.5},
   tile800:{sx:.8, sy:.8, base:'#ebe6dd', grout:'#cfc6b7', rough:.3}, tile600:{sx:.6, sy:.6, base:'#dfe3e0', grout:'#bfc6c1', rough:.35},
@@ -1676,7 +1676,7 @@ function floorMat(kind){
   return floorMats[kind] = new THREE.MeshStandardMaterial({map:t, roughness:s.rough});
 }
 
-/* ======================= 几何小工具（y = 底面高度） ======================= */
+/* ======================= Geometriaapuohjelmat (y = pohjan korkeus) ======================= */
 const asMat = m => typeof m === 'string' ? mat(m) : m;
 const sh = o => { o.castShadow = o.receiveShadow = true; return o; };
 const mesh = (geo, m) => sh(new THREE.Mesh(geo, asMat(m)));
@@ -1690,29 +1690,29 @@ function rbox(w, h, d, m, x = 0, y = 0, z = 0, r = .04){
 function cyl(rt, rb, h, m, x = 0, y = 0, z = 0, seg = 28){
   const o = mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.position.set(x, y + h/2, z); return o;
 }
-// 旋转体：pts = [[半径, 高度], …] 自下而上，y = 底面
+// Kiertokappale: pts = [[säde, korkeus], …] alhaalta ylös, y = pohja
 function lathe(pts, m, x = 0, y = 0, z = 0, seg = 40){
   const o = mesh(new THREE.LatheGeometry(pts.map(([r, h]) => new THREE.Vector2(Math.max(r, 1e-4), h)), seg), m); o.position.set(x, y, z); return o;
 }
-// 两点之间的圆杆，r0 在 a 端、r1 在 b 端（收分椅腿、斜撑）
+// Pyöreä sauva kahden pisteen välillä, r0 päässä a, r1 päässä b (kapenevat tuolinjalat, vinotuet)
 function rod(a, b, r0, m, r1 = r0, seg = 12){
   const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), o = mesh(new THREE.CylinderGeometry(r1, r0, A.distanceTo(B), seg), m);
   o.position.copy(A).add(B).multiplyScalar(.5); o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.sub(A).normalize()); return o;
 }
-// 沿曲线的圆管（水龙头、扶手、灯臂）
+// Putki käyrää pitkin (hana, kaide, valaisimen varsi)
 const tube = (pts, r, m, seg = 40) => mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p)), false, 'centripetal'), seg, r, 10), m);
-// 椭球（靠垫、叶片、豆袋），y = 中心
+// Ellipsoidi (tyyny, lehti, säkkituoli), y = keskipiste
 function blob(rx, ry, rz, m, x = 0, y = 0, z = 0, seg = 24){
   const o = mesh(new THREE.SphereGeometry(1, seg, Math.round(seg*.7)), m); o.scale.set(rx, ry, rz); o.position.set(x, y, z); return o;
 }
-// 水平圆环，y = 中心
+// Vaakasuora rengas, y = keskipiste
 function ring(R, r, m, x = 0, y = 0, z = 0){ const o = mesh(new THREE.TorusGeometry(R, r, 10, 48), m); o.rotation.x = Math.PI/2; o.position.set(x, y, z); return o; }
 function rrect(w, d, r){
   const s = new THREE.Shape(), x = -w/2, y = -d/2; r = Math.min(r, w/2 - .001, d/2 - .001);
   s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + d - r); s.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
   s.lineTo(x + r, y + d); s.quadraticCurveTo(x, y + d, x, y + d - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s;
 }
-// 中空圆角框（浴缸、水槽沿、椅背框）：外 w×d、壁厚 t、高 h
+// Ontto pyöristetty kehys (kylpyamme, altaan reuna, tuolin selkäkehys): ulko w×d, seinämä t, korkeus h
 function shell(w, d, h, t, r, m, x = 0, y = 0, z = 0){
   const s = rrect(w, d, r); s.holes.push(rrect(w - 2*t, d - 2*t, Math.max(.004, r - t)));
   const geo = new THREE.ExtrudeGeometry(s, {depth:h, bevelEnabled:false, curveSegments:10}); geo.rotateX(-Math.PI/2);
@@ -1720,7 +1720,7 @@ function shell(w, d, h, t, r, m, x = 0, y = 0, z = 0){
 }
 const darker = (hex, k = .8) => '#' + new THREE.Color(hex).multiplyScalar(k).getHexString();
 const lighter = (hex, k = .2) => '#' + new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), k).getHexString();
-// 四条收分腿：inset 为距边距离，r 为腿底半径（顶部略粗）
+// Neljä kapenevaa jalkaa: inset = etäisyys reunasta, r = jalan pohjan säde (yläpää hieman paksumpi)
 const legs = (g, w, d, h, m, inset = .05, r = .02) => [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a, b]) => g.add(rod([a*(w/2-inset), 0, b*(d/2-inset)], [a*(w/2-inset), h, b*(d/2-inset)], r*.7, m, r)));
 const metal = () => mat('#cfd2d4', {metalness:.9, roughness:.25});
 const chrome = () => mat('#eef0f2', {metalness:1, roughness:.08});
@@ -1733,7 +1733,7 @@ const woodM = c => mat(c, {roughness:.55});
 const screenMat = (glow = '#1a2636') => mat('#0b0e13', {roughness:.1, metalness:.3, emissive:glow, emissiveIntensity:.35});
 const glowMat = (c = '#fff4dc', e = '#ffdca0', k = .5) => mat(c, {emissive:e, emissiveIntensity:k, roughness:.9, side:THREE.DoubleSide});
 
-// 拉手：y 为拉手中心，z 为门板正面
+// Kahva: y = kahvan keskipiste, z = ovilevyn etupinta
 function pull(g, len, vert, x, y, z){
   const m = hwMat(), o = new THREE.Group();
   o.add(vert ? box(.01, len, .01, m, 0, -len/2, .028) : box(len, .01, .01, m, 0, -.005, .028));
@@ -1741,11 +1741,11 @@ function pull(g, len, vert, x, y, z){
   o.position.set(x, y, z); g.add(o);
 }
 function knob(g, x, y, z){ const k = cyl(.011, .014, .02, hwMat(), x, y - .01, z + .01, 16); k.rotation.x = Math.PI/2; g.add(k, blob(.014, .014, .008, hwMat(), x, y, z + .022, 12)); }
-// 柜门 / 抽屉面板：x0..x0+w、y0..y0+h 区域内 nx 列 × ny 行，正面朝 +z（z = 柜体正面）
-// hd：'bar' 金属拉手 | 'knob' 圆钮 | 'edge' 顶部隐形拉槽 | 'none'；hy：门拉手中心高度（null = 面板中部）
+// Kaapin ovet / laatikoiden etulevyt: alueella x0..x0+w, y0..y0+h nx saraketta × ny riviä, etupuoli kohti +z (z = kaapin etupinta)
+// hd: 'bar' metallikahva | 'knob' nuppi | 'edge' piilotettu yläurakahva | 'none'; hy: oven kahvan keskikorkeus (null = levyn keskikohta)
 function fronts(g, x0, y0, w, h, z, nx, ny, m, hd = 'bar', hy = null){
   const gap = .005, pw = w/nx, ph = h/ny, fz = z + .018;
-  g.add(box(w, h, .002, '#2a2724', x0 + w/2, y0, z + .001));                     // 缝隙里透出的暗色
+  g.add(box(w, h, .002, '#2a2724', x0 + w/2, y0, z + .001));                     // raoista näkyvä tumma väri
   for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){
     const cx = x0 + pw*(i + .5), yb = y0 + ph*j, drawer = ph < .4 && pw >= ph;
     g.add(rbox(pw - gap, ph - gap, .018, m, cx, yb + gap/2, z + .009, .003));
@@ -1773,19 +1773,19 @@ function tableLamp(g, x, y, z, s = 1){
 }
 const plate = (g, r, x, y, z) => g.add(lathe([[0, 0], [r*.6, 0], [r*.72, .008], [r, .02]], ceramic({side:THREE.DoubleSide}), x, y, z, 32));
 
-/* ======================= 家具模型（局部坐标：背面朝 -z） ======================= */
+/* ======================= Kalustemallit (paikalliset koordinaatit: selkäpuoli kohti -z) ======================= */
 function buildFurniture(f){
   const g = new THREE.Group(), w = M(f.w), d = M(f.d), c = f.color || '#ddd', bz = -d/2, R = rng(Math.round(f.w*7 + f.d*13 + f.cx + f.cy));
   switch (f.type){
     case 'bed': {
       const fr = woodM('#8d7258'), fab = fabric(c), fh = .3, mt = .22, top = fh + mt, n = Math.max(3, Math.round(w/.28)), sw = (w - .04)/n;
-      g.add(box(w - .12, .06, d - .14, '#4a3e33', 0, 0, .03), rbox(w, fh - .06, d - .08, fr, 0, .06, .04, .015));        // 内缩踢脚 + 床箱
-      g.add(rbox(w, 1.08, .06, fr, 0, 0, bz + .03, .012));                                                                 // 床头板
-      for (let i = 0; i < n; i++) g.add(rbox(sw - .006, .62, .06, fabric(darker(c, .8)), -w/2 + .02 + sw*(i + .5), .42, bz + .08, .025));   // 竖向软包
+      g.add(box(w - .12, .06, d - .14, '#4a3e33', 0, 0, .03), rbox(w, fh - .06, d - .08, fr, 0, .06, .04, .015));        // sisennetty jalkalista + sängynrunko
+      g.add(rbox(w, 1.08, .06, fr, 0, 0, bz + .03, .012));                                                                 // sängynpääty
+      for (let i = 0; i < n; i++) g.add(rbox(sw - .006, .62, .06, fabric(darker(c, .8)), -w/2 + .02 + sw*(i + .5), .42, bz + .08, .025));   // pystysuuntainen pehmustus
       const md = d - .13, dd = md*.66, dz = d/2 - .015 - dd/2;
-      g.add(rbox(w - .06, mt, md, '#f6f3ee', 0, fh, bz + .11 + md/2, .07));                                              // 床垫
-      g.add(rbox(w + .02, .27, dd, fab, 0, top - .2, dz, .04), rbox(w + .024, .06, .22, fabric('#fbfaf7'), 0, top + .025, dz - dd/2 + .11, .025));   // 被子 + 翻边
-      g.add(rbox(w + .05, .285, .42, fabric(darker(c, .62)), 0, top - .205, d/2 - .35, .03));                               // 床尾巾
+      g.add(rbox(w - .06, mt, md, '#f6f3ee', 0, fh, bz + .11 + md/2, .07));                                              // patja
+      g.add(rbox(w + .02, .27, dd, fab, 0, top - .2, dz, .04), rbox(w + .024, .06, .22, fabric('#fbfaf7'), 0, top + .025, dz - dd/2 + .11, .025));   // peitto + käänne
+      g.add(rbox(w + .05, .285, .42, fabric(darker(c, .62)), 0, top - .205, d/2 - .35, .03));                               // sängyn jalkopäänpeite
       const np = w >= 1.3 ? 2 : 1, pw = (w - .16 - (np-1)*.06)/np;
       for (let i = 0; i < np; i++){
         const x = -w/2 + .08 + pw/2 + i*(pw + .06);
@@ -1840,7 +1840,7 @@ function buildFurniture(f){
         g.add(box(w, .02, d - .02, darker(c, .9), 0, h - .02, -.01));
       } else if (f.type === 'shoecab'){
         const h = 1.0, y0 = .16, n = Math.max(1, Math.round(w/.45));
-        g.add(box(w, h - y0, d - .02, cm, 0, y0, -.01), box(w - .04, .01, .03, glowMat('#fff7e6', '#ffe9c4', .8), 0, y0 - .01, fz - .06));   // 悬空 + 底部灯带
+        g.add(box(w, h - y0, d - .02, cm, 0, y0, -.01), box(w - .04, .01, .03, glowMat('#fff7e6', '#ffe9c4', .8), 0, y0 - .01, fz - .06));   // leijuva + pohjan valonauha
         fronts(g, -w/2, y0, w, h - y0, fz, n, 1, cm, 'edge');
         g.add(rbox(w + .01, .025, d, woodM(darker(c, .8)), 0, h, 0, .006));
         g.add(rbox(.22, .015, .14, woodM('#6b543f'), -w*.25, h + .025, 0, .006));
@@ -1853,7 +1853,7 @@ function buildFurniture(f){
         fronts(g, -w/2, .1, w, .52, fz, n, 1, cm, 'bar', .52);
         g.add(rbox(w + .02, .03, d + .01, woodM(darker(c, .78)), 0, h - .03, 0, .008));
         vase(g, w*.3, h, 0, .07, .24, '#e9e2d6', R);
-        g.add(rot(box(.3, .38, .02, woodM('#3a3027'), -w*.25, h, bz + .06), -.12), rot(box(.25, .33, .005, '#d9cfbf', -w*.25, h + .03, bz + .075), -.12));   // 靠墙画框
+        g.add(rot(box(.3, .38, .02, woodM('#3a3027'), -w*.25, h, bz + .06), -.12), rot(box(.25, .33, .005, '#d9cfbf', -w*.25, h + .03, bz + .075), -.12));   // seinää vasten oleva taulukehys
         g.add(lathe([[0, 0], [.05, 0], [.12, .06], [.13, .07]], mat('#b8a58c', {roughness:.5, side:THREE.DoubleSide}), 0, h, .02, 32));
         for (let k = 0; k < 3; k++) g.add(blob(.035, .035, .035, ['#d98c4a', '#c9ad4f', '#b5463a'][k], Math.cos(k*2.1)*.04, h + .045, .02 + Math.sin(k*2.1)*.04, 14));
       }
@@ -2137,9 +2137,9 @@ function buildFurniture(f){
       const cm = mat(c, {roughness:.45}), stone = mat('#dcd7cf', {roughness:.2}), cd = d - .3, n = Math.max(1, Math.round((w - .1)/.6)), cab = new THREE.Group(), fz = cd/2 - .03;
       cab.add(box(w - .12, .1, cd - .08, '#4a4641', 0, 0, -.04), box(w - .1, .74, cd - .03, cm, 0, .1, -.015));
       fronts(cab, -w/2 + .05, .64, w - .1, .2, fz, n, 1, cm, 'bar'); fronts(cab, -w/2 + .05, .1, w - .1, .54, fz, n, 1, cm, 'bar', .56);
-      cab.rotation.y = Math.PI; cab.position.z = bz + cd/2; g.add(cab);                    // 柜门朝 -z，+z 侧留出吧台挑空
+      cab.rotation.y = Math.PI; cab.position.z = bz + cd/2; g.add(cab);                    // kaapin ovet kohti -z, +z-puolelle jää baaritason ulkoneva osa
       g.add(rbox(w, .05, d, stone, 0, .84, 0, .006));
-      [-1, 1].forEach(s => g.add(box(.04, .84, d, stone, s*(w/2 - .02), 0, 0)));             // 瀑布式侧板
+      [-1, 1].forEach(s => g.add(box(.04, .84, d, stone, s*(w/2 - .02), 0, 0)));             // vesiputousmainen sivulevy
       g.add(lathe([[0, 0], [.06, 0], [.14, .06], [.15, .07]], mat('#6b543f', {roughness:.5, side:THREE.DoubleSide}), w*.22, .89, 0, 32));
       for (let k = 0; k < 4; k++) g.add(blob(.04, .04, .04, ['#d98c4a', '#9fbf5a', '#b5463a', '#e6c14f'][k], w*.22 + Math.cos(k*1.6)*.05, .935 + (k === 3 ? .04 : 0), Math.sin(k*1.6)*.05, 14));
       vase(g, -w*.25, .89, -.05, .05, .22, '#e9e2d6', R);
@@ -2256,18 +2256,18 @@ function buildFurniture(f){
     default: g.add(box(w, .8, d, c));
   }
   g.position.set(wx(f.cx), 0, wz(f.cy));
-  g.rotation.y = -f.rot * Math.PI/180;       // 平面顺时针旋转 → 绕 Y 轴负向
+  g.rotation.y = -f.rot * Math.PI/180;       // pohjapiirroksessa myötäpäivään kierto → kierto Y-akselin negatiiviseen suuntaan
   g.userData.fid = f.id;
   return g;
 }
 
-/* ======================= 建筑 ======================= */
+/* ======================= Rakennus ======================= */
 function clearGroup(g){ g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); g.clear(); }
 function wallBox([x0, y0, x1, y1], yb, yt, m){
   if (yt - yb <= .001) return;
   const o = new THREE.Mesh(new THREE.BoxGeometry(M(x1-x0), yt-yb, M(y1-y0)), m || [wallMat, wallMat, capMat, wallMat, wallMat, wallMat]);
   o.position.set(wx((x0+x1)/2), (yb+yt)/2, wz((y0+y1)/2)); o.castShadow = o.receiveShadow = true; archUp.add(o);
-  // 漫游辅助：墙体棱线 + 踢脚线，让相邻墙面、墙角一眼可分（仅漫游模式显示）
+  // Kävelyapu: seinien reunaviivat + jalkalistat, jotta viereiset seinät ja nurkat erottuvat helposti (näkyy vain kävelytilassa)
   const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry), edgeMat); ln.position.copy(o.position); ln.userData.walkOnly = true; ln.visible = opt.mode === 'walk'; archUp.add(ln);
   if (yb <= .001){
     const p = o.geometry.parameters, sh = Math.min(.12, yt), sk = new THREE.Mesh(new THREE.BoxGeometry(p.width + .02, sh, p.depth + .02), skirtMat);
@@ -2287,7 +2287,7 @@ function buildArch(){
     const fl = new THREE.Mesh(geo, bay ? [m, mat('#e9e4da')] : m);
     fl.receiveShadow = true; fl.userData.room = r.id;
     if (bay){ fl.castShadow = true; archUp.add(fl); } else archFloor.add(fl);
-    // 天花：法线朝下，只在室内仰视时可见
+    // katto: normaali osoittaa alas, näkyy vain sisällä ylöspäin katsottaessa
     const cg = new THREE.ShapeGeometry(shapeOf(r.poly, true)); cg.rotateX(Math.PI/2);
     const ceil = new THREE.Mesh(cg, mat('#fbfaf7', {roughness:1})); ceil.position.y = H; ceil.visible = top >= H; archUp.add(ceil);
     if (r.at){
@@ -2302,7 +2302,7 @@ function buildArch(){
     wallBox(w, 0, w[4] === 'low' ? Math.min(1, top) : top);
     colliders.push([wx(w[0]), wz(w[1]), wx(w[2]), wz(w[3])]);
   });
-  // 门洞、飘窗洞口上方过梁
+  // ovi- ja erkkeriaukkojen yläpuoliset palkit
   [...DOORS.map(d => [d.rect, 2.1]), ...SLIDES.map(s => [s.rect, s.v ? 2.4 : 2.1]), [[10270,800,10510,2600], 2.4], [[10270,4260,10510,5740], 2.4]]
     .forEach(([r, h]) => { if (top > h) wallBox(r, h, top); });
   WINS.forEach((r, i) => {
@@ -2355,7 +2355,7 @@ function buildLabels(){
   });
   const counted = ROOMS.filter(r => r.counted !== false);
   $('#roomList').innerHTML = counted.map(r => `<button data-room="${r.id}"><span>${esc(nm(state.rooms[r.id].name))}</span><small>${area(r.poly).toFixed(2)} m²</small></button>`).join('')
-    + `<button data-room="__all"><span>${tr('全屋', 'Whole home')}</span><small>${counted.reduce((a, r) => a + area(r.poly), 0).toFixed(2)} m²</small></button>`;
+    + `<button data-room="__all"><span>${tr('Koko koti', 'Whole home')}</span><small>${counted.reduce((a, r) => a + area(r.poly), 0).toFixed(2)} m²</small></button>`;
   document.querySelectorAll('#roomList button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#roomList button').forEach(x => x.classList.toggle('on', x === b));
     if (opt.mode === 'walk') setMode('orbit');
@@ -2363,7 +2363,7 @@ function buildLabels(){
   });
 }
 
-// 只重建变化的部分
+// rakennetaan uudelleen vain muuttuneet osat
 function sync(force){
   if (!inited || (!active && !force)) return;
   const a = JSON.stringify([state.rooms, state.demolished, opt.cut]), f = JSON.stringify(state.furniture), l = JSON.stringify([state.rooms, opt.cut]);
@@ -2372,7 +2372,7 @@ function sync(force){
   if (force || l !== sigLabels){ sigLabels = l; buildLabels(); }
 }
 
-// CSS2DRenderer 只看标签自身的 visible，不继承父级，所以逐个设置
+// CSS2DRenderer tarkistaa vain tunnisteen oman visible-arvon eikä peri sitä vanhemmalta, joten asetetaan yksitellen
 function showLabels(v){ labelG.visible = v; labelG.children.forEach(o => o.visible = v); }
 function applyGrow(){
   if (!inited) return;
@@ -2381,7 +2381,7 @@ function applyGrow(){
   lampG.visible = grow > .99;
 }
 
-/* ======================= 日照 / 夜景 ======================= */
+/* ======================= Auringonvalo / yö ======================= */
 function applyLight(){
   const t = (opt.hour - 6) / 12, az = Math.PI * (.15 + t*.7), el = Math.sin(Math.PI*t) * 1.05 + .15, warm = 1 - Math.sin(Math.PI*t);
   sun.position.set(Math.cos(az)*18, Math.sin(el)*20 + 3, -Math.sin(az)*10 + 8); sun.target.position.set(0, 0, 0);
@@ -2397,11 +2397,11 @@ function applyLight(){
   $('#sunT').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 
-/* ======================= 相机位姿 / 动画 ======================= */
+/* ======================= Kameran asento / animaatio ======================= */
 const ease = t => t < .5 ? 4*t*t*t : 1 - (-2*t + 2)**3/2;
 const clamp01 = t => Math.max(0, Math.min(1, t));
 const pose = (t, p) => ({t, p});
-// 与当前 2D 视口完全重合的正俯视位姿：透视相机在该高度下，地面可视高度 = 2D 视口高度
+// suoraan ylhäältä oleva asento, joka vastaa täsmälleen nykyistä 2D-näkymää: perspektiivikameralla tällä korkeudella lattian näkyvä korkeus = 2D-näkymän korkeus
 function planPose(){
   const cx = view.x0 + SW()/2/view.s, cy = view.y0 + SH()/2/view.s, visH = SH()/view.s/1000;
   const dist = visH / 2 / Math.tan(FOV/2*Math.PI/180), t = new THREE.Vector3(wx(cx), 0, wz(cy));
@@ -2414,7 +2414,7 @@ function isoFrom(P){
 const isoWhole = () => pose(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5.5, 15.5, 10));
 const topWhole = () => pose(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 19, 1e-4));
 const curPose = () => pose(orbit.target.clone(), camera.position.clone());
-// 以目标点为中心做球坐标插值：镜头沿弧线倾斜环绕，而不是直线穿越
+// pallokoordinaatti-interpolointi kohdepisteen ympärillä: kamera kallistuu ja kiertää kaarta pitkin suoran viivan sijaan
 function camTween(A, B, e){
   const t = A.t.clone().lerp(B.t, e);
   const sa = new THREE.Spherical().setFromVector3(A.p.clone().sub(A.t)), sb = new THREE.Spherical().setFromVector3(B.p.clone().sub(B.t));
@@ -2435,7 +2435,7 @@ function flyToRoom(id){
   flyTo(pose(t, new THREE.Vector3(t.x + dir.x*dist*.7, dist*1.05, t.z + dir.z*dist*.7)));
 }
 
-/* ======================= 进入 / 退出 3D ======================= */
+/* ======================= 3D:hen siirtyminen / poistuminen ======================= */
 async function enter(){
   init(); active = true;
   renderer.setSize(SW(), SH()); labelRenderer.setSize(SW(), SH()); camera.aspect = SW()/SH(); camera.updateProjectionMatrix();
@@ -2445,7 +2445,7 @@ async function enter(){
   grow = 0; furnGrow = 0; applyGrow(); setPose(A);
   stage.classList.add('animating');
   startLoop(); renderer.render(scene, camera);
-  stage.classList.add('is3d');                       // 交叉淡入：此刻 3D 画面与 2D 平面完全重合
+  stage.classList.add('is3d');                       // ristiinhäivytys: tässä vaiheessa 3D-kuva osuu täsmälleen 2D-pohjan päälle
   await wait(420);
   await animate(1700, t => {
     camTween(A, B, ease(clamp01(t/.85)));
@@ -2467,14 +2467,14 @@ async function exit(){
     grow = 1 - ease(clamp01((t - .2)/.6));
     applyGrow();
   });
-  stage.classList.remove('is3d');                    // 此刻 3D 已压平为正俯视，与 2D 重合后淡出
+  stage.classList.remove('is3d');                    // tässä vaiheessa 3D on litistynyt suoraan ylhäältä katsottuun näkymään ja häivytys tapahtuu 2D:n osuttua kohdalleen
   await wait(450);
   active = false; cancelAnimationFrame(raf); raf = 0;
   stage.classList.remove('animating');
   grow = furnGrow = 1; applyGrow();
 }
 
-/* ======================= 选择 / 拾取 ======================= */
+/* ======================= Valinta / poiminta ======================= */
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
 function pick(e){
   if (!e) ptr.set(0, 0);
@@ -2488,11 +2488,11 @@ function pick(e){
     if (o.userData.room) return {room:o.userData.room};
     while (o && !o.userData.fid && o !== scene) o = o.parent;
     if (o?.userData.fid) return {fid:o.userData.fid};
-    return null;                                     // 被墙体挡住
+    return null;                                     // seinän peitossa
   }
   return null;
 }
-// 屏幕点 → 地面（y = 0）上的户型坐标 mm；s = 该处每 mm 对应的屏幕像素，用于拖放时的幽灵图大小
+// näytön piste → pohjapiirroksen koordinaatti mm lattialla (y = 0); s = näytön pikseleitä per mm kyseisessä kohdassa, käytetään vedettävän haamukuvan kokoon
 const ground0 = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 function groundAt(x, y){
   if (!active || anim) return null;
@@ -2500,7 +2500,7 @@ function groundAt(x, y){
   ptr.set((x - r.left)/r.width*2 - 1, -(y - r.top)/r.height*2 + 1);
   ray.setFromCamera(ptr, camera);
   if (!ray.ray.intersectPlane(ground0, hit) || hit.distanceTo(camera.position) > 60) return null;
-  // 视线先碰到墙体（或飘窗台）时，落点取碰到的位置，而不是穿过墙落到看不见的墙后
+  // kun katse osuu ensin seinään (tai erkkerin reunaan), pudotuskohdaksi otetaan osumakohta eikä näkymätön piste seinän takana
   const wall = ray.intersectObjects([archUp, archFloor], true).find(h => h.object.material !== glassMat && h.object.visible);
   if (wall && wall.distance < hit.distanceTo(camera.position) - .01) hit.set(wall.point.x, 0, wall.point.z);
   const px = v => new THREE.Vector2(v.x*r.width/2, v.y*r.height/2), a = px(hit.clone().project(camera));
@@ -2519,12 +2519,12 @@ function updateSel(){
   if (selHelper) selHelper.update();
 }
 
-/* ======================= 漫游 ======================= */
-// 触屏漫游：左下虚拟摇杆移动，在画面上拖动转向（iPad 不支持鼠标指针锁定）
-const HINT_ORBIT = () => COARSE ? tr('单指旋转 · 双指缩放 / 平移 · 点选家具后可拖动摆放 · 点门开关', '1 finger orbits · 2 fingers zoom / pan · select furniture to drag it · tap doors to open')
-  : tr('左键旋转 · 右键平移 · 滚轮缩放 · 选中家具后拖动可摆放 · 点击门开关', 'Left-drag orbits · right-drag pans · scroll zooms · select furniture to drag it · click doors to open');
-const HINT_TOUCHWALK = () => tr('左下摇杆移动 · 拖动画面转向 · 点门开关', 'Joystick moves · drag to look · tap doors to open');
-const HINT_WALK = () => tr('WASD 移动 · 鼠标转向 · Shift 快走 · E 开关门 · Esc 暂停', 'WASD moves · mouse looks · Shift runs · E opens doors · Esc pauses');
+/* ======================= Kävely ======================= */
+// Kosketuskävely: vasemman alakulman virtuaalisauva liikuttaa, kuvaa vetämällä käännytään (iPad ei tue hiiren osoittimen lukitusta)
+const HINT_ORBIT = () => COARSE ? tr('Yksi sormi kiertää · kaksi sormea zoomaa / panoroi · valitse kaluste ja vedä asettaaksesi · napauta ovea avataksesi', '1 finger orbits · 2 fingers zoom / pan · select furniture to drag it · tap doors to open')
+  : tr('Vasen veto kiertää · oikea veto panoroi · vieritys zoomaa · valitse kaluste ja vedä asettaaksesi · napsauta ovea avataksesi', 'Left-drag orbits · right-drag pans · scroll zooms · select furniture to drag it · click doors to open');
+const HINT_TOUCHWALK = () => tr('Sauva liikuttaa · vedä kääntääksesi katsetta · napauta ovea avataksesi', 'Joystick moves · drag to look · tap doors to open');
+const HINT_WALK = () => tr('WASD liikkuu · hiiri katsoo · Shift juoksee · E avaa oven · Esc keskeyttää', 'WASD moves · mouse looks · Shift runs · E opens doors · Esc pauses');
 function syncHint3d(){ $('#hint3d').textContent = opt.mode === 'orbit' ? HINT_ORBIT() : touchWalk ? HINT_TOUCHWALK() : HINT_WALK(); }
 let touchWalk = false;
 const joy = {x:0, y:0, id:null}, eul = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -2562,7 +2562,7 @@ function setMode(m){
     window.select(null);
     if (opt.cut < H){ opt.cut = H; syncCutBtns(); sync(); }
     orbit.enabled = false; fly = null;
-    camera.position.set(wx(4200), 1.6, wz(8755)); camera.lookAt(wx(7000), 1.5, wz(8755));   // 入户门外
+    camera.position.set(wx(4200), 1.6, wz(8755)); camera.lookAt(wx(7000), 1.5, wz(8755));   // ulko-oven ulkopuolella
     $('#walkOverlay').style.display = 'flex';
     syncHint3d();
   } else {
@@ -2591,7 +2591,7 @@ function stepWalk(dt){
   if (keys.KeyW || keys.ArrowUp) mv.add(fwd); if (keys.KeyS || keys.ArrowDown) mv.sub(fwd);
   if (keys.KeyD || keys.ArrowRight) mv.add(right); if (keys.KeyA || keys.ArrowLeft) mv.sub(right);
   if (touchWalk){ mv.addScaledVector(fwd, -joy.y).addScaledVector(right, joy.x); }
-  const mag = Math.min(1, mv.length());        // 摇杆推得越远走得越快
+  const mag = Math.min(1, mv.length());        // mitä pidemmälle sauvaa työnnetään, sitä nopeammin kävellään
   if (mag < .05) return;
   mv.normalize().multiplyScalar(sp * mag);
   const p = camera.position;
@@ -2605,22 +2605,22 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => keys[e.code] = false);
 
-/* ======================= 工具栏 ======================= */
+/* ======================= Työkalupalkki ======================= */
 function syncModeBtns(){ document.querySelectorAll('#modes3d .btn').forEach(b => b.classList.toggle('on', b.dataset.mode === opt.mode)); }
 function syncCutBtns(){ document.querySelectorAll('[data-cut]').forEach(b => b.classList.toggle('on', +b.dataset.cut === opt.cut)); }
 function syncWalkTexts(){
   const t = COARSE
-    ? [tr('点击开始，从入户门进入', 'Tap to start at the front door'), tr('左下摇杆移动 · 在画面上拖动转向', 'Joystick moves · drag on screen to look'),
-       tr('点门开关 · 点「退出漫游」回到鸟瞰', 'Tap doors to open · "Exit walk" returns to orbit')]
-    : [tr('点击开始，从入户门进入', 'Click to start at the front door'),
-       tr('<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> 移动 · 鼠标转向 · <kbd>Shift</kbd> 快走', '<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> move · mouse looks · <kbd>Shift</kbd> runs'),
-       tr('<kbd>E</kbd> 开关正前方的门 · <kbd>Esc</kbd> 暂停', '<kbd>E</kbd> opens the door ahead · <kbd>Esc</kbd> pauses')];
+    ? [tr('Napauta aloittaaksesi ulko-ovelta', 'Tap to start at the front door'), tr('Sauva liikuttaa · vedä kuvaa kääntääksesi katsetta', 'Joystick moves · drag on screen to look'),
+       tr('Napauta ovea avataksesi · "Poistu kävelystä" palauttaa kiertonäkymään', 'Tap doors to open · "Exit walk" returns to orbit')]
+    : [tr('Napsauta aloittaaksesi ulko-ovelta', 'Click to start at the front door'),
+       tr('<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> liikkuu · hiiri katsoo · <kbd>Shift</kbd> juoksee', '<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> move · mouse looks · <kbd>Shift</kbd> runs'),
+       tr('<kbd>E</kbd> avaa edessä olevan oven · <kbd>Esc</kbd> keskeyttää', '<kbd>E</kbd> opens the door ahead · <kbd>Esc</kbd> pauses')];
   t.forEach((h, i) => $('#wo' + (i + 1)).innerHTML = h);
   syncHint3d();
 }
 function bindUI(){
   document.querySelectorAll('#modes3d .btn').forEach(b => b.onclick = () => setMode(b.dataset.mode));
-  // 触屏设备用摇杆漫游；桌面端锁定鼠标，锁定失败时也退回到摇杆
+  // kosketuslaitteet käyttävät sauvaa; työpöydällä hiiri lukitaan, ja lukituksen epäonnistuessa palataan sauvaan
   $('#walkOverlay').onclick = () => COARSE ? startTouchWalk() : walkCtl.lock();
   document.addEventListener('pointerlockerror', () => { if (active && opt.mode === 'walk') startTouchWalk(); });
   $('#walkExit').onclick = () => setMode('orbit');
@@ -2638,7 +2638,7 @@ function bindUI(){
   $('#sun').oninput = e => { opt.hour = +e.target.value; applyLight(); };
 }
 
-/* ======================= 主循环 ======================= */
+/* ======================= Pääsilmukka ======================= */
 const clock = new THREE.Clock();
 function startLoop(){ if (!raf){ clock.getDelta(); raf = requestAnimationFrame(loop); } }
 function loop(){
@@ -2654,7 +2654,7 @@ function loop(){
   labelRenderer.render(scene, camera);
 }
 
-function shot(){ const a = document.createElement('a'); a.download = tr('户型装修方案', 'floor-plan-design') + '-3D.png'; a.href = renderer.domElement.toDataURL('image/png'); a.click(); }
+function shot(){ const a = document.createElement('a'); a.download = tr('sisustussuunnitelma', 'floor-plan-design') + '-3D.png'; a.href = renderer.domElement.toDataURL('image/png'); a.click(); }
 
 function relang(){ syncWalkTexts(); if (inited) buildLabels(); }
 
