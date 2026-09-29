@@ -84,3 +84,44 @@ Nykyisen editorin pohjapiirrostiedot ovat edelleen kovakoodattuja:
 - `buildFurniture()`: eri kalustetyyppien 3D-mallit
 
 Muokkaamalla näitä tietoja voit ottaa käyttöön oman pohjapiirroksesi.
+
+## V0: yhteisen huoneistomallin perusta
+
+Tässä osuudessa toteutetaan selainpohja ja erillinen `unit-v1`-mallisopimus.
+Editorin nykyinen JSON ja `huxing-design-v1`-tallennus säilyvät ennallaan.
+`unit-v1` ei vielä korvaa editorin demoasuntoa tai tallennusmuotoa. Seuraava
+V0-osuus kytkee mallin 2D/3D-editoriin. PDF/PNG/JPEG-pohjapiirustustuonti kuuluu V1:een.
+
+Kanoninen malli on `rakennuspiirustus-automaatio`-repon Pydantic-malli
+`src/rakennuskuva/unit_models.py`. Sen vienti kopioidaan
+`schemas/unit-input-v1.schema.json`-tiedostoon. `npm run types:generate` tuottaa
+TypeScript-tyypit; `npm run types:check` havaitsee vanhentuneen tuloksen.
+
+- `src/io/unit.ts`: validoiva `parseUnit`, JSON-luku/vienti ja keskitetty y-akselin muunnos.
+- `src/model/apply.ts`: seitsemän muutosoperaatiota; lähtömalli ja operaatiot säilyvät muuttumattomina.
+- `examples/accessibility-unit.json`: synteettinen kylpyhuone ja eteinen, kapea ovi ja kynnys.
+- `fixtures/unit/` ja `fixtures/apply/`: molemmissa repoissa ajettavat samat JSON-tapaukset.
+
+Tarkistukset:
+
+```bash
+npm ci
+npm run types:check
+npm run typecheck
+npm run test:unit
+npm run build
+npm run test:e2e
+node tools/check-contract-sync.mjs --rk ../rakennuspiirustus-automaatio
+```
+
+Playwright käyttää valmiiksi asennettua Chromiumia: Windowsissa oletus on Edge;
+muussa ympäristössä aseta `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selaimen poluksi.
+Testit kattavat työpöydän ja 390×844-kosketusnäkymän. Selainasennusta ei tehdä.
+Kuvakaappaukset tallennetaan `docs/kodin-muutostyokuva/screenshots/`-hakemistoon.
+`E2E_PHASE` erottaa ennen/jälkeen-kuvat. Baseline-testi ohjaa vanhan sovelluksen
+estetyn CDN-latauksen testissä samaan paikalliseen Three.js-versioon.
+
+RK:ssa ajetaan `uv run pytest -q`, `uv run python tools/export_unit_schema.py --check`
+ja `uv run python tools/sync_skills.py --check`. RK:n CI vertaa sopimuskopioita
+FP:n samannimiseen haaraan; julkisen FP:n CI ei tarvitse pääsyä yksityiseen RK-repoon.
+Rajaus ja etenemispoikkeama: [V0-SOPIMUS.md](docs/kodin-muutostyokuva/V0-SOPIMUS.md).

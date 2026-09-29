@@ -191,6 +191,13 @@ flowchart LR
   `tools/sync_skills.py --check`).
 - `schema_version` pakollinen. Muutokset vain uuden version kautta.
 
+V0 toteutetaan osissa; ensimmäinen osuus ja käyttäjän sallima eteneminen vaiheen
+−1 keskeneräisyydestä huolimatta on rajattu [V0-SOPIMUS.md](V0-SOPIMUS.md):ssä.
+Uusi `Measurement` on erillinen vanhasta project-input-v2-mallista, jotta sen
+olemassa olevat tuonnit säilyvät yhteensopivina. `unit-v1` hylkää tuntemattomat
+kentät ja validoi myös elementtien viittaukset. Aikaleimat säilyvät alkuperäisessä
+RFC3339-merkkijonomuodossa aikavyöhykkeineen; tuntematon tarkkuus on `null`.
+
 ### 5.2 Koordinaatisto
 
 - Yksikkö millimetri. Paikallinen koordinaatisto huoneistolle.
@@ -290,7 +297,7 @@ operaatioita:
 ```jsonc
 { "op": "demolish_wall",   "target": "w-12" }
 { "op": "add_wall",        "wall": { /* uusi Wall */ } }
-{ "op": "modify_opening",  "target": "o-4", "set": { "clear_width": 900, "swing": "right" } }
+{ "op": "modify_opening",  "target": "o-4", "set": { "clear_width": { "value_mm": 900, "status": "assumed", "method": "assumption", "source_refs": ["design:door-width"], "confidence_mm": null }, "swing": "right" } }
 { "op": "remove_threshold","target": "t-2" }
 { "op": "add_fixture",     "fixture": { "kind": "grab_bar", /* … */ } }
 { "op": "replace_fixture", "target": "f-7", "fixture": { /* … */ } }
@@ -299,6 +306,13 @@ operaatioita:
 
 - Tavoitetila = `apply(baseline, changes)`. Laskenta on deterministinen ja sama
   molemmissa repoissa (yhteiset testitapaukset, luku 12).
+- Myös muutosoperaatioiden pituudet ovat `Measurement`-olioita: suunniteltu mitta
+  ei ole kentällä mitattu arvo. `apply` palauttaa uuden mallin muuttamatta
+  lähtömallia tai operaatiolistaa. Purku poistaa tavoitetilasta seinän aukot,
+  niihin sidotut kynnykset ja poistettuihin elementteihin viittaavat raakamitat.
+  Lähtömallin mittaushistoria säilyy. Kalusteen korvaus säilyttää kohteen id:n.
+- V0:n ensimmäisessä osuudessa raakamitan `from`/`to` viittaavat elementtien
+  id:ihin. Erillinen pisteiden tunnistemalli kuuluu raakamittageometrian toteutukseen.
 - Muutoskuvan värit johdetaan operaatioista: purettava keltaisella, uusi punaisella,
   muuttuva korostettuna. Suomalainen käytäntö, tarkistetaan viranomais- ja
   isännöitsijäpohjista ennen toteutusta.

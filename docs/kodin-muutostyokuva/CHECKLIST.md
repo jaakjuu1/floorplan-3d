@@ -39,31 +39,38 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
 
 ## Vaihe V0: Perusta — yhteinen huoneistomalli
 
-**Etenemispoikkeama 2026-09-29:** käyttäjä sallii V0:n teknisen toteutuksen, vaikka vaiheen −1 pilottikohde ja liite-esimerkit ovat kesken. Rajaus: [V0-SOPIMUS.md](V0-SOPIMUS.md).
+**Etenemispoikkeama 2026-09-29:** käyttäjä sallii V0:n teknisen toteutuksen,
+vaikka vaiheen −1 pilottikohteen vahvistus ja liite-esimerkit ovat kesken.
+Niitä ei kuitata valmiiksi; ne tarvitaan ennen vastaavia kenttä- ja
+hyväksymistestejä. Ensimmäisen teknisen osuuden rajaus ja työnjako:
+[V0-SOPIMUS.md](V0-SOPIMUS.md).
 
+**Valmis osuus:** kanoninen mallisopimus, yhteiset testit ja Vite-selainpohja.
+V0:n lopullinen valmistumisehto ei vielä täyty. Editorin semanttinen mallikytkentä,
+demoasunnon muunto ja tallennustilan siirto ovat seuraava yhtenäinen osuus.
 
 ### Skeema (§5)
-- [ ] **[RK]** Uusi moduuli `src/rakennuskuva/unit_models.py`: `UnitInputs`,
+- [x] **[RK]** Uusi moduuli `src/rakennuskuva/unit_models.py`: `UnitInputs`,
       `Wall`, `Opening`, `Room`, `Fixture`, `Threshold`, `RawMeasurement`,
       `ChangeOp`, `SurveyInfo` + `Consent`
-- [ ] **[RK]** `Measurement`-malliin `method`-luettelo (§5.3), `captured_at`,
+- [x] **[RK]** `Measurement`-malliin `method`-luettelo (§5.3), `captured_at`,
       `device`. Vanhan vapaan tekstin kuvaus luetteloon tuonnissa, nykyinen
       `project-input-v2` ei rikkoudu
-- [ ] **[RK]** Validoinnit: yksilölliset id:t, `host_wall`-viittaukset,
+- [x] **[RK]** Validoinnit: yksilölliset id:t, `host_wall`-viittaukset,
       monikulmioiden sulkeutuminen, `Threshold` sidottu aukkoon tai huonerajaan
-- [ ] **[RK]** `Wall.kind = load_bearing` vaatii `source_refs`-lähteen, joka ei ole
+- [x] **[RK]** `Wall.kind = load_bearing` vaatii `source_refs`-lähteen, joka ei ole
       `assumption` (§16, kantavuusriski)
-- [ ] **[RK]** Ei kenttää terveystiedolle. Käyttäjäkohtaiset vaatimukset vain
+- [x] **[RK]** Ei kenttää terveystiedolle. Käyttäjäkohtaiset vaatimukset vain
       numeroina (`user.*`) (§10)
-- [ ] **[RK]** Skeemavienti `schemas/unit-input-v1.schema.json`
-- [ ] **[RK]** Testit: kelvollinen ja virheelliset esimerkkimallit
+- [x] **[RK]** Skeemavienti `schemas/unit-input-v1.schema.json`
+- [x] **[RK]** Testit: kelvollinen ja virheelliset esimerkkimallit
 
 ### Esimerkkidata
 - [ ] **[FP]** Nykyinen kovakoodattu demo-asunto (`ROOMS`, `WALLS`, `WINS`, `DOORS`,
       `SLIDES`, `index.html:399–462`) muunnetaan `examples/demo-unit.json`-tiedostoksi
       skeeman mukaiseksi. Status `assumed`, menetelmä `archive_drawing`
 - [ ] **[RK]** Sama tiedosto `rakennuskuva`n testiaineistoksi
-- [ ] **[MOL]** Pieni esteettömyysesimerkki: kerrostalokylpyhuone + eteinen, jossa
+- [x] **[MOL]** Pieni esteettömyysesimerkki: kerrostalokylpyhuone + eteinen, jossa
       kynnys ja kapea ovi
 
 ### floorplan-3d lukee mallin
@@ -73,11 +80,13 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
       Three.js npm-paketista CDN:n sijaan, sama toiminnallisuus. Savutesti vihreänä
 - [ ] **[FP]** Jako hakemistoihin: `src/model/`, `src/plan2d/`, `src/view3d/`,
       `src/io/` (§6.4). Savutesti vihreänä jaon jälkeen
-- [ ] **[FP]** Skeeman TypeScript-tyypit generoidaan `unit-input-v1.schema.json`-
+- [x] **[FP]** Skeeman TypeScript-tyypit generoidaan `unit-input-v1.schema.json`-
       tiedostosta (generointi osana käännöstä tai CI-tarkistus)
-- [ ] **[FP]** CI: tyyppitarkistus, testit (esim. Vitest) ja Playwright-savutesti
+- [x] **[FP]** CI: tyyppitarkistus, testit (esim. Vitest) ja Playwright-savutesti
 - [x] **[FP]** README päivitetty: `npm install`, `npm run dev`, `npm run build`
-- [ ] **[FP]** `src/io/unit.ts`: tuonti ja vienti. y-akselin kääntö vain tässä (§5.2)
+- [x] **[FP]** `src/io/unit.ts`: tuonti ja vienti. y-akselin kääntö vain tässä (§5.2)
+      Rajapinta testattu erillisenä; editorin nykyinen JSON-tuonti ja renderöinti
+      kytketään siihen jäljempänä olevissa vielä avoimissa kohdissa
 - [ ] **[FP]** Keskilinjaseinät (`a`, `b`, `thickness`) → nykyinen 2D- ja
       3D-renderöinti. Vinot seinät vähintään piirtyvät oikein
 - [ ] **[FP]** Aukot `host_wall` + `along_wall` -mallista → nykyiset ikkuna-, ovi- ja
@@ -89,11 +98,11 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
 - [ ] **[FP]** Kalusteet ja lattiamateriaalit toimivat kuten ennen
 
 ### Muutoskerros (§5.6)
-- [ ] **[RK]** `apply(baseline, changes)` Pythonissa
-- [ ] **[FP]** `apply(baseline, changes)` JS:ssä
-- [ ] **[MOL]** Yhteiset testitapaukset `fixtures/apply/*.json` (syöte + odotettu
+- [x] **[RK]** `apply(baseline, changes)` Pythonissa
+- [x] **[FP]** `apply(baseline, changes)` JS:ssä
+- [x] **[MOL]** Yhteiset testitapaukset `fixtures/apply/*.json` (syöte + odotettu
       tulos) ja niiden ajo molempien CI:ssä
-- [ ] **[MOL]** Skeeman ja testitapausten kopioiden synkronointitarkistus CI:hin
+- [x] **[MOL]** Skeeman ja testitapausten kopioiden synkronointitarkistus CI:hin
       (vrt. `tools/sync_skills.py --check`)
 
 **Valmis kun:** demo-asunto latautuu JSONista ja näyttää samalta kuin ennen, savutesti
