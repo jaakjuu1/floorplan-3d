@@ -66,10 +66,13 @@ demoasunnon muunto ja tallennustilan siirto ovat seuraava yhtenäinen osuus.
 - [x] **[RK]** Testit: kelvollinen ja virheelliset esimerkkimallit
 
 ### Esimerkkidata
-- [ ] **[FP]** Nykyinen kovakoodattu demo-asunto (`ROOMS`, `WALLS`, `WINS`, `DOORS`,
+- [x] **[FP]** Nykyinen kovakoodattu demo-asunto (`ROOMS`, `WALLS`, `WINS`, `DOORS`,
       `SLIDES`, `index.html:399–462`) muunnetaan `examples/demo-unit.json`-tiedostoksi
       skeeman mukaiseksi. Status `assumed`, menetelmä `archive_drawing`
-- [ ] **[RK]** Sama tiedosto `rakennuskuva`n testiaineistoksi
+- [x] **[RK]** Sama tiedosto `rakennuskuva`n testiaineistoksi.
+      `rk unit validate --input examples/demo-unit.json` tarkistaa mallin ja muutokset;
+      sama demo kuuluu sopimuskopioiden synkronointiin. Geometria verrataan
+      FP:n 697d6ca-version aineistoon; kaikki demomitat pysyvät oletuksina.
 - [x] **[MOL]** Pieni esteettömyysesimerkki: kerrostalokylpyhuone + eteinen, jossa
       kynnys ja kapea ovi
 

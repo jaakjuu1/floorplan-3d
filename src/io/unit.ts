@@ -31,7 +31,17 @@ export function toScreenPoint(point: Point2D): { x: number; y: number } {
   return { x: point.x.value_mm, y: -point.y.value_mm };
 }
 
+/** Convert numeric model coordinates and vectors to screen coordinates. */
+export function toScreenVector(point: { x: number; y: number }): { x: number; y: number } {
+  return { x: point.x, y: point.y === 0 ? 0 : -point.y };
+}
+
 /** Numeric conversion only: recording a Measurement needs its own provenance. */
 export function fromScreenPoint(point: { x: number; y: number }): { x: number; y: number } {
   return { x: point.x, y: -point.y };
+}
+
+/** Convert counterclockwise model rotation to the screen's downward-y rotation. */
+export function toScreenAngle(degrees: number): number {
+  return -degrees;
 }

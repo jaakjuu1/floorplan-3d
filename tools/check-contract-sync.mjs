@@ -10,7 +10,7 @@ if (!rk) {
   process.exit(2);
 }
 
-const files = ['schemas/unit-input-v1.schema.json', 'examples/accessibility-unit.json'];
+const files = ['schemas/unit-input-v1.schema.json', 'examples/accessibility-unit.json', 'examples/demo-unit.json'];
 for (const directory of ['fixtures/unit', 'fixtures/apply']) {
   const source = resolve(root, directory);
   const names = (await readdir(source)).filter(name => name.endsWith('.json')).sort();
