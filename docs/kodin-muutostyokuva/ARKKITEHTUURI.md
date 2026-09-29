@@ -353,7 +353,8 @@ operaatioita:
 
 1. **Aloitus:** projekti, osoite, huoneisto. Profiilien valinta (muutostyö,
    esteettömyys tai molemmat). Suostumukset kysytään ja kirjataan.
-2. **Huoneen muoto:** valitaan pohja (suorakaide, L-muoto, vapaa monikulmio). Puhelimen
+2. **Huoneen muoto:** tuodaan olemassa oleva pohjapiirustus (§6.5) tai valitaan
+   muotopohja (suorakaide, L-muoto, vapaa monikulmio). Puhelimen
    pienellä näytöllä muotopohja on nopeampi ja tarkempi kuin vapaa piirtäminen
    sormella.
 3. **Seinämitat järjestyksessä:** sovellus korostaa seinän kerrallaan myötäpäivään
@@ -416,6 +417,32 @@ Nykyinen yhden tiedoston rakenne ei kanna kenttäsovellusta ja tietomallia. Pä�
   ladataan samaa reittiä kuin mikä tahansa malli.
 - Nykyinen käytös säilytetään: siirto Viteen tehdään ensin sellaisenaan (sama
   toiminnallisuus, savutesti vihreänä), ja vasta sitten aletaan muuttaa rakennetta.
+
+### 6.5 Pohjapiirustus lähtöaineistona (V1)
+
+Käyttäjän tarkennus 2026-09-29: kartoituksen voi aloittaa myös olemassa olevasta
+pohjapiirustuksesta. Käyttäjän tuoman tiedoston tuki kuuluu V1:een; arkistojen
+hakupalvelut ja integraatiot jäävät V6:een.
+
+- Ensimmäisen toteutuksen tiedostomuodot ovat PDF (sivun valinta), PNG ja JPEG.
+  Kuva voi olla skannaus tai valokuva piirustuksesta. Tuotu aineisto säilyy
+  projektin lähdeliitteenä ja on käytettävissä myös offline-tilassa.
+- Piirustus näytetään 2D:n taustalla. Käyttäjä kohdistaa sen ja asettaa
+  mittakaavan valitsemalla kaksi pistettä ja antamalla niiden välisen mitan.
+  Kalibrointimitan alkuperä kirjataan kuten muidenkin mittojen.
+- Ensimmäisessä versiossa käyttäjä jäljentää huoneet, seinät ja aukot taustan
+  avulla sekä syöttää piirustuksen mitat. Näistä syntyy sama muokattava
+  huoneistomalli ja 2D/3D-esikatselu kuin laserilla aloitettaessa. Automaattinen
+  viivojen tai mittojen tunnistus ei kuulu tämän ensimmäisen version rajaukseen.
+- Piirustuksesta luetut mitat saavat statuksen `inferred`, menetelmän
+  `archive_drawing` ja lähdeviitteen tiedostoon sekä PDF:n sivuun. Tarkkuutta ei
+  keksitä: tuntematon tarkkuus jää puuttuvaksi ja estää kriittisen mitan kuittauksen.
+  Ilman lähdemittaa asetettu oletusarvo on `assumed` / `assumption`.
+- Laser- tai mittanauhamittaus voi korvata piirustuksesta saadun arvon.
+  Alkuperäinen lähde säilytetään; pelkkä piirustuksen hyväksyntä tai yhden matkan
+  kalibrointi ei muuta muita mittoja `measured`-tilaan.
+- Valokuvan perspektiivivirhettä ei voi korjata yhdellä mittakaavalla.
+  Vääristyneen kuvan jäljennös pysyy luonnoksena ja mitat tarkistetaan kentällä.
 
 ---
 
@@ -612,7 +639,7 @@ kenttäsovellus, apply, varasto) ei muutu.
 | Vaihe | Sisältö | Valmis kun |
 |---|---|---|
 | **V0 Perusta** | `unit-input-v1`-skeema, esimerkkimallit, floorplan-3d lukee mallin (demo-asunto JSONiksi), y-akselin kääntö, apply-testit | Nykyinen demo-asunto toimii JSONista ladattuna, testit vihreinä molemmissa repoissa |
-| **V1 Kenttäkartoitus (laser)** | Kartoitustila puhelimelle, huoneen muotopohjat, mittojen käsisyöttö, reaaliaikainen 2D/3D-esikatselu, sulkeutumistarkistus, offline | Pilottiasunto kartoitettu, tarkkuustesti läpäisty |
+| **V1 Kenttäkartoitus (laser)** | Kartoitustila puhelimelle, muotopohjat tai pohjapiirustuksen tuonti, mittojen käsisyöttö, reaaliaikainen 2D/3D-esikatselu, sulkeutumistarkistus, offline | Pilottiasunto kartoitettu, tarkkuustesti ja pohjapiirustuksesta aloitus läpäisty |
 | **V2 Säännöt** | Sääntötiedosto, puuttuvien mittojen lista, muutostyö- ja esteettömyysprofiilit, pyörätuolisimulaatio | Molemmat profiilit toimivat pilottiasunnossa, yhteiset sääntötestit vihreinä |
 | **V3 Tulosteet** | Muutoskuva, työselostus, esteettömyysliite, määräluettelo, mittausraportti | Isännöitsijä ja toimintaterapeutti arvioineet tulosteet |
 | **V4 Jakaminen** | Jaettu 3D-linkki, palvelin, roolit, suostumusten hallinta, DPIA | 3 oikeaa kohdetta läpi koko ketjun |

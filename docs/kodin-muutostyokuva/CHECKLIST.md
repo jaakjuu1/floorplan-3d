@@ -117,6 +117,20 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
       `source_refs`
 - [ ] **[FP]** Nykytilan lukitus ja kartoittajan kuittaus
 
+### Pohjapiirustus lähtöaineistona (§6.5)
+- [ ] **[FP]** PDF:n sivun tai PNG/JPEG-kuvan tuonti 2D-taustaksi; lähdeliite
+      säilyy projektin mukana ja toimii offline-tilassa
+- [ ] **[FP]** Taustan kohdistus ja mittakaavan kalibrointi kahden pisteen ja
+      tunnetun matkan avulla; kalibrointimitan alkuperä kirjataan
+- [ ] **[FP]** Huoneiden, seinien ja aukkojen jäljentäminen sekä piirustuksen
+      mittojen käsisyöttö samaan huoneistomalliin; päivittyvä 2D/3D-esikatselu
+- [ ] **[MOL]** Piirustusmitat `inferred` / `archive_drawing`, lähdeviite
+      tiedostoon ja sivuun; tuntematon tarkkuus säilyy puuttuvana. Kenttämittaus
+      korvaa arvon alkuperäketjun säilyttäen, hyväksyntä ei muuta statusta
+- [ ] **[FP]** Playwright-testit myös 390×844-kosketusnäkymässä: PDF/kuva →
+      kalibrointi → huone ja aukko → 2D/3D → kenttämitta → tallennus ja avaus
+      offline-tilassa; piirustuksen muut mitat eivät muutu `measured`-tilaan
+
 ### Geometria (§5.5)
 - [ ] **[FP]** Raakamittaukset + luonnos → seinien koordinaatit
 - [ ] **[FP]** Sulkeutumistarkistus huoneittain. Poikkeama näkyy ja pyytää
@@ -160,7 +174,7 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
 
 **Valmis kun:** pilottiasunto kartoitettu. Oviaukot ≤ 5 mm ja seinät ≤ 10 mm
 referenssistä. Kaksio ≤ 60 min, tai poikkeama selitetty ja korjaussuunnitelma
-kirjattu.
+kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
 
 ---
 
@@ -303,8 +317,9 @@ raportoitu.
 - [ ] **[EI-KOODI]** Rakennus- ja huoneistotiedot (DVV / Ryhti): käyttöoikeudet ja
       siirtymä selvitetty
 - [ ] **[EI-KOODI]** Pilottikunnan piirustusarkisto: saatavuus ja hinta
-- [ ] **[MOL]** Arkistopiirustuksen tuonti nykytilan pohjaksi
-      (`archive_drawing`)
+- [ ] **[MOL]** Arkistopalvelusta haetun piirustuksen kytkentä V1:n
+      pohjapiirustustuontiin (`archive_drawing`); käyttäjän oman tiedoston
+      tuonti toteutetaan jo V1:ssä (§6.5)
 - [ ] **[MOL]** Rakennusvuosi → haitta-ainekartoituksen tarpeen liputus
       muutostyöprofiilissa
 - [ ] **[MOL]** Mikään ulkoinen tieto ei nouse `measured`-tilaan ilman
