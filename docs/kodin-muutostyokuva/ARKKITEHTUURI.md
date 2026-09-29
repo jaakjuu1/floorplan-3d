@@ -1,0 +1,617 @@
+# Kodin muutostyökuva — arkkitehtuuri
+
+Tila: suunnitteludokumentti, luonnos 1
+Päivä: 2026-09-29
+Toteutuksen tarkistuslista: [CHECKLIST.md](CHECKLIST.md)
+
+Tämä dokumentti kuvaa, miten kolmesta olemassa olevasta palasta rakennetaan yksi
+palvelu, joka tuottaa asunnon muutostöihin tarvittavat kuvat ja tarkistukset:
+
+| Pala | Repo | Mitä se tuo |
+|---|---|---|
+| Interaktiivinen 2D/3D-editori | `jaakjuu1/floorplan-3d` (tämä repo) | Pohjapiirroksen muokkaus, seinien purku, kantavat seinät, kalusteet, 3D-kävely törmäystarkistuksella, kustannusarvio, kosketuskäyttö |
+| Semanttinen rakennusmalli ja viranomaiskuvat | `jaakjuu1/rakennuspiirustus-automaatio` (`rakennuskuva`) | Mittausten alkuperäketju (status, menetelmä, tarkkuus, kuittaaja), virallisen tulosteen estologiikka, A3-arkit (SVG/PDF) ja QA-JSON |
+| Parametrinen generointi ja esitys | `achrefelouafi/ProceduralBuildingsThreeJS` (ulkoinen, MIT) | Ideat: parametrinen malli → monta instanssia, valaistus, kuvakulmat, ympäristön massamalli. Ei koodiriippuvuutta |
+
+---
+
+## 1. Tausta ja tavoite
+
+### 1.1 Ongelma
+
+Sama asunnon muutostyö tarvitsee usein useamman erillisen paperin eri vastaanottajille:
+
+- **Taloyhtiö** tarvitsee osakkaan muutostyöilmoituksen, kun työ voi vaikuttaa
+  rakenteisiin, vedeneristykseen, putkistoihin, ilmanvaihtoon tai muihin osakkaisiin
+  (asunto-osakeyhtiölaki, 5 luku).
+- **Hyvinvointialue** tarvitsee asunnonmuutostyöhakemuksen liitteineen, kun kotia
+  muutetaan esteettömäksi (esim. kynnysten poisto, oviaukon levennys, tukikahvat).
+- **Urakoitsija** tarvitsee mitat ja työn kuvauksen tarjousta varten.
+
+Nykyään jokainen paperi tehdään erikseen, eri ihmisen toimesta ja eri piirroksella.
+Mittaukset tehdään useaan kertaan, eikä kenelläkään ole yhteistä, ajantasaista kuvaa
+asunnosta.
+
+### 1.2 Ratkaisu yhdellä lauseella
+
+**Yksi mitattu huoneistomalli, johon muutos piirretään kerran ja josta tulostetaan
+jokaiselle vastaanottajalle oma paperi ja tarkistus.**
+
+### 1.3 Ensisijaiset käyttötapaukset
+
+1. **Muutostyöilmoitus** (kerrostalo): esim. kylpyhuoneremontti, väliseinän purku,
+   keittiön siirto.
+2. **Esteettömyyden asunnonmuutostyö**: kynnysten poisto, oviaukon levennys, WC:n ja
+   suihkun muutos, tukikahvat, kääntötila pyörätuolille.
+3. **Molemmat yhtä aikaa**: tyypillinen tapaus, esim. esteettömyyskylpyhuone
+   kerrostalossa. Tämä on palvelun ydin.
+
+### 1.4 Rajaukset (ei tässä vaiheessa)
+
+- Rakennuslupaa vaativat muutokset ja pääsuunnittelijan tehtävät. Järjestelmä tuottaa
+  luonnoksia ja liitteitä, ei korvaa kelpoista suunnittelijaa.
+- LVI-, sähkö- ja rakennesuunnittelu. Järjestelmä *liputtaa* kohdat, joihin tarvitaan
+  asiantuntija, mutta ei suunnittele niitä.
+- Pihasaunaidea ja muut käyttötapaukset. Arkkitehtuuri pidetään niille avoimena
+  (ks. luku 13), mutta niitä ei toteuteta nyt.
+- Sähköinen asiointi viranomaisten järjestelmiin. Aluksi tulosteet ovat PDF-liitteitä.
+
+---
+
+## 2. Periaatteet
+
+1. **Yksi semanttinen malli, monta näkymää.** Sama periaate kuin
+   `rakennuskuva/docs/architecture/11-drawing-contract.md`: kuvat johdetaan mallista,
+   niitä ei piirretä erikseen.
+2. **Laser ensin, video vain luvalla.** Malli on oltava valmis pelkillä laser- ja
+   mittanauhamittauksilla. Video on vapaaehtoinen rikastava kerros, joka otetaan vain
+   asukkaan suostumuksella.
+3. **Jokaisella mitalla on alkuperä.** Arvo, status (`measured` / `inferred` /
+   `assumed`), menetelmä, lähde, tarkkuus ja kuittaaja. Ei nimettömiä numeroita.
+4. **Säännöt ohjaavat mittaamista.** Valittu käyttötapaus (profiili) kertoo, mitkä
+   mitat ovat kriittisiä ja millä tarkkuudella. Kenttäsovellus pyytää ne paikan päällä.
+5. **Nykytila on muuttumaton, muutos on erillinen kerros.** Muutoskuva on nykytilan ja
+   muutoksen ero, ei käsin väritetty kopio.
+6. **Luonnos ei naamioidu viralliseksi.** Kuten `rakennuskuva`: jos kriittiset mitat
+   puuttuvat tai ovat arvioita, tuloste on merkitty luonnokseksi ja estolista näkyy.
+7. **Terveystietoa ei tallenneta malliin.** Malliin tallennetaan vain tilan
+   vaatimukset (esim. "pyörätuoli, leveys 700 mm"), ei diagnooseja tai toimintakyvyn
+   kuvausta (ks. luku 10).
+
+---
+
+## 3. Nykytila: mitä on jo olemassa ja mitä puuttuu
+
+### 3.1 floorplan-3d
+
+Olemassa (`index.html`, yksi tiedosto, ~2 700 riviä, Three.js r160):
+
+- 2D-pohja SVG:nä, mitat millimetreinä, mittatyökalu, seinien purku ja kantavien
+  seinien merkintä (`WALLS`, `index.html:399`), kalustekirjasto (`LIB`), huonekohtaiset
+  lattiamateriaalit ja kustannusarvio.
+- 3D-näkymä: kiertokamera, kävelytila, ovien avaus, törmäystarkistus
+  (`blocked()`, `index.html:2593`, säde 0,22 m), aurinko/yö.
+- Kosketuskäyttö ja tabletti (`COARSE`-haarat, virtuaalinen ohjaussauva).
+- Tila `localStorage`ssa (`huxing-design-v1`) ja JSON-vienti/tuonti (vain kalusteet,
+  huonemateriaalit, puretut seinät ja mittaukset).
+
+Puuttuu:
+
+- **Pohjapiirros on kovakoodattu.** `ROOMS`, `WALLS`, `WINS`, `DOORS`, `SLIDES` ovat
+  vakioita (`index.html:399–462`). Uutta asuntoa ei voi luoda eikä tuoda.
+- Seinät ovat akselinsuuntaisia suorakaiteita `[x0,y0,x1,y1,tyyppi]`. Vinoja seiniä
+  ei tueta.
+- Kynnyksiä, märkätilan rajoja, oviaukon vapaata leveyttä ja kiintokalusteiden
+  vapaatiloja ei mallinneta.
+- Mittauksilla ei ole alkuperää eikä tarkkuutta.
+- Koordinaatisto: x oikealle, **y alaspäin** (SVG). `rakennuskuva` käyttää y:tä
+  pohjoiseen eli ylöspäin.
+
+### 3.2 rakennuskuva
+
+Olemassa (`src/rakennuskuva/`, Python, Pydantic, 39 testiä):
+
+- `Measurement` (`input_models.py`): `value_mm`, `status`, `method`, `source_refs`,
+  `confidence_mm`, `confirmed_by`, `note` ja `official_release_blocker()`.
+- `ProjectInputs.official_release_blockers()`: virallinen tuloste estyy, jos
+  kriittinen mitta ei ole `measured`, tarkkuus ylittää 50 mm tai metatiedot puuttuvat.
+- A3-renderöijät: pohja, leikkaukset A–A ja B–B, julkisivut, SVG + PDF + QA-JSON.
+- CLI `rakennuskuva` / `rk`: `validate`, `floor-plan`, `section`, `elevation`, `all`.
+
+Puuttuu tätä käyttötapausta varten:
+
+- **Malli on rakennustasoinen ja ulkokuoripainotteinen.** `BuildingInput` olettaa
+  suorakaiteen ulkomitat, pulpettikaton (`RoofInput.type: "shed"`) ja seinät
+  ilmansuunnittain (`WallInput.side`). Huoneet ovat akselinsuuntaisia suorakaiteita,
+  kalustetyyppejä on viisi.
+- Huoneistotasoa (kerrostaloasunto osana isompaa rakennusta) ei ole.
+- Muutoskuvaa (nykytila vs. muutos) ei ole arkkityyppinä.
+- `method` on vapaa merkkijono, joten sääntö ei voi vaatia tiettyä menetelmää.
+- Tarkkuusraja on yksi globaali arvo (50 mm). Esteettömyys tarvitsee mittakohtaiset
+  rajat.
+- CLI riippuu esimerkkiprojektin `architectural_model`-moduulista
+  (`cli.py: _ensure_semantic_path`).
+
+### 3.3 Johtopäätös
+
+Kumpaakaan nykyistä tietomallia ei voi käyttää sellaisenaan. Tarvitaan **uusi
+huoneistotason skeema**, joka lainaa `rakennuskuva`n mittausmallin ja
+`floorplan-3d`:n editorin, ja jota kumpikin repo lukee ja kirjoittaa.
+
+---
+
+## 4. Järjestelmän yleiskuva
+
+```mermaid
+flowchart LR
+  subgraph FIELD["Kenttä (kartoittaja, tabletti)"]
+    L[Bluetooth-laser] --> K[Kenttäsovellus<br/>floorplan-3d, kartoitustila]
+    N[Mittanauha / käsisyöttö] --> K
+    V[Video, vain luvalla] -.-> K
+  end
+  K -->|huoneistomalli JSON| S[(Projektivarasto)]
+  S --> E[Muutoksen suunnittelu<br/>floorplan-3d, suunnittelutila]
+  E -->|muutoskerros| S
+  S --> R[Sääntömoottori<br/>profiilit: muutostyö, esteettömyys]
+  R -->|puuttuvat mitat, tarkistukset| K
+  R -->|tarkistusraportti| O
+  S --> O[rakennuskuva<br/>A3-arkit + QA]
+  O --> P1[Muutostyöilmoituksen liitteet<br/>→ taloyhtiö]
+  O --> P2[Asunnonmuutostyön liitteet<br/>→ hyvinvointialue]
+  O --> P3[Tarjouspyyntö + määrät<br/>→ urakoitsija]
+  S --> W[Jaettu 3D-katselu<br/>isännöitsijä, terapeutti, asukas]
+```
+
+### 4.1 Komponentit
+
+| # | Komponentti | Toteutus | Vastuu |
+|---|---|---|---|
+| C1 | **Huoneistomalli** (skeema) | JSON Schema + Pydantic (`rakennuskuva`) + JS-lukija/kirjoittaja (`floorplan-3d`) | Yhteinen sopimus kaikkien osien välillä |
+| C2 | **Kenttäsovellus** | `floorplan-3d`, uusi kartoitustila | Huoneiden luonnostelu, mittausten kirjaus, laser-yhteys, puuttuvien mittojen lista |
+| C3 | **Suunnittelutila** | `floorplan-3d`, nykyinen editori laajennettuna | Muutoskerroksen piirtäminen, 3D, pyörätuolisimulaatio, kustannukset |
+| C4 | **Sääntömoottori** | Deklaratiiviset säännöt (JSON) + arvioijat Pythonissa, esikatselu JS:ssä | Kriittiset mitat, tarkistukset, estot |
+| C5 | **Tulosteet** | `rakennuskuva`, uudet arkkityypit | A3-muutoskuva, esteettömyysliite, määräluettelo, QA-JSON |
+| C6 | **Projektivarasto** | MVP: tiedostot (JSON + liitteet). Myöhemmin: palvelin | Versiot, roolit, suostumukset, säilytysajat |
+| C7 | **Jaettu katselu** | `floorplan-3d` vain luku -tilassa | Linkki isännöitsijälle, terapeutille ja urakoitsijalle |
+| C8 | **Videoputki** (valinnainen) | Erillinen palvelu, vain suostumuksella | Stillkuvat mittojen lähteiksi, päätelty lisägeometria |
+| C9 | **Ulkoiset rajapinnat** | Adapterit | MML, HTJ, rakennustiedot, piirustusarkistot (luku 11) |
+
+---
+
+## 5. Huoneistomalli (C1)
+
+### 5.1 Skeeman paikka ja versiointi
+
+- Uusi skeema `unit-input-v1` (huoneisto), rinnakkain nykyisen
+  `project-input-v2`:n kanssa. Nykyistä skeemaa ei rikota.
+- Kanoninen määrittely Pydanticina `rakennuskuva`ssa, josta generoidaan
+  `schemas/unit-input-v1.schema.json` samalla tavalla kuin nykyinen skeema.
+- `floorplan-3d` lukee ja kirjoittaa samaa JSONia. Skeemasta kopio tähän repoon
+  (`schemas/`) ja CI-tarkistus, että kopiot eivät eriydy (vrt. `rakennuskuva`n
+  `tools/sync_skills.py --check`).
+- `schema_version` pakollinen. Muutokset vain uuden version kautta.
+
+### 5.2 Koordinaatisto
+
+- Yksikkö millimetri. Paikallinen koordinaatisto huoneistolle.
+- **x oikealle, y ylöspäin** (sama kuin `rakennuskuva`). `floorplan-3d` kääntää
+  y-akselin näytössä. Kääntö tehdään yhdessä paikassa (tuonti/vienti), ei ympäri
+  koodia.
+- Valinnainen `north_deg` (pohjoisnuolen suunta) aurinkotarkasteluja ja
+  asemapiirrosta varten.
+- Korkeudet (z) lattiapinnasta, ellei `height_system` ole annettu.
+
+### 5.3 Mittaus (`Measurement`)
+
+Otetaan `rakennuskuva`n malli sellaisenaan ja tarkennetaan kahta kenttää:
+
+```jsonc
+{
+  "value_mm": 842,
+  "status": "measured",            // measured | inferred | assumed
+  "method": "laser",               // UUSI: luettelo, ks. alla
+  "source_refs": ["survey:2026-10-02/m-017", "photo:kph-ovi-01.jpg"],
+  "confidence_mm": 2,
+  "confirmed_by": "kartoittaja:mv",
+  "captured_at": "2026-10-02T10:14:00+03:00",   // UUSI
+  "device": "Leica DISTO D2 #1234",             // UUSI, valinnainen
+  "note": "vapaa leveys karmien välistä"
+}
+```
+
+`method`-luettelo:
+
+| Arvo | Käyttö | Tyypillinen status |
+|---|---|---|
+| `laser` | Laseretäisyysmittari | `measured` |
+| `tape` | Mittanauha, rullamitta, rakotulkki (kynnykset, pienet mitat) | `measured` |
+| `lidar_scan` | Puhelimen LiDAR-skannaus | `inferred` |
+| `video` | Videosta johdettu geometria | `inferred` |
+| `archive_drawing` | Arkistopiirustuksesta luettu | `inferred` |
+| `registry` | Ulkoisesta rekisteristä (esim. MML:n kiinteistörajat) | `inferred` |
+| `derived` | Laskettu muista mitoista (esim. suljettu monikulmio) | perii heikoimman lähteen statuksen |
+| `assumption` | Oletus (esim. tyypillinen seinäpaksuus) | `assumed` |
+
+Siirtymä: `rakennuskuva`n nykyinen vapaa `method`-kenttä kuvataan luetteloon
+tuonnissa (`vision_estimate` → `video`, `drawing_assumption` → `assumption` jne.).
+
+### 5.4 Rakenne-elementit
+
+```text
+UnitInputs
+├── schema_version: "unit-v1"
+├── project        (id, nimi, osoite, kunta, kiinteistötunnus?, huoneistotunnus?)
+├── building_ref   (taloyhtiö, rakennusvuosi?, kerros, porras; ulkoisista lähteistä)
+├── survey         (kartoitus: kuka, milloin, laitteet, suostumukset, ks. 5.7)
+├── baseline       (nykytila)
+│   ├── walls[]        seinä = keskilinja (a, b) + paksuus + tyyppi
+│   ├── openings[]     aukko seinässä: ovi / ikkuna / aukko, sijainti seinällä
+│   ├── rooms[]        huone = monikulmio + nimi + tyyppi (märkätila, keittiö…)
+│   ├── fixtures[]     kiintokalusteet: WC, lavuaari, suihku, amme, liesi, kaapit
+│   ├── thresholds[]   kynnykset ja tasoerot (aukkoon tai huonerajaan sidottu)
+│   └── measurements[] raakamittaukset, joihin elementit viittaavat
+├── changes[]      (muutoskerros, ks. 5.6)
+├── profiles[]     (käytössä olevat sääntöprofiilit, ks. luku 7)
+└── documents      (vastaanottajat, suunnittelija, revisio)
+```
+
+Elementit:
+
+| Elementti | Kentät (ydin) | Huomiot |
+|---|---|---|
+| `Wall` | `id`, `a:{x,y}`, `b:{x,y}`, `thickness`, `kind` (`load_bearing` / `partition` / `external` / `party` = huoneistojen välinen), `wet_side?` | Keskilinjamalli tukee vinoja seiniä. Jokainen koordinaatti ja paksuus on `Measurement`. `kind: load_bearing` vaatii lähteen (arkistopiirustus, isännöitsijä), koska sitä ei voi mitata |
+| `Opening` | `id`, `kind` (`door` / `sliding_door` / `window` / `opening`), `host_wall`, `along_wall`, `width` (karmiaukko), `clear_width` (vapaa kulkuleveys), `height`, `sill_z`, `swing` | `clear_width` on esteettömyyden kriittinen mitta, erillinen karmiaukosta |
+| `Room` | `id`, `name`, `kind` (`wet`, `sauna`, `kitchen`, `bedroom`, `living`, `hall`, `storage`, `wc`, `balcony`), `polygon` | Pinta-ala lasketaan, ei syötetä. `kind: wet` laukaisee märkätilasäännöt |
+| `Fixture` | `id`, `kind`, `x`, `y`, `width`, `depth`, `rotation_deg`, `height?`, `clearance?` | WC:n vapaa tila sivuilla on esteettömyyden kriittinen mitta |
+| `Threshold` | `id`, `at_opening?` tai `between_rooms?`, `height` (mm), `kind` (`threshold` / `step` / `slope`) | Mitataan aina `tape`-menetelmällä |
+| `Measurement` (raaka) | `id`, `from`, `to` (viittaukset pisteisiin tai elementteihin), arvo ja alkuperä | Raakamitat säilytetään, jotta geometria voidaan laskea uudelleen ja ristiintarkistaa |
+
+### 5.5 Raakamittauksista geometriaksi
+
+Kenttäsovellus tallentaa **raakamittaukset** (etäisyys A:sta B:hen) ja **luonnoksen**
+(huoneen muoto). Geometria lasketaan niistä:
+
+1. Luonnos antaa topologian: mitkä seinät rajaavat huonetta ja missä järjestyksessä.
+2. Seinämitat asetetaan luonnokselle. Suorakulmaisuus oletetaan, ellei vinoutta ole
+   merkitty.
+3. **Sulkeutumistarkistus:** huoneen kehä pitää sulkeutua. Poikkeama raportoidaan
+   (esim. "lävistäjä poikkeaa 14 mm odotetusta").
+4. Jos huoneesta on mitattu lävistäjä, suorakulmaisuus tarkistetaan ja kulma
+   korjataan.
+5. Huoneet liitetään toisiinsa yhteisten seinien ja aukkojen kautta. Seinäpaksuus
+   saadaan aukon kohdalta mitattuna (karmisyvyys) tai oletuksena (`assumed`).
+6. Johdettujen arvojen status on heikoin lähteiden statuksista (`derived`).
+
+### 5.6 Muutoskerros
+
+Nykytila (`baseline`) lukitaan, kun kartoitus hyväksytään. Muutokset ovat listana
+operaatioita:
+
+```jsonc
+{ "op": "demolish_wall",   "target": "w-12" }
+{ "op": "add_wall",        "wall": { /* uusi Wall */ } }
+{ "op": "modify_opening",  "target": "o-4", "set": { "clear_width": 900, "swing": "right" } }
+{ "op": "remove_threshold","target": "t-2" }
+{ "op": "add_fixture",     "fixture": { "kind": "grab_bar", /* … */ } }
+{ "op": "replace_fixture", "target": "f-7", "fixture": { /* … */ } }
+{ "op": "change_finish",   "room": "r-kph", "floor": "tile_antislip", "walls": "tile" }
+```
+
+- Tavoitetila = `apply(baseline, changes)`. Laskenta on deterministinen ja sama
+  molemmissa repoissa (yhteiset testitapaukset, luku 12).
+- Muutoskuvan värit johdetaan operaatioista: purettava keltaisella, uusi punaisella,
+  muuttuva korostettuna. Suomalainen käytäntö, tarkistetaan viranomais- ja
+  isännöitsijäpohjista ennen toteutusta.
+- `floorplan-3d`:n nykyinen `state.demolished` on käytännössä muutoskerroksen
+  esiaste. Se korvataan `changes`-listalla.
+
+### 5.7 Kartoitus ja suostumus (`survey`)
+
+```jsonc
+"survey": {
+  "survey_id": "…",
+  "captured_at": "2026-10-02",
+  "surveyor": { "id": "kartoittaja:mv", "organisation": "…" },
+  "devices": ["Leica DISTO D2 #1234", "rullamitta"],
+  "data_origin": "real_survey",
+  "consent": {
+    "video": false,               // oletus false
+    "photos": "details_only",     // none | details_only | full
+    "given_by": "asukas",         // rooli, ei nimeä, ellei välttämätön
+    "given_at": "2026-10-02T09:55:00+03:00",
+    "purpose": ["muutostyoilmoitus", "asunnonmuutostyo"],
+    "retention_days": { "video": 30, "photos": 365 }
+  }
+}
+```
+
+- Ilman `consent.video = true` kenttäsovellus ei käynnistä videotallennusta.
+- Säilytysaika on osa dataa. Varasto poistaa videot ja kuvat automaattisesti
+  (luku 10).
+
+---
+
+## 6. Kenttäsovellus (C2)
+
+### 6.1 Kartoittajan työnkulku
+
+1. **Aloitus:** projekti, osoite, huoneisto. Profiilien valinta (muutostyö,
+   esteettömyys tai molemmat). Suostumukset kysytään ja kirjataan.
+2. **Luonnostelu:** huone kerrallaan sormella: nurkat, seinät, aukot. Mittoja ei
+   tarvita vielä.
+3. **Mittaus:** napautetaan seinää, aukkoa tai kahta pistettä, ja lasermitta siirtyy
+   siihen. Käsisyöttö aina mahdollinen.
+4. **Ohjattu lista:** sovellus näyttää profiilien vaatimat puuttuvat mitat
+   ("Kylpyhuoneen oviaukon vapaa leveys", "Kynnyksen korkeus", "WC-istuimen
+   sivuetäisyys seinästä"). Listan tila näkyy jatkuvasti.
+5. **Tarkistukset paikan päällä:** sulkeutumis- ja lävistäjätarkistus. Poikkeamasta
+   pyyntö mitata uudelleen.
+6. **Kuvat:** valokuvat yksityiskohdista, jos suostumus sallii. Kuva sidotaan
+   elementtiin (`source_refs`).
+7. **Lopetus:** yhteenveto. Kaikki kriittiset mitat kunnossa? Kartoittaja kuittaa.
+   Nykytila lukitaan.
+
+Tavoiteaika tavalliselle kaksiolle: alle 60 min. Todennetaan kenttätestissä (luku 12).
+
+### 6.2 Laser-yhteys
+
+- Selaimessa **Web Bluetooth** (GATT). Toimii Chromessa Androidilla, Windowsilla ja
+  macOS:llä. **Ei toimi iOS/iPadOS Safarissa.** iPadille tarvitaan joko ohut
+  natiivikääre (esim. Capacitor) tai kolmannen osapuolen selain, jossa Web Bluetooth
+  on tuettu. Päätös tehdään ennen kenttäpilottia (avoin kysymys K1).
+- Laitevalmistajien Bluetooth-rajapinnat ja SDK-ehdot selvitetään (esim. Leica DISTO,
+  Bosch GLM). Ensimmäinen tuettu malli valitaan sen perusteella, kumpi on avoimempi.
+- Adapterirajapinta: `LaserAdapter.connect()`, `onMeasurement(cb)`, `deviceInfo()`.
+  Käsisyöttö toteuttaa saman rajapinnan, jolloin kaikki muu koodi on laitteesta
+  riippumatonta.
+
+### 6.3 Offline
+
+- Kartoitus tapahtuu usein kellarissa tai ilman verkkoa. Sovellus on PWA:
+  Service Worker, välimuistissa Three.js ja sovellus, data IndexedDB:ssä.
+- Synkronointi varastoon, kun verkko palaa (MVP: tiedoston vienti).
+
+### 6.4 floorplan-3d:n rakennemuutos
+
+Nykyinen yhden tiedoston rakenne ei kanna kenttäsovellusta, laseradaptereita ja
+tietomallia. Ehdotus (avoin kysymys K2):
+
+- Pidetään **ei käännösvaihetta** -periaate, mutta jaetaan `index.html` natiiveiksi
+  ES-moduuleiksi: `model/` (skeema, apply, geometria), `plan2d/`, `view3d/`,
+  `survey/` (kenttätila), `rules/` (esikatselu), `io/` (tuonti/vienti, laser).
+- Kovakoodattu esimerkkiasunto siirretään `examples/demo-unit.json`-tiedostoksi ja
+  ladataan samaa reittiä kuin mikä tahansa malli.
+
+---
+
+## 7. Sääntömoottori (C4)
+
+### 7.1 Sääntöprofiilit
+
+| Profiili | Käyttö | Esimerkkisääntöjä |
+|---|---|---|
+| `muutostyo` | Taloyhtiön muutostyöilmoitus | Kantavan tai huoneistojen välisen seinän muutos → **esto**, vaatii rakennesuunnittelijan. Märkätilan muutos → vedeneristyksen suunnitelma ja tarkastus vaaditaan. Ilmanvaihtoventtiilin tai hormin kohdalla muutos → liputus. Purettava seinä, jonka tyyppi on `assumed` → vaatii lähteen |
+| `esteettomyys` | Asunnonmuutostyö | Kääntötila Ø1500 mm (tai käyttäjäprofiilin mukainen) valituissa huoneissa. Oven vapaa leveys ≥ vaatimus. Kynnyskorkeus ≤ raja. WC-istuimen sivutila. Kulkureitin leveys |
+| (myöhemmin) `pihasauna`, `asuntokauppa` | | |
+
+Esteettömyyden viitearvot: ympäristöministeriön asetus rakennuksen esteettömyydestä
+(241/2017). Asetus koskee uudisrakentamista. Korjauksissa arvoja käytetään
+mitoitusohjeena, ja toimintaterapeutti voi asettaa käyttäjäkohtaiset arvot (esim.
+pyörätuolin todellinen leveys ja kääntösäde). Numeroarvot tarkistetaan asetuksesta
+ennen toteutusta.
+
+### 7.2 Säännön rakenne
+
+Säännöt ovat deklaratiivisia, jotta kenttäsovellus tietää ilman palvelinta, mitä pitää
+mitata:
+
+```jsonc
+{
+  "id": "esteettomyys.door.clear_width",
+  "profile": "esteettomyys",
+  "applies_to": { "element": "opening", "where": { "kind": ["door", "sliding_door"], "on_route": true } },
+  "requires": [
+    { "field": "clear_width", "method": ["laser", "tape"], "max_confidence_mm": 5 }
+  ],
+  "check": { "type": "min", "field": "clear_width", "param": "user.door_clear_width_mm", "default": 850 },
+  "severity": "block",          // block | warn | info
+  "message_fi": "Oviaukon vapaa leveys {value} mm, vaatimus {limit} mm",
+  "reference": "YM asetus 241/2017 (mitoitusohje korjauksissa)"
+}
+```
+
+- `requires` tuottaa kenttäsovelluksen puuttuvien mittojen listan.
+- `max_confidence_mm` on mittakohtainen. Tämä korvaa `rakennuskuva`n yhden
+  globaalin 50 mm:n rajan tässä profiilissa.
+- `check`-tyyppejä on rajattu joukko (`min`, `max`, `range`, `clear_circle`,
+  `clear_rect`, `path_width`, `forbidden_change`, `requires_document`).
+  Geometriset tarkistukset (`clear_circle`, `path_width`) toteutetaan koodina.
+
+### 7.3 Missä sääntöjä ajetaan
+
+- **Kanoninen arviointi Pythonissa** (`rakennuskuva`): tulosteiden QA ja estot.
+- **Esikatselu JS:ssä** (`floorplan-3d`): puuttuvat mitat ja suunnittelun aikainen
+  palaute.
+- Sama sääntötiedosto molemmille. Yhteiset testitapaukset (`fixtures/rules/*.json` +
+  odotettu tulos), jotka ajetaan molempien CI:ssä, jotta toteutukset eivät eriydy.
+
+### 7.4 Pyörätuolisimulaatio (osa C3)
+
+- 3D-kävelytilan törmäystarkistus (`blocked()`) yleistetään: törmäysmuoto
+  parametrina (ympyrä → pyörätuolin suorakaide + kääntöympyrä).
+- 2D-pohjalle piirretään kääntöympyrät ja liian kapeat kohdat.
+- "Aja reitti": ulko-ovelta WC:hen ja sänkyyn. Reitin kapein kohta raportoidaan.
+- Tulos syöttää `clear_circle`- ja `path_width`-sääntöjä, ja kuvakaappaus menee
+  esteettömyysliitteeseen.
+
+---
+
+## 8. Tulosteet (C5)
+
+Kaikki tulosteet syntyvät `rakennuskuva`ssa samasta mallista. Jokaisella on QA-JSON
+ja luonnos/virallinen-merkintä.
+
+| Tuloste | Vastaanottaja | Sisältö |
+|---|---|---|
+| **Muutoskuva A3 1:50** | Taloyhtiö, isännöitsijä | Nykytila + muutos väreillä, mitat, huonenimet, märkätilarajat, nimiö |
+| **Työselostus** | Taloyhtiö, urakoitsija | Operaatiolistasta generoitu teksti: mitä puretaan, mitä rakennetaan, mitä materiaaleja |
+| **Esteettömyysliite** | Hyvinvointialue | Nykytila vs. muutos, kääntöympyrät, oviaukkojen vapaat leveydet, kynnysten poisto, sääntöjen tulos, 3D-kuvat |
+| **Määräluettelo ja kustannusarvio** | Asukas, urakoitsija | Pinta-alat (aukot vähennetty), purettava seinä-m, laatoitus-m², vedeneristys-m², kalusteet. Kotitalousvähennyksen arvio |
+| **Mittausraportti** | Kaikki | Jokainen kriittinen mitta: arvo, menetelmä, tarkkuus, kuittaaja, lähde |
+| **Jaettava 3D-linkki** | Kaikki | Vain luku -näkymä, nykytila/muutos-vaihto |
+
+Uudet `rakennuskuva`-komennot (ehdotus): `rk unit validate`, `rk unit change-plan`,
+`rk unit accessibility`, `rk unit quantities`, `rk unit all`.
+
+---
+
+## 9. Projektivarasto, roolit ja jakaminen (C6, C7)
+
+### 9.1 MVP
+
+- Ei palvelinta. Malli on yksi JSON-tiedosto ja liitteet kansiossa. Kenttäsovellus
+  vie tiedoston, ja `rakennuskuva` ajetaan komentoriviltä.
+- Riittää ensimmäisille pilottikohteille, joissa tekijät ovat itse mukana.
+
+### 9.2 Myöhemmin (palvelin)
+
+| Rooli | Oikeudet |
+|---|---|
+| Asukas / osakas | Omien projektien luku, suostumusten anto ja peruutus |
+| Kartoittaja | Nykytilan luonti ja kuittaus |
+| Toimintaterapeutti | Esteettömyysprofiilin parametrit, esteettömyysliitteen kuittaus |
+| Suunnittelija | Muutoskerros, tulosteiden kuittaus |
+| Isännöitsijä | Luku ja kommentointi, muutostyöilmoituksen vastaanotto |
+| Urakoitsija | Luku (määrät ja kuvat), ei henkilötietoja |
+
+- Versiot: jokainen tallennus on revisio. Tulosteet viittaavat revisioon.
+- Jakolinkit ovat aikarajattuja ja roolikohtaisia.
+
+---
+
+## 10. Tietosuoja ja tietoturva
+
+- **Terveystiedot ovat erityisiä henkilötietoja (GDPR 9 art.).** Esteettömyyden
+  perusteluja (diagnoosit, toimintakyky) ei tallenneta huoneistomalliin. Malliin
+  tallennetaan vain tilavaatimukset (esim. `user.door_clear_width_mm = 900`).
+  Hakemuksen perustelu tehdään hyvinvointialueen omassa järjestelmässä.
+- **Video ja kuvat:** oletuksena ei videota. Kasvojen ja paperien automaattinen
+  sumennus ennen tallennusta. Vain tarvittavat stillkuvat säilytetään. Säilytysaika
+  mallissa ja automaattinen poisto.
+- **Minimointi:** asukkaan nimeä ei tarvita malliin. Osoite ja huoneistotunnus
+  riittävät. Urakoitsijan näkymässä ei henkilötietoja.
+- Rekisteriseloste, käsittelijäsopimukset (hyvinvointialue, isännöitsijä) ja
+  tietosuojan vaikutustenarviointi (DPIA) ennen palvelinta ja ennen kuin videota
+  käsitellään.
+- Salaus siirrossa ja levossa, pääsylokit.
+
+---
+
+## 11. Ulkoiset tietolähteet ja rajapinnat (C9)
+
+| Lähde | Mitä saadaan | Käyttö | Tila |
+|---|---|---|---|
+| **MML Kiinteistötietojen kyselypalvelu** (OGC API Features, avoin, API-avain) | Kiinteistöjaotus, kiinteistötunnukset | Omakotitalokohteet: tontti, sijainti. Rajojen tarkkuus 0,5–4 m, joten menetelmä `registry` ja status `inferred`, ei virallisiin mittoihin | Tunnettu, maksuton |
+| **MML Maastotietokanta** | Rakennusten pohjamuodot | Omakotitalon ulkomuoto, 3D-konteksti | Tunnettu, maksuton |
+| **MML korkeusmalli** | Maanpinnan korkeudet | Luiskat ja sisäänkäynnit (esteettömyys omakotitalossa) | Tunnettu |
+| **MML osoitehaku / geokoodaus** | Osoite → sijainti ja kiinteistö | Projektin aloitus | Selvitettävä |
+| **Huoneistotietojärjestelmä (HTJ)** | Osakehuoneistot, taloyhtiö, isännöitsijä | Vastaanottajat, huoneistotunnus | Käyttöoikeudet selvitettävä |
+| **Rakennus- ja huoneistotiedot** (DVV / Ryhti) | Rakennusvuosi, kerrosluku, rakennustapa | Rakennusvuosi → esim. asbesti- ja haitta-ainekartoituksen tarve | Käyttöoikeudet ja siirtymä Ryhtiin selvitettävä |
+| **Kuntien piirustusarkistot** | Alkuperäiset lupakuvat | Nykytilan pohja (`archive_drawing`), kantavat seinät | Kuntakohtainen, selvitettävä |
+| **Verohallinto** | Kotitalousvähennyksen säännöt | Kustannusarvioon | Julkiset laskentasäännöt, ei rajapintaa |
+
+Adapteriperiaate: jokainen lähde on oma moduulinsa, jonka tulokset tallennetaan
+malliin omalla `method`- ja `source_refs`-merkinnällä. Mikään ulkoinen tieto ei
+nouse `measured`-tilaan ilman kenttämittausta.
+
+---
+
+## 12. Testaus ja validointi
+
+### 12.1 Tarkkuus- ja kenttätesti (ennen laajaa toteutusta)
+
+1. Pilottiasunto. Referenssimitat (≥ 20 kpl: seinät, lävistäjät, oviaukot karmi- ja
+   vapaana leveytenä, ikkunat, kynnykset, WC:n vapaatilat) mitataan kahteen kertaan
+   eri henkilöiden toimesta.
+2. Kartoitus kenttäsovelluksella laserilla. Ajankäyttö kirjataan huoneittain.
+3. Jos suostumus: sama asunto videolla / LiDARilla. Poikkeamat laserista taulukkoon.
+4. Hyväksymisrajat: laser vs. referenssi ≤ 5 mm oviaukoissa ja ≤ 10 mm seinissä.
+   Kokonaisaika kaksiossa ≤ 60 min.
+
+### 12.2 Automaattiset testit
+
+- Skeema: Pydantic-validointi, JSON Schema -vienti, esimerkkimallit (`examples/`).
+- Skeemakopion synkronointitarkistus reposta toiseen.
+- `apply(baseline, changes)`: samat testitapaukset Pythonissa ja JS:ssä.
+- Sääntömoottori: yhteiset testitapaukset ja odotetut tulokset.
+- Geometria: sulkeutumis- ja lävistäjätarkistus, pinta-alat.
+- Tulosteet: `rakennuskuva`n nykyinen QA-JSON-malli uusille arkeille.
+- `floorplan-3d`: Playwright-savutesti (lataus, tuonti, 2D/3D-vaihto,
+  kenttätilan perusvirta) ja kuvakaappausvertailu.
+
+### 12.3 Käyttäjätestit
+
+- Isännöitsijä: onko muutoskuva ja työselostus sellaisenaan hyväksyttävä liite?
+- Toimintaterapeutti: korvaako esteettömyysliite nykyisen käsin tehdyn luonnoksen?
+- Kartoittaja: pysyykö aika tavoitteessa, ja ohjaako puuttuvien mittojen lista oikein?
+
+---
+
+## 13. Laajennettavuus: pihasauna ja muut
+
+Arkkitehtuuri pidetään avoimena seuraaville ilman uudelleensuunnittelua:
+
+- **Pihasaunaidea:** sama `Measurement`-malli ja tulosteputki. Uusi profiili
+  `pihasauna`, tonttitiedot MML:stä, parametrinen rakennus (ProceduralBuildingsin
+  idea), rakennuskuvan nykyinen rakennustason skeema.
+- **Asuntokauppa** (pinta-alan tarkistusmittaus): sama kenttäsovellus, uusi profiili
+  ja SFS 5139 -raportti.
+
+Ehto laajennuksille: profiili = sääntötiedosto + tulostepohjat. Ydin (malli,
+kenttäsovellus, apply, varasto) ei muutu.
+
+---
+
+## 14. Toteutusvaiheet
+
+| Vaihe | Sisältö | Valmis kun |
+|---|---|---|
+| **V0 Perusta** | `unit-input-v1`-skeema, esimerkkimallit, floorplan-3d lukee mallin (demo-asunto JSONiksi), y-akselin kääntö, apply-testit | Nykyinen demo-asunto toimii JSONista ladattuna, testit vihreinä molemmissa repoissa |
+| **V1 Kenttäkartoitus (laser)** | Kartoitustila, luonnostelu, mittausten kirjaus, käsisyöttö, yksi Bluetooth-laser, sulkeutumistarkistus, offline | Pilottiasunto kartoitettu, tarkkuustesti läpäisty |
+| **V2 Säännöt** | Sääntötiedosto, puuttuvien mittojen lista, muutostyö- ja esteettömyysprofiilit, pyörätuolisimulaatio | Molemmat profiilit toimivat pilottiasunnossa, yhteiset sääntötestit vihreinä |
+| **V3 Tulosteet** | Muutoskuva, työselostus, esteettömyysliite, määräluettelo, mittausraportti | Isännöitsijä ja toimintaterapeutti arvioineet tulosteet |
+| **V4 Jakaminen** | Jaettu 3D-linkki, palvelin, roolit, suostumusten hallinta, DPIA | 3 oikeaa kohdetta läpi koko ketjun |
+| **V5 Video (valinnainen)** | Suostumuspohjainen videotallennus, stillkuvat lähteiksi, sumennus, säilytysajat | Videoaineisto poistuu automaattisesti, poikkeamat laserista raportoitu |
+| **V6 Ulkoiset lähteet** | MML, HTJ, rakennustiedot, arkistopiirustukset | Vähintään yksi lähde tuotannossa |
+
+Yksityiskohtainen tarkistuslista: [CHECKLIST.md](CHECKLIST.md).
+
+---
+
+## 15. Avoimet kysymykset
+
+| # | Kysymys | Vaikuttaa |
+|---|---|---|
+| K1 | iPad vai Android-tabletti kenttälaitteeksi? (Web Bluetooth ei toimi iOS Safarissa) | V1 |
+| K2 | Pysyykö floorplan-3d ilman käännösvaihetta (ES-moduulit) vai siirrytäänkö Viteen? | V0 |
+| K3 | Mikä laser tuetaan ensin, ja ovatko sen Bluetooth-ehdot kunnossa? | V1 |
+| K4 | Kuka kuittaa kantavuustiedon (`Wall.kind`), kun arkistopiirustusta ei ole? | V2 |
+| K5 | Mitä isännöitsijät oikeasti vaativat muutostyöilmoituksen liitteeltä? Onko valtakunnallista mallia vai taloyhtiökohtaisia lomakkeita? | V3 |
+| K6 | Hyvinvointialueiden asunnonmuutostyöhakemusten liitevaatimukset | V3 |
+| K7 | Muutoskuvan värikäytäntö (keltainen/punainen): tarkistetaan viranomais- ja isännöitsijäpohjista | V3 |
+| K8 | Missä `rakennuskuva` ajetaan tuotannossa (palvelin vs. kartoittajan kone)? | V4 |
+| K9 | Liiketoimintamalli: kuka maksaa kartoituksen? (asukas, urakoitsija, hyvinvointialue) | V4 |
+
+---
+
+## 16. Riskit
+
+| Riski | Vaikutus | Varautuminen |
+|---|---|---|
+| Kartoitus kestää liian kauan | Palvelu ei kannata | Kenttätesti ennen V2:ta, ohjattu mittauslista, laser-integraatio |
+| Kantavuus arvataan väärin | Vakava rakenteellinen vahinko | Kantavuus ei koskaan `measured` ilman lähdettä. Muutostyöprofiili estää kantavan tai tuntemattoman seinän muutoksen ilman asiantuntijaa |
+| Tuloste luullaan viralliseksi | Vastuukysymys | Luonnosmerkintä ja estolista kuten `rakennuskuva`ssa. Kuittaaja nimetään |
+| Kaksi toteutusta (Python/JS) eriytyy | Eri tulos kentällä ja tulosteessa | Yhteiset testitapaukset molempien CI:ssä, Python kanoninen |
+| Terveystietoa päätyy malliin | Tietosuojariski | Skeemassa ei kenttää terveystiedolle. Vain tilavaatimukset |
+| Web Bluetooth ei toimi valitulla laitteella | V1 viivästyy | Käsisyöttö toimii aina. Adapterirajapinta. K1 ratkaistaan ensin |
+| floorplan-3d:n uudelleenjärjestely rikkoo nykyiset ominaisuudet | Regressio | Playwright-savutesti ennen jakoa moduuleihin |
