@@ -16,19 +16,19 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
 
 ## Vaihe −1: Päätökset ennen koodia
 
-- [ ] **[EI-KOODI]** K1: Kenttälaite (iPad vai Android-tabletti). Jos iPad → päätetään
-      natiivikääre (Capacitor tms.) Web Bluetoothia varten (§6.2)
-- [ ] **[EI-KOODI]** K2: floorplan-3d ilman käännösvaihetta (ES-moduulit) vai Vite (§6.4)
-- [ ] **[EI-KOODI]** K3: Ensimmäinen tuettu laser. Selvitä Bluetooth-rajapinnan ja
-      SDK:n ehdot vähintään kahdelta valmistajalta (esim. Leica DISTO, Bosch GLM)
+- [x] **[EI-KOODI]** K1: Kenttälaite → **Android-puhelin** (§6.0)
+- [x] **[EI-KOODI]** K2: Rakenne → **Vite (+ TypeScript)** (§6.4)
+- [x] **[EI-KOODI]** K3: Laser → **ei integraatiota**, lukemat syötetään käsin (§6.0)
+- [ ] **[EI-KOODI]** Testilaitteeksi valittu Android-puhelin (tyypillinen keskitason
+      malli, ei lippulaiva), jolla 3D-esikatselun suorituskyky mitataan
 - [ ] **[EI-KOODI]** Pilottiasunto valittu ja asukkaan lupa kartoitukseen saatu
 - [ ] **[EI-KOODI]** Yksi isännöitsijä ja yksi toimintaterapeutti lupautuneet
       arvioimaan tulosteet (V3)
 - [ ] **[EI-KOODI]** Hae 2–3 esimerkkiä oikeista muutostyöilmoituksen liitteistä ja
       asunnonmuutostyöhakemuksista (K5, K6, K7)
 
-**Valmis kun:** K1–K3 päätetty ja kirjattu arkkitehtuuridokumenttiin, pilottikohde ja
-arvioijat sovittu.
+**Valmis kun:** pilottikohde, testipuhelin ja arvioijat sovittu (K1–K3 päätetty).
+
 
 ---
 
@@ -61,9 +61,15 @@ arvioijat sovittu.
 ### floorplan-3d lukee mallin
 - [ ] **[FP]** Playwright-savutesti *ennen* muutoksia: lataus, 2D-näkymä, 3D-näkymä,
       kalusteen lisäys, seinän purku, JSON-vienti (§12.2)
-- [ ] **[FP]** K2:n mukainen jako moduuleihin: `model/`, `plan2d/`, `view3d/`, `io/`
-      (§6.4). Savutesti vihreänä jaon jälkeen
-- [ ] **[FP]** `io/unit.js`: tuonti ja vienti. y-akselin kääntö vain tässä (§5.2)
+- [ ] **[FP]** Siirto Viteen *sellaisenaan*: `package.json`, Vite + TypeScript,
+      Three.js npm-paketista CDN:n sijaan, sama toiminnallisuus. Savutesti vihreänä
+- [ ] **[FP]** Jako hakemistoihin: `src/model/`, `src/plan2d/`, `src/view3d/`,
+      `src/io/` (§6.4). Savutesti vihreänä jaon jälkeen
+- [ ] **[FP]** Skeeman TypeScript-tyypit generoidaan `unit-input-v1.schema.json`-
+      tiedostosta (generointi osana käännöstä tai CI-tarkistus)
+- [ ] **[FP]** CI: tyyppitarkistus, testit (esim. Vitest) ja Playwright-savutesti
+- [ ] **[FP]** README päivitetty: `npm install`, `npm run dev`, `npm run build`
+- [ ] **[FP]** `src/io/unit.ts`: tuonti ja vienti. y-akselin kääntö vain tässä (§5.2)
 - [ ] **[FP]** Keskilinjaseinät (`a`, `b`, `thickness`) → nykyinen 2D- ja
       3D-renderöinti. Vinot seinät vähintään piirtyvät oikein
 - [ ] **[FP]** Aukot `host_wall` + `along_wall` -mallista → nykyiset ikkuna-, ovi- ja
@@ -90,14 +96,16 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
 ## Vaihe V1: Kenttäkartoitus laserilla
 
 ### Kartoitustila (§6.1)
-- [ ] **[FP]** Uusi tila "Kartoitus" editorin rinnalle
+- [ ] **[FP]** Uusi tila "Kartoitus" editorin rinnalle, suunniteltu ensin
+      Android-puhelimen pystynäytölle ja yhden käden käyttöön (§6.0)
 - [ ] **[FP]** Projektin aloitus: osoite, huoneisto, profiilit, suostumukset
       (`survey.consent`, oletus: ei videota) (§5.7)
-- [ ] **[FP]** Huoneen luonnostelu sormella: nurkat, seinät, aukot. Tarttuminen
-      90°:een oletuksena
-- [ ] **[FP]** Mittauksen kohdistus: napauta seinää, aukkoa tai kahta pistettä →
-      odottaa mittaa
-- [ ] **[FP]** Käsisyöttö numeronäppäimistöllä, menetelmävalinta (`laser` / `tape`)
+- [ ] **[FP]** Huoneen muotopohjat: suorakaide, L-muoto, vapaa monikulmio
+- [ ] **[FP]** Seinä kerrallaan -eteneminen myötäpäivään, aktiivinen seinä korostettu
+- [ ] **[FP]** Aukot seinittäin: etäisyys nurkasta, leveys, korkeus, kynnys; oville
+      karmiaukko ja vapaa kulkuleveys erikseen
+- [ ] **[FP]** Seuraava huone liittyy edelliseen yhteisen seinän tai oviaukon kautta
+- [ ] **[FP]** Mittojen syöttö myös jälkikäteen paperilta (sama työnkulku)
 - [ ] **[FP]** Raakamittaukset tallentuvat `measurements[]`-listaan alkuperineen,
       kartoittaja kuittaajana
 - [ ] **[FP]** Valokuva elementtiin (vain jos `consent.photos` sallii) →
@@ -114,18 +122,30 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
 - [ ] **[FP]** Johdettujen arvojen status = heikoin lähde (`derived`)
 - [ ] **[RK]** Sama geometrialaskenta tai sen tarkistus Pythonissa (QA)
 
-### Laser (§6.2)
-- [ ] **[FP]** `LaserAdapter`-rajapinta: `connect()`, `onMeasurement(cb)`,
-      `deviceInfo()`
-- [ ] **[FP]** Käsisyöttö toteuttaa saman rajapinnan
-- [ ] **[FP]** Ensimmäinen laseradapteri (K3) Web Bluetoothilla
-- [ ] **[FP]** Laitteen tunniste tallentuu mittaan (`device`)
-- [ ] **[FP]** Yhteyden katkeamisen ja uudelleenyhdistämisen käsittely
+### Mittojen syöttö (§6.2)
+- [ ] **[FP]** Iso numeronäppäimistö, oletusyksikkö mm; `3,42` tulkitaan metreiksi
+      (3420 mm)
+- [ ] **[FP]** "Seuraava" siirtää suoraan seuraavaan puuttuvaan mittaan
+- [ ] **[FP]** Menetelmä (`laser` / `tape`) muistetaan, vaihto yhdellä
+      napautuksella; kynnyksille oletuksena `tape`
+- [ ] **[FP]** Epäuskottavan arvon vahvistus (väärä yksikkö, liian suuri tai pieni)
+- [ ] **[FP]** Jokainen syöte tallentuu heti; kumoa toimii
+- [ ] **[FP]** Vapaa laitekenttä (`device`) kartoitukselle, ei pakollinen
+
+### Reaaliaikainen esikatselu (§6.0)
+- [ ] **[FP]** Jokainen syötetty mitta päivittää 2D-pohjan heti
+- [ ] **[FP]** 3D-esikatselu päivittyy mittausten aikana (vaihdettavissa 2D:n kanssa
+      yhdellä napautuksella)
+- [ ] **[FP]** Puuttuvat mitat näkyvät pohjassa (esim. katkoviiva + arvioitu pituus)
+- [ ] **[FP]** Suorituskyky testipuhelimella: esikatselu päivittyy alle 200 ms:ssa
+      mitan syötöstä
 
 ### Offline (§6.3)
-- [ ] **[FP]** PWA: manifest, Service Worker, Three.js ja sovellus välimuistissa
+- [ ] **[FP]** PWA Viten PWA-lisäosalla: manifest, Service Worker, sovellus ja
+      Three.js välimuistissa; asennettavissa Androidin aloitusnäytölle
 - [ ] **[FP]** Projektit IndexedDB:ssä (ei pelkkä `localStorage`)
-- [ ] **[FP]** Projektin vienti tiedostona (MVP-synkronointi)
+- [ ] **[FP]** Projektin vienti tiedostona ja jakaminen Androidin jakovalikon
+      kautta (MVP-synkronointi)
 
 ### Kenttätesti (§12.1)
 - [ ] **[EI-KOODI]** Referenssimitat pilottiasunnosta (≥ 20 kpl, kaksi mittaajaa)

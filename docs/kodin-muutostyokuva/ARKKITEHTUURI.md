@@ -1,6 +1,6 @@
 # Kodin muutostyökuva — arkkitehtuuri
 
-Tila: suunnitteludokumentti, luonnos 1
+Tila: suunnitteludokumentti, luonnos 2 (K1–K3 päätetty)
 Päivä: 2026-09-29
 Toteutuksen tarkistuslista: [CHECKLIST.md](CHECKLIST.md)
 
@@ -144,8 +144,8 @@ huoneistotason skeema**, joka lainaa `rakennuskuva`n mittausmallin ja
 
 ```mermaid
 flowchart LR
-  subgraph FIELD["Kenttä (kartoittaja, tabletti)"]
-    L[Bluetooth-laser] --> K[Kenttäsovellus<br/>floorplan-3d, kartoitustila]
+  subgraph FIELD["Kenttä (kartoittaja, Android-puhelin)"]
+    L[Laser, erillinen laite] -->|lukema syötetään käsin| K[Kenttäsovellus<br/>floorplan-3d, kartoitustila]
     N[Mittanauha / käsisyöttö] --> K
     V[Video, vain luvalla] -.-> K
   end
@@ -167,7 +167,7 @@ flowchart LR
 | # | Komponentti | Toteutus | Vastuu |
 |---|---|---|---|
 | C1 | **Huoneistomalli** (skeema) | JSON Schema + Pydantic (`rakennuskuva`) + JS-lukija/kirjoittaja (`floorplan-3d`) | Yhteinen sopimus kaikkien osien välillä |
-| C2 | **Kenttäsovellus** | `floorplan-3d`, uusi kartoitustila | Huoneiden luonnostelu, mittausten kirjaus, laser-yhteys, puuttuvien mittojen lista |
+| C2 | **Kenttäsovellus** | `floorplan-3d`, uusi kartoitustila | Huoneiden muoto, mittojen käsisyöttö puhelimella, reaaliaikainen 2D/3D-esikatselu, puuttuvien mittojen lista |
 | C3 | **Suunnittelutila** | `floorplan-3d`, nykyinen editori laajennettuna | Muutoskerroksen piirtäminen, 3D, pyörätuolisimulaatio, kustannukset |
 | C4 | **Sääntömoottori** | Deklaratiiviset säännöt (JSON) + arvioijat Pythonissa, esikatselu JS:ssä | Kriittiset mitat, tarkistukset, estot |
 | C5 | **Tulosteet** | `rakennuskuva`, uudet arkkityypit | A3-muutoskuva, esteettömyysliite, määräluettelo, QA-JSON |
@@ -214,7 +214,7 @@ Otetaan `rakennuskuva`n malli sellaisenaan ja tarkennetaan kahta kenttää:
   "confidence_mm": 2,
   "confirmed_by": "kartoittaja:mv",
   "captured_at": "2026-10-02T10:14:00+03:00",   // UUSI
-  "device": "Leica DISTO D2 #1234",             // UUSI, valinnainen
+  "device": "laser, kartoittajan oma",          // UUSI, valinnainen vapaa teksti
   "note": "vapaa leveys karmien välistä"
 }
 ```
@@ -312,7 +312,7 @@ operaatioita:
   "survey_id": "…",
   "captured_at": "2026-10-02",
   "surveyor": { "id": "kartoittaja:mv", "organisation": "…" },
-  "devices": ["Leica DISTO D2 #1234", "rullamitta"],
+  "devices": ["laser", "rullamitta"],
   "data_origin": "real_survey",
   "consent": {
     "video": false,               // oletus false
@@ -333,54 +333,84 @@ operaatioita:
 
 ## 6. Kenttäsovellus (C2)
 
+### 6.0 Päätökset
+
+- **Laite: Android-puhelin** (K1). Käyttöliittymä suunnitellaan ensin puhelimen
+  pystynäytölle ja yhden käden käyttöön. Tabletti ja työpöytä ovat toissijaisia.
+- **Laser on erillinen laite, ei integraatiota** (K3). Kartoittaja lukee mitan
+  laserin näytöltä ja syöttää sen sovellukseen. Sovellus ei yhdisty laseriin
+  Bluetoothilla. Menetelmäksi kirjataan silti `laser`, koska mitta on laserilla
+  mitattu.
+- **Tavoite:** 3D-malli syntyy mittausten jälkeen tai *samalla kun mitataan*. Jokainen
+  syötetty mitta päivittää pohjan ja 3D-esikatselun heti.
+
 ### 6.1 Kartoittajan työnkulku
 
 1. **Aloitus:** projekti, osoite, huoneisto. Profiilien valinta (muutostyö,
    esteettömyys tai molemmat). Suostumukset kysytään ja kirjataan.
-2. **Luonnostelu:** huone kerrallaan sormella: nurkat, seinät, aukot. Mittoja ei
-   tarvita vielä.
-3. **Mittaus:** napautetaan seinää, aukkoa tai kahta pistettä, ja lasermitta siirtyy
-   siihen. Käsisyöttö aina mahdollinen.
-4. **Ohjattu lista:** sovellus näyttää profiilien vaatimat puuttuvat mitat
+2. **Huoneen muoto:** valitaan pohja (suorakaide, L-muoto, vapaa monikulmio). Puhelimen
+   pienellä näytöllä muotopohja on nopeampi ja tarkempi kuin vapaa piirtäminen
+   sormella.
+3. **Seinämitat järjestyksessä:** sovellus korostaa seinän kerrallaan myötäpäivään
+   ("Seinä 2/4: pohjoinen"), ja kartoittaja syöttää laserin lukeman. Pohja ja
+   3D-esikatselu päivittyvät jokaisen mitan jälkeen.
+4. **Aukot seinittäin:** ovi, ikkuna tai aukko → etäisyys nurkasta, leveys, korkeus,
+   kynnys. Oville erikseen karmiaukko ja vapaa kulkuleveys.
+5. **Ohjattu lista:** sovellus näyttää profiilien vaatimat puuttuvat mitat
    ("Kylpyhuoneen oviaukon vapaa leveys", "Kynnyksen korkeus", "WC-istuimen
    sivuetäisyys seinästä"). Listan tila näkyy jatkuvasti.
-5. **Tarkistukset paikan päällä:** sulkeutumis- ja lävistäjätarkistus. Poikkeamasta
+6. **Tarkistukset paikan päällä:** sulkeutumis- ja lävistäjätarkistus. Poikkeamasta
    pyyntö mitata uudelleen.
-6. **Kuvat:** valokuvat yksityiskohdista, jos suostumus sallii. Kuva sidotaan
+7. **Kuvat:** valokuvat yksityiskohdista, jos suostumus sallii. Kuva sidotaan
    elementtiin (`source_refs`).
-7. **Lopetus:** yhteenveto. Kaikki kriittiset mitat kunnossa? Kartoittaja kuittaa.
+8. **Seuraava huone:** yhteinen seinä ja oviaukko liitetään edelliseen huoneeseen,
+   jolloin huoneet asettuvat toistensa viereen automaattisesti.
+9. **Lopetus:** yhteenveto. Kaikki kriittiset mitat kunnossa? Kartoittaja kuittaa.
    Nykytila lukitaan.
+
+Mittaukset voi syöttää myös jälkikäteen paperilta. Työnkulku on sama, vain
+esikatselu ei ole silloin paikan päällä käytössä.
 
 Tavoiteaika tavalliselle kaksiolle: alle 60 min. Todennetaan kenttätestissä (luku 12).
 
-### 6.2 Laser-yhteys
+### 6.2 Mittojen syöttö puhelimella
 
-- Selaimessa **Web Bluetooth** (GATT). Toimii Chromessa Androidilla, Windowsilla ja
-  macOS:llä. **Ei toimi iOS/iPadOS Safarissa.** iPadille tarvitaan joko ohut
-  natiivikääre (esim. Capacitor) tai kolmannen osapuolen selain, jossa Web Bluetooth
-  on tuettu. Päätös tehdään ennen kenttäpilottia (avoin kysymys K1).
-- Laitevalmistajien Bluetooth-rajapinnat ja SDK-ehdot selvitetään (esim. Leica DISTO,
-  Bosch GLM). Ensimmäinen tuettu malli valitaan sen perusteella, kumpi on avoimempi.
-- Adapterirajapinta: `LaserAdapter.connect()`, `onMeasurement(cb)`, `deviceInfo()`.
-  Käsisyöttö toteuttaa saman rajapinnan, jolloin kaikki muu koodi on laitteesta
-  riippumatonta.
+- Iso numeronäppäimistö, oletusyksikkö millimetri. Senttimetrit ja metrit
+  tunnistetaan desimaalierottimesta (esim. `3,42` → 3420 mm).
+- "Seuraava"-painike siirtää suoraan seuraavaan puuttuvaan mittaan. Ei valikoiden
+  selaamista kesken mittauksen.
+- Menetelmä (`laser` / `tape`) muistetaan edellisestä, vaihdettavissa yhdellä
+  napautuksella. Kynnyksille oletuksena `tape`.
+- Epäuskottava arvo (esim. seinä 34 200 mm, oviaukko 85 mm) pyytää vahvistuksen.
+  Yleisin virhe on väärä yksikkö.
+- Jokainen syöte tallentuu heti (ei tallennuspainiketta), ja kumoa toimii.
 
 ### 6.3 Offline
 
 - Kartoitus tapahtuu usein kellarissa tai ilman verkkoa. Sovellus on PWA:
   Service Worker, välimuistissa Three.js ja sovellus, data IndexedDB:ssä.
-- Synkronointi varastoon, kun verkko palaa (MVP: tiedoston vienti).
+- Synkronointi varastoon, kun verkko palaa (MVP: tiedoston vienti ja jakaminen
+  Androidin jakovalikon kautta).
 
 ### 6.4 floorplan-3d:n rakennemuutos
 
-Nykyinen yhden tiedoston rakenne ei kanna kenttäsovellusta, laseradaptereita ja
-tietomallia. Ehdotus (avoin kysymys K2):
+Nykyinen yhden tiedoston rakenne ei kanna kenttäsovellusta ja tietomallia. Päätös
+(K2): **siirrytään Viteen.**
 
-- Pidetään **ei käännösvaihetta** -periaate, mutta jaetaan `index.html` natiiveiksi
-  ES-moduuleiksi: `model/` (skeema, apply, geometria), `plan2d/`, `view3d/`,
-  `survey/` (kenttätila), `rules/` (esikatselu), `io/` (tuonti/vienti, laser).
+- Vite + TypeScript. Sama pino kuin ProceduralBuildingsThreeJS:ssä, joten sen ratkaisuja
+  voi lainata suoraan.
+- Hakemistot: `src/model/` (skeema, apply, geometria), `src/plan2d/`, `src/view3d/`,
+  `src/survey/` (kenttätila), `src/rules/` (esikatselu), `src/io/` (tuonti/vienti).
+- Skeeman TypeScript-tyypit generoidaan `unit-input-v1.schema.json`-tiedostosta, jotta
+  JS- ja Python-puoli eivät eriydy.
+- PWA Viten PWA-lisäosalla. Three.js npm-paketista CDN:n sijaan, jolloin offline-tila
+  toimii.
+- Tuotantokäännös on staattinen, joten julkaisu onnistuu mille tahansa staattiselle
+  palvelimelle.
 - Kovakoodattu esimerkkiasunto siirretään `examples/demo-unit.json`-tiedostoksi ja
   ladataan samaa reittiä kuin mikä tahansa malli.
+- Nykyinen käytös säilytetään: siirto Viteen tehdään ensin sellaisenaan (sama
+  toiminnallisuus, savutesti vihreänä), ja vasta sitten aletaan muuttaa rakennetta.
 
 ---
 
@@ -577,7 +607,7 @@ kenttäsovellus, apply, varasto) ei muutu.
 | Vaihe | Sisältö | Valmis kun |
 |---|---|---|
 | **V0 Perusta** | `unit-input-v1`-skeema, esimerkkimallit, floorplan-3d lukee mallin (demo-asunto JSONiksi), y-akselin kääntö, apply-testit | Nykyinen demo-asunto toimii JSONista ladattuna, testit vihreinä molemmissa repoissa |
-| **V1 Kenttäkartoitus (laser)** | Kartoitustila, luonnostelu, mittausten kirjaus, käsisyöttö, yksi Bluetooth-laser, sulkeutumistarkistus, offline | Pilottiasunto kartoitettu, tarkkuustesti läpäisty |
+| **V1 Kenttäkartoitus (laser)** | Kartoitustila puhelimelle, huoneen muotopohjat, mittojen käsisyöttö, reaaliaikainen 2D/3D-esikatselu, sulkeutumistarkistus, offline | Pilottiasunto kartoitettu, tarkkuustesti läpäisty |
 | **V2 Säännöt** | Sääntötiedosto, puuttuvien mittojen lista, muutostyö- ja esteettömyysprofiilit, pyörätuolisimulaatio | Molemmat profiilit toimivat pilottiasunnossa, yhteiset sääntötestit vihreinä |
 | **V3 Tulosteet** | Muutoskuva, työselostus, esteettömyysliite, määräluettelo, mittausraportti | Isännöitsijä ja toimintaterapeutti arvioineet tulosteet |
 | **V4 Jakaminen** | Jaettu 3D-linkki, palvelin, roolit, suostumusten hallinta, DPIA | 3 oikeaa kohdetta läpi koko ketjun |
@@ -592,9 +622,9 @@ Yksityiskohtainen tarkistuslista: [CHECKLIST.md](CHECKLIST.md).
 
 | # | Kysymys | Vaikuttaa |
 |---|---|---|
-| K1 | iPad vai Android-tabletti kenttälaitteeksi? (Web Bluetooth ei toimi iOS Safarissa) | V1 |
-| K2 | Pysyykö floorplan-3d ilman käännösvaihetta (ES-moduulit) vai siirrytäänkö Viteen? | V0 |
-| K3 | Mikä laser tuetaan ensin, ja ovatko sen Bluetooth-ehdot kunnossa? | V1 |
+| ~~K1~~ | **Päätetty:** Android-puhelin | V1 |
+| ~~K2~~ | **Päätetty:** Vite (+ TypeScript) | V0 |
+| ~~K3~~ | **Päätetty:** ei laserintegraatiota, lukemat syötetään käsin | V1 |
 | K4 | Kuka kuittaa kantavuustiedon (`Wall.kind`), kun arkistopiirustusta ei ole? | V2 |
 | K5 | Mitä isännöitsijät oikeasti vaativat muutostyöilmoituksen liitteeltä? Onko valtakunnallista mallia vai taloyhtiökohtaisia lomakkeita? | V3 |
 | K6 | Hyvinvointialueiden asunnonmuutostyöhakemusten liitevaatimukset | V3 |
@@ -613,5 +643,6 @@ Yksityiskohtainen tarkistuslista: [CHECKLIST.md](CHECKLIST.md).
 | Tuloste luullaan viralliseksi | Vastuukysymys | Luonnosmerkintä ja estolista kuten `rakennuskuva`ssa. Kuittaaja nimetään |
 | Kaksi toteutusta (Python/JS) eriytyy | Eri tulos kentällä ja tulosteessa | Yhteiset testitapaukset molempien CI:ssä, Python kanoninen |
 | Terveystietoa päätyy malliin | Tietosuojariski | Skeemassa ei kenttää terveystiedolle. Vain tilavaatimukset |
-| Web Bluetooth ei toimi valitulla laitteella | V1 viivästyy | Käsisyöttö toimii aina. Adapterirajapinta. K1 ratkaistaan ensin |
+| Käsisyötössä näppäilyvirhe (väärä yksikkö, vaihtuneet numerot) | Väärä malli | Epäuskottavien arvojen vahvistus, sulkeutumis- ja lävistäjätarkistus, reaaliaikainen esikatselu paljastaa virheen heti |
+| Puhelimen näyttö liian pieni luonnosteluun | Kartoitus hidastuu | Muotopohjat vapaan piirtämisen sijaan, seinä kerrallaan -eteneminen. Testataan kenttätestissä |
 | floorplan-3d:n uudelleenjärjestely rikkoo nykyiset ominaisuudet | Regressio | Playwright-savutesti ennen jakoa moduuleihin |
