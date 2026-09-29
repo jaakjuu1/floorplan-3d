@@ -1,6 +1,6 @@
 # Kodin sisustussuunnittelu
 
-Pelkkää selainta käyttävä asunnon sisustussuunnittelutyökalu: sijoita kalusteita 2D-pohjapiirrokseen, muokkaa seiniä, mittaa etäisyyksiä ja vaihda yhdellä painalluksella Three.js-pohjaiseen 3D-näkymään, jossa voit katsella kohdetta ylhäältä tai kävellä sisällä ensimmäisen persoonan näkymässä. Koko sovellus on yksi `index.html`-tiedosto, jota ei tarvitse rakentaa – avaa se vain selaimessa.
+Selaimessa toimiva asunnon sisustussuunnittelutyökalu: sijoita kalusteita 2D-pohjapiirrokseen, muokkaa seiniä, mittaa etäisyyksiä ja vaihda yhdellä painalluksella Three.js-pohjaiseen 3D-näkymään, jossa voit katsella kohdetta ylhäältä tai kävellä sisällä ensimmäisen persoonan näkymässä. Kehitys ja tuotantokäännös käyttävät Viteä.
 
 ## Ominaisuudet
 
@@ -31,16 +31,23 @@ Pelkkää selainta käyttävä asunnon sisustussuunnittelutyökalu: sijoita kalu
 ```bash
 git clone <repositorion-osoite>
 cd <repositorion-hakemisto>
+npm install
+npm run dev
 ```
 
-Avaa sitten `index.html` suoraan selaimessa. Voit myös käynnistää paikallisen staattisen palvelimen:
+Avaa terminaalin näyttämä paikallinen osoite. Tarvitset Node.js 22.12+ tai 24+.
+Tuotantoversion muodostaminen ja paikallinen esikatselu:
 
 ```bash
-python3 -m http.server 8000
-# avaa http://localhost:8000
+npm run build
+npm run preview
 ```
 
-> Three.js ladataan jsDelivr-CDN:stä, joten 3D-näkymän ensimmäinen avaus vaatii verkkoyhteyden.
+Three.js 0.160.0 sisältyy käännökseen npm-paketista. HTML:n avaaminen suoraan
+tiedostona ei enää käynnistä sovellusta. Tallennukset säilyvät samalla selaimen
+alkuperällä (protokolla, palvelin ja portti). Jos siirryt vanhasta `file://`- tai
+toisesta palvelinosoitteesta, vie suunnitelma vanhassa sovelluksessa JSONina ja
+tuo se uuteen osoitteeseen.
 
 ## Pikanäppäimet
 
@@ -61,14 +68,14 @@ python3 -m http.server 8000
 
 ## Teknologiat
 
-- Puhdas HTML / CSS / JavaScript, ei kehyksiä eikä rakennusvaihetta
+- HTML / CSS, Vite ja TypeScript; nykyinen editori säilyy aluksi JavaScriptinä
 - 2D-pohjapiirros piirretään SVG:llä
 - 3D-näkymä käyttää [Three.js](https://threejs.org/) r160 -kirjastoa (OrbitControls, PointerLockControls, RoundedBoxGeometry, RoomEnvironment, CSS2DRenderer)
 - Tiedot tallennetaan `localStorage`en
 
 ## Oman pohjapiirroksen käyttö
 
-Pohjapiirroksen tiedot on kirjoitettu `index.html`-tiedostoon:
+Nykyisen editorin pohjapiirrostiedot ovat edelleen kovakoodattuja:
 
 - `ROOMS`: huoneiden monikulmiot, nimet ja oletuslattiamateriaali
 - `WALLS` / `WINS`: seinät ja ikkuna-aukot

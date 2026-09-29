@@ -39,6 +39,9 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
 
 ## Vaihe V0: Perusta — yhteinen huoneistomalli
 
+**Etenemispoikkeama 2026-09-29:** käyttäjä sallii V0:n teknisen toteutuksen, vaikka vaiheen −1 pilottikohde ja liite-esimerkit ovat kesken. Rajaus: [V0-SOPIMUS.md](V0-SOPIMUS.md).
+
+
 ### Skeema (§5)
 - [ ] **[RK]** Uusi moduuli `src/rakennuskuva/unit_models.py`: `UnitInputs`,
       `Wall`, `Opening`, `Room`, `Fixture`, `Threshold`, `RawMeasurement`,
@@ -64,16 +67,16 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
       kynnys ja kapea ovi
 
 ### floorplan-3d lukee mallin
-- [ ] **[FP]** Playwright-savutesti *ennen* muutoksia: lataus, 2D-näkymä, 3D-näkymä,
+- [x] **[FP]** Playwright-savutesti *ennen* muutoksia: lataus, 2D-näkymä, 3D-näkymä,
       kalusteen lisäys, seinän purku, JSON-vienti (§12.2)
-- [ ] **[FP]** Siirto Viteen *sellaisenaan*: `package.json`, Vite + TypeScript,
+- [x] **[FP]** Siirto Viteen *sellaisenaan*: `package.json`, Vite + TypeScript,
       Three.js npm-paketista CDN:n sijaan, sama toiminnallisuus. Savutesti vihreänä
 - [ ] **[FP]** Jako hakemistoihin: `src/model/`, `src/plan2d/`, `src/view3d/`,
       `src/io/` (§6.4). Savutesti vihreänä jaon jälkeen
 - [ ] **[FP]** Skeeman TypeScript-tyypit generoidaan `unit-input-v1.schema.json`-
       tiedostosta (generointi osana käännöstä tai CI-tarkistus)
 - [ ] **[FP]** CI: tyyppitarkistus, testit (esim. Vitest) ja Playwright-savutesti
-- [ ] **[FP]** README päivitetty: `npm install`, `npm run dev`, `npm run build`
+- [x] **[FP]** README päivitetty: `npm install`, `npm run dev`, `npm run build`
 - [ ] **[FP]** `src/io/unit.ts`: tuonti ja vienti. y-akselin kääntö vain tässä (§5.2)
 - [ ] **[FP]** Keskilinjaseinät (`a`, `b`, `thickness`) → nykyinen 2D- ja
       3D-renderöinti. Vinot seinät vähintään piirtyvät oikein
