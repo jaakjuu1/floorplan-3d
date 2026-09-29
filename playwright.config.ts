@@ -13,8 +13,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   outputDir: './tmp/playwright-results',
   reporter: 'list',
-  workers: 2,
-  timeout: 120_000,
+  // Shared CI runners render WebGL in software; avoid competing 3D sessions.
+  workers: process.env.CI ? 1 : 2,
+  timeout: process.env.CI ? 300_000 : 120_000,
   expect: { timeout: 15_000 },
   use: { baseURL, browserName: 'chromium', launchOptions, trace: 'retain-on-failure' },
   projects: [

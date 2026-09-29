@@ -50,6 +50,8 @@ hyväksymistestejä. Ensimmäisen teknisen osuuden rajaus ja työnjako:
 ovat käytössä. RK validoi saman demon. Paikalliset tarkistukset: 41 TypeScript-
 testiä, 109 Python-testiä ja 6 Chromium-testiä (työpöytä ja 390×844-kosketus).
 Testipuhelimella tehtävä kenttä- ja suorituskykytesti kuuluu edelleen V1:een.
+CI:n WebGL-selainkokeet ajetaan yksi kerrallaan ja 300 sekunnin tapausrajalla;
+ensimmäinen rinnakkainen ajo ylitti 120 sekunnin rajan. Paikallinen raja on 120 s.
 
 ### Skeema (§5)
 - [x] **[RK]** Uusi moduuli `src/rakennuskuva/unit_models.py`: `UnitInputs`,
