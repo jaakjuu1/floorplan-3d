@@ -337,6 +337,11 @@ operaatioita:
 
 - **Laite: Android-puhelin** (K1). Käyttöliittymä suunnitellaan ensin puhelimen
   pystynäytölle ja yhden käden käyttöön. Tabletti ja työpöytä ovat toissijaisia.
+- **Testipuhelin: Samsung Galaxy Z Fold3**, käyttäjän valinta 2026-09-29.
+  Tämä poikkeaa tarkistuslistan alkuperäisestä keskitason puhelimesta: käytetään
+  käyttäjän nimeämää laitetta. Kenttätestin ensisijainen näkymä on kansinäyttö
+  pystyasennossa; sisänäyttö tarkistetaan lisäksi. V1:n suorituskykytulos koskee
+  tätä laitetta, eikä sitä yleistetä keskitason Android-puhelimiin.
 - **Laser on erillinen laite, ei integraatiota** (K3). Kartoittaja lukee mitan
   laserin näytöltä ja syöttää sen sovellukseen. Sovellus ei yhdisty laseriin
   Bluetoothilla. Menetelmäksi kirjataan silti `laser`, koska mitta on laserilla

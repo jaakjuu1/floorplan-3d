@@ -19,13 +19,18 @@ edellisen ehto täyttyy tai poikkeama on kirjattu.
 - [x] **[EI-KOODI]** K1: Kenttälaite → **Android-puhelin** (§6.0)
 - [x] **[EI-KOODI]** K2: Rakenne → **Vite (+ TypeScript)** (§6.4)
 - [x] **[EI-KOODI]** K3: Laser → **ei integraatiota**, lukemat syötetään käsin (§6.0)
-- [ ] **[EI-KOODI]** Testilaitteeksi valittu Android-puhelin (tyypillinen keskitason
-      malli, ei lippulaiva), jolla 3D-esikatselun suorituskyky mitataan
+- [x] **[EI-KOODI]** Testilaitteeksi valittu Android-puhelin: **Samsung Galaxy
+      Z Fold3**, käyttäjän vahvistus 2026-09-29. Poikkeama alkuperäisestä keskitason
+      laitteesta kirjattu arkkitehtuurin §6.0:aan. Suorituskyky mitataan V1:ssä
 - [ ] **[EI-KOODI]** Pilottiasunto valittu ja asukkaan lupa kartoitukseen saatu
-- [ ] **[EI-KOODI]** Yksi isännöitsijä ja yksi toimintaterapeutti lupautuneet
-      arvioimaan tulosteet (V3)
+- [x] **[EI-KOODI]** Yksi isännöitsijä ja yksi toimintaterapeutti lupautuneet
+      arvioimaan tulosteet (V3); käyttäjän vahvistus 2026-09-29
 - [ ] **[EI-KOODI]** Hae 2–3 esimerkkiä oikeista muutostyöilmoituksen liitteistä ja
       asunnonmuutostyöhakemuksista (K5, K6, K7)
+- [x] **[EI-KOODI]** Edellisen kohdan osatyö: kolme julkista lomaketta ja niiden
+      liitevaatimukset tarkistettu 2026-09-29; [lähteet ja avoimet asiat](LIITE-ESIMERKIT.md).
+      Hyväksytyn kohteen piirustusliite ja muutosvärien varmistus puuttuvat,
+      joten alkuperäistä esimerkkikohtaa ei ole kuitattu kokonaan
 
 **Valmis kun:** pilottikohde, testipuhelin ja arvioijat sovittu (K1–K3 päätetty).
 
