@@ -21,7 +21,7 @@ Pelkkää selainta käyttävä asunnon sisustussuunnittelutyökalu: sijoita kalu
 
 **Suunnitelma ja tilastot**
 - Huoneiden pinta-alat ja asunnon nettopinta-ala lasketaan automaattisesti
-- Vaihda jokaisen huoneen lattiamateriaali (tammiparketti, laatta, marmori, terrazzo, matto jne.); kustannusarvio lasketaan pinta-alasta + 5 % hukka
+- Vaihda jokaisen huoneen lattiamateriaali (tammiparketti, laatta, marmori, terrazzo, matto jne.); kustannusarvio (€) lasketaan pinta-alasta + 5 % hukka
 - Kumoa / tee uudelleen; suunnitelma tallentuu automaattisesti selaimen paikalliseen tallennustilaan
 - Käyttöliittymän kielen vaihto suomi / English (painike ylhäällä oikealla, oletuksena suomi, valinta muistetaan)
 - Vie PNG-kuvana, vie / tuo suunnitelma JSON-tiedostona
