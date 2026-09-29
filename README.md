@@ -68,29 +68,40 @@ tuo se uuteen osoitteeseen.
 
 ## Teknologiat
 
-- HTML / CSS, Vite ja TypeScript; nykyinen editori säilyy aluksi JavaScriptinä
+- HTML / CSS, Vite ja TypeScript; 2D/3D-esityskerros on JavaScriptiä
 - 2D-pohjapiirros piirretään SVG:llä
 - 3D-näkymä käyttää [Three.js](https://threejs.org/) r160 -kirjastoa (OrbitControls, PointerLockControls, RoundedBoxGeometry, RoomEnvironment, CSS2DRenderer)
 - Tiedot tallennetaan `localStorage`en
 
 ## Oman pohjapiirroksen käyttö
 
-Nykyisen editorin pohjapiirrostiedot ovat edelleen kovakoodattuja:
+Tiedosto → Tuo JSON hyväksyy kanonisen `unit-v1`-huoneistomallin, sovelluksen
+oman suunnitelmaviennin ja vanhan editorin JSON-viennin. Tuonti tarkistaa sekä
+rakenteen että muutosoperaatioiden lopputilan ennen nykyisen suunnitelman vaihtoa.
+PDF/PNG/JPEG-pohjapiirustustuonti kuuluu V1:een.
 
-- `ROOMS`: huoneiden monikulmiot, nimet ja oletuslattiamateriaali
-- `WALLS` / `WINS`: seinät ja ikkuna-aukot
-- `MATS`: lattiamateriaalien nimet ja yksikköhinnat
-- `LIB`: kalustekirjasto (tyyppi, nimi, oletuskoko, väri)
-- `buildFurniture()`: eri kalustetyyppien 3D-mallit
+Demoasunnon rakenne on `examples/demo-unit.json`:ssa. Sen mitat ovat vanhasta
+piirrostoteutuksesta siirrettyjä oletuksia (`assumed`, `archive_drawing`), eivät
+kenttämittauksia. Tarkkuutta tai mittausten kuittaajaa ei ole keksitty.
+Kalustekirjasto ja lattiamateriaalien hinnasto säilyvät editorissa.
 
-Muokkaamalla näitä tietoja voit ottaa käyttöön oman pohjapiirroksesi.
+## V0: yhteinen huoneistomalli ja editori
 
-## V0: yhteisen huoneistomallin perusta
+2D- ja 3D-näkymät johdetaan samasta `unit-v1`-mallista. Lähtötila (`baseline`)
+säilyy muuttumattomana; purku ja lattiamateriaalin vaihto tallentuvat
+`changes`-operaatioiksi. Tavoitetilan muodostaa yhteinen `apply`.
 
-Tässä osuudessa toteutetaan selainpohja ja erillinen `unit-v1`-mallisopimus.
-Editorin nykyinen JSON ja `huxing-design-v1`-tallennus säilyvät ennallaan.
-`unit-v1` ei vielä korvaa editorin demoasuntoa tai tallennusmuotoa. Seuraava
-V0-osuus kytkee mallin 2D/3D-editoriin. PDF/PNG/JPEG-pohjapiirustustuonti kuuluu V1:een.
+Suunnitelmavienti on `kodin-design-v2`: se sisältää kanonisen mallin `unit`-kentässä
+sekä irtokalusteet, huoneiden näyttönimet ja editorin näyttömittaukset. Jälkimmäiset
+eivät ole kanonisia kenttämittauksia. Pelkkä huoneistomalli voidaan viedä RK:hon
+suunnitelman `unit`-kentästä.
+
+Vanha `huxing-design-v1` siirretään automaattisesti uuteen tallennusavaimeen.
+Alkuperäinen avain säilyy koskemattomana ja vanha JSON säilyy myös viennin
+`legacy`-kentässä. Siirto on toistettava. Jos tallennus on vioittunut, sovellus
+ilmoittaa virheestä ja estää automaattitallennuksen, kunnes tuot kelvollisen
+suunnitelman tai palautat oletussuunnitelman. Ota vanhasta tallennuksesta tai
+JSON-viennistä kopio ennen sen poistamista; sovellus ei poista sitä puolestasi.
 
 Kanoninen malli on `rakennuspiirustus-automaatio`-repon Pydantic-malli
 `src/rakennuskuva/unit_models.py`. Sen vienti kopioidaan
@@ -99,6 +110,10 @@ TypeScript-tyypit; `npm run types:check` havaitsee vanhentuneen tuloksen.
 
 - `src/io/unit.ts`: validoiva `parseUnit`, JSON-luku/vienti ja keskitetty y-akselin muunnos.
 - `src/model/apply.ts`: seitsemän muutosoperaatiota; lähtömalli ja operaatiot säilyvät muuttumattomina.
+- `src/model/render-unit.ts`: yhteinen keskilinjaseinien, aukkojen ja huoneiden näyttögeometria.
+- `src/io/design.ts`: suunnitelman validointi ja palautettava tallennussiirto.
+- `src/plan2d/editor.js`, `src/view3d/view3d.js`: nykyisen editorin näkymät.
+- `examples/demo-unit.json`: nykyinen demoasunto kanonisessa muodossa, sama tiedosto RK:ssa.
 - `examples/accessibility-unit.json`: synteettinen kylpyhuone ja eteinen, kapea ovi ja kynnys.
 - `fixtures/unit/` ja `fixtures/apply/`: molemmissa repoissa ajettavat samat JSON-tapaukset.
 
@@ -118,8 +133,9 @@ Playwright käyttää valmiiksi asennettua Chromiumia: Windowsissa oletus on Edg
 muussa ympäristössä aseta `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selaimen poluksi.
 Testit kattavat työpöydän ja 390×844-kosketusnäkymän. Selainasennusta ei tehdä.
 Kuvakaappaukset tallennetaan `docs/kodin-muutostyokuva/screenshots/`-hakemistoon.
-`E2E_PHASE` erottaa ennen/jälkeen-kuvat. Baseline-testi ohjaa vanhan sovelluksen
-estetyn CDN-latauksen testissä samaan paikalliseen Three.js-versioon.
+`E2E_PHASE=model` erottaa integraation kuvat aiemmista lähtötilan kuvista.
+Vinot seinät piirtyvät molemmissa näkymissä; kalusteiden seinään napsautus
+tukee tässä vaiheessa akselinsuuntaisia seiniä.
 
 RK:ssa ajetaan `uv run pytest -q`, `uv run python tools/export_unit_schema.py --check`
 ja `uv run python tools/sync_skills.py --check`. RK:n CI vertaa sopimuskopioita

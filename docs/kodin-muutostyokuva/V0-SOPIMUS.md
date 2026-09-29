@@ -1,8 +1,11 @@
-# V0:n ensimmäinen tekninen osuus
+# V0:n toteutussopimus
 
-Rajaus 2026-09-29: kanoninen huoneistosopimus ja selainpohja. V0 ei valmistu
-kokonaan tässä osuudessa: nykyisen demo-asunnon muunto, semanttisen mallin
-kytkentä editoriin, vinot seinät ja vanhan tilan siirto jäävät seuraavaan osaan.
+## Ensimmäinen tekninen osuus (lähtötilanne)
+
+Ensimmäinen rajaus 2026-09-29 oli kanoninen huoneistosopimus ja selainpohja.
+V0 ei valmistunut kokonaan siinä osuudessa: nykyisen demo-asunnon muunto,
+semanttisen mallin kytkentä editoriin, vinot seinät ja vanhan tilan siirto
+siirtyivät jäljempänä kuvattuun editori-integraatioon.
 V1:n pohjapiirustustuontia ei toteuteta.
 
 Käyttäjä sallii V0:n etenemisen vaiheen −1 pilottikohteen ja liite-esimerkkien
@@ -70,3 +73,60 @@ Nykyinen editori ja Vite-versio: oikea Chromium, työpöytä ja 390×844 kosketu
 RK: `uv run pytest -q` ja `uv run python tools/sync_skills.py --check`.
 FP: tyyppigeneroinnin tarkistus, TypeScript-tarkistus, yhteiset fixturet,
 tuotantokäännös ja Playwright. Kopioiden vertailu ja molempien repojen CI.
+
+## V0:n editori-integraatio (2026-09-29)
+
+Lähtötila tarkistettu: FP 697d6ca, RK 5e156cf, molemmat haarassa
+claude/gracious-franklin-kg3pr1. FP:n muiden .gitignore ja .ignore säilytetään.
+Lähtötestit: TS 30, Python 107, Chromium 2 (työpöytä ja 390×844 kosketus).
+
+Järjestys: demo ja adapteri; editori ja tallennus; regressiot ja kuvien tarkistus;
+Sol-lukukatselmointi; korjaukset ja tarkistukset; commitit, pushit ja CI.
+Vaiheen −1 etenemispoikkeama säilyy. V1 ei kuulu työhön.
+
+Tiedosto-omistus:
+- A / Luna: examples/demo-unit.json, src/model/render-unit.ts,
+  src/model/demo-presentation.ts, tests/render-unit.test.ts; RK:n demo-kopio,
+  tests/test_demo_unit.py ja molempien tools/check-contract-sync.mjs (jos RK:ssa on kopio).
+- B / Luna: src/legacy/editor.js, src/legacy/view3d.js ja niiden siirto
+  src/plan2d/editor.js sekä src/view3d/view3d.js; src/main.ts; index.html tarvittaessa.
+- C / Luna: tests/e2e/, tests/design.test.ts, fixtures/editor/ ja puhelinkuvat.
+- Pääagentti: src/io/design.ts, package.json, dokumentit, muu integraatio ja Git.
+  RK:ssa lisäksi minimaalinen `rk unit validate --input` ja sen CLI-testi;
+  komento validoi mallin ja apply-tuloksen, ei hyväksy virallista tulostetta.
+- Sol: vain valmiin kokonaisuuden lukukatselmointi.
+Kaikki työskentelevät samassa työpuussa; muiden muutoksia ei palauteta.
+
+Rajapinnat (kanoninen Pydantic unit-v1 ei muutu):
+- projectUnit(unit: UnitInputs) render-unit.ts:ssä johtaa tavoitetilan applylla.
+  Palauttaa { rooms, walls, openings, fixtures, demolishedWalls, bounds } näyttömillimetreissä.
+  Room: {id,name,poly:[number,number][],mat,at:[number,number],counted?:boolean}.
+  Wall: {id,a:[number,number],b:[number,number],thickness,kind,polygon,
+  segments: {a,b,polygon}[],height?:number}. Aukot vähennetään segments-listasta.
+  Opening: {id,host_wall,kind,a,b,polygon,thickness,width,height,sill,swing,
+  h:[number,number],c:[number,number],o:[number,number],entry?:boolean,name?:string}.
+  Aukon a/b ovat keskilinjalla; h on saranapiste, c sulkusuunta ja o avautumissuunta.
+  bounds: {x,y,w,h}. Puuttuvat korkeudet saavat vain näyttöoletuksen.
+  Fixtures ovat apply-tuloksen kiintokalusteita, jotka piirretään vain luettavana
+  erillään editorin irtokalusteista. Kulmamuunnos keskitetään myös io/unit.ts:ään.
+  Baseline ja muutokset pysyvät koskemattomina. demolishedWalls on lähtöseinien
+  esitys purettujen seinien valintaa/palautusta varten. Koordinaattimuunnos vain io/unit.ts.
+- Demo pitää vanhat seinä-id:t w0…w47 siirtoa varten. Aukkojen host-seinät voivat
+  olla erillisiä aukon pituisia seinäosia. Esityksen poikkeamat (matala seinä,
+  nimien asemointi, erkkerien laskenta, ulko-oven väri) ovat demo-presentation.ts:ssä,
+  eivät toinen rakennegeometria. Huoneet ja rakenneseinät luetaan aina JSONista.
+  Demoasetuksia käytetään vain demoasunnolle. Oven saranan paikka johdetaan
+  aukon sijainnista ja isäntäseinän suunnasta, jotta aukon siirtäminen toimii.
+- Design: {schema_version:'kodin-design-v2',unit:UnitInputs,furniture:[],rooms:{},
+  measures:[],legacy?:unknown}. rooms säilyttää editorin nimimuutokset ja mat-valinnan;
+  lattian muutos kirjoitetaan myös change_finish-operaationa ja renderöidään applysta.
+  Irtokalusteet ja näyttömittaukset eivät ole kanonisia kenttämittauksia.
+- design.ts: parseDesign(input, defaults), loadDesign(storage, defaults),
+  saveDesign(storage, design); DEFAULT_STORE='kodin-design-v2', LEGACY_STORE='huxing-design-v1'.
+  defaults on kelvollinen Design, jonka editori muodostaa demosta + defaultFurnituresta.
+  parseDesign hyväksyy uuden suunnitelman, kanonisen unit-v1:n ja vanhan editoritilan.
+  Pelkkä unit-tuonti saa tyhjän irtokalustelistan. Kaikki tarkistetaan ennen tilan vaihtoa.
+  Vanha raakadata säilyy legacy-kentässä ja localStoragen alkuperäinen avain koskemattomana.
+  Epäkelpoista uutta tallennusta ei korvata automaattisesti demolla.
+- main.ts asettaa window.UnitModel={demoUnit,projectUnit,parseDesign,loadDesign,saveDesign}
+  ennen klassisen editoriskriptin latausta. JS-editori pysyy muuten nykyisessä muodossa.

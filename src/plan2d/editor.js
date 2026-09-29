@@ -37,7 +37,7 @@ const SHORT_FI = {
   'Astianpesukone':'Astianp.', 'Uunikaappi':'Uunik.', 'Kuivausrumpu':'Kuiv.r.', 'Ilmanpuhdistin':'Ilmanp.', 'Työtuoli':'Työt.',
   'Lukutuoli':'Lukut.', 'Teepöytä':'Teep.', 'Lepotuoli':'Lepot.', 'Juoksumatto':'Juoksum.',
 };
-const nm = s => LANG === 'en' ? (NAMES_EN[s] ?? s) : s;
+const nm = s => LANG === 'en' && Object.hasOwn(NAMES_EN, s) ? NAMES_EN[s] : s;
 // Staattiset tekstit: elementeille kirjoitetaan data-en / data-en-title, suomenkielinen alkuperäisteksti tallennetaan datasettiin ensimmäisellä vaihdolla
 function applyStaticLang(){
   document.documentElement.lang = tr('fi', 'en');
@@ -47,80 +47,9 @@ function applyStaticLang(){
   document.getElementById('langBtn').textContent = tr('EN', 'FI');
 }
 
-/* ============================================================
- *  Pohjapiirroksen data (yksikkö mm, origo = vasemman ulkoseinän sisäpinta / ylemmän ulkoseinän sisäpinta)
- *  Kaikki arvot on johdettu alkuperäisen pohjapiirroksen mittamerkinnöistä:
- *  Ylä: 1580/240/2760/240/1540/240/3670 = 10270
- *  Ala: 2180/240/2160/240/5450/240/1340 = 11850
- *  Vasen: 3370/1580/240/2770/240/2360 = 10560
- *  Oikea: 3370/240/2760/240/3950 = 10560
- * ============================================================ */
-// Seinät: [x0,y0,x1,y1,tyyppi]  b=kantava (musta) e=ulkoseinä n=purettava ei-kantava low=matala seinä
-const WALLS = [
-  // Yläulkoseinä
-  [1580,-240,2120,0,'b'],[1580,0,1820,300,'b'],[2120,-240,4580,0,'e'],[4580,-240,5140,0,'e'],
-  [5760,-240,6050,0,'e'],[6050,-240,6600,0,'b'],[6360,0,6600,300,'b'],[6600,-240,9960,0,'e'],
-  [9960,-240,10510,0,'b'],[10270,0,10510,300,'b'],
-  // Oikea ulkoseinä
-  [10270,300,10510,800,'e'],[10270,2600,10510,3090,'e'],[10270,3090,10510,4260,'b'],
-  [10270,5740,10510,6370,'b'],[9960,6370,10510,6610,'b'],[10270,6610,10510,7400,'b'],
-  [10270,9770,10510,10560,'b'],[9960,10560,10510,10800,'b'],
-  // Alaosa / parveke
-  [4580,10560,9960,10800,'e'],[10510,10560,12090,10800,'e'],[11850,9960,12090,10560,'e'],
-  // Olohuoneen vasen seinä (ulko-oven molemmin puolin)
-  [4580,9200,4820,10560,'e'],[4580,7960,4820,8310,'e'],
-  // Ruokailutilan / keittiön ulkoseinä
-  [3620,7960,4580,8200,'e'],[2180,7960,3620,8200,'b'],[2180,7590,2420,7960,'b'],[2180,7400,2420,7590,'n'],
-  [-240,7960,2180,8200,'e'],[-240,3610,0,7960,'e'],
-  // Pyykkiparveke
-  [0,4950,200,5190,'n'],[200,4950,1275,5190,'low'],[1580,3370,2420,3825,'b'],
-  [2180,4430,2420,5796,'n'],[2090,4950,2180,5190,'n'],
-  // Vieraskylpyhuone
-  [2420,4950,4580,5190,'n'],[4580,3280,4820,4075,'n'],[4580,4860,4820,5190,'n'],[2420,3370,4580,3610,'n'],
-  // Lastenhuone / Pääkylpyhuone
-  [4580,0,4820,2400,'n'],[4820,2080,6360,2320,'n'],[6360,300,6600,1198,'n'],[6360,1983,6600,2400,'n'],
-  // Käytävä / Päämakuuhuone / Nuortenhuone
-  [6083,3370,6600,3707,'b'],[6360,3280,6600,3370,'n'],[6600,3370,9960,3610,'n'],[9960,3370,10270,3610,'b'],
-  [6083,4600,6323,6610,'n'],[6323,6370,9960,6610,'n'],
-];
-// Ikkunat
-const WINS = [
-  [5140,-240,5760,0],[1580,300,1820,3370],[-240,3370,1580,3610],[2180,3825,2420,4430],
-  [10510,6370,12090,6610],[11850,6610,12090,9960],
-  // Erkkeri-ikkunat (päämakuuhuone / nuortenhuone)
-  [10510,660,11130,760],[11030,760,11130,2650],[10510,2650,11130,2750],
-  [10510,4110,11130,4210],[11030,4210,11130,5785],[10510,5785,11130,5885],
-];
-// Heiluriovet: aukko, sarana, sulkusuunta, avautumissuunta, oven leveys
-const DOORS = [
-  {name:'Lastenhuoneen ovi',rect:[4580,2400,4820,3280],h:[4580,3280],c:[0,-1],o:[-1,0],len:880},
-  {name:'Päämakuuhuoneen ovi',rect:[6360,2400,6600,3280],h:[6600,3280],c:[0,-1],o:[1,0],len:880},
-  {name:'Pääkylpyhuoneen ovi',rect:[6360,1198,6600,1983],h:[6360,1198],c:[0,1],o:[-1,0],len:785},
-  {name:'Vieraskylpyhuoneen ovi',rect:[4580,4075,4820,4860],h:[4580,4860],c:[0,-1],o:[-1,0],len:785},
-  {name:'Nuortenhuoneen ovi',rect:[6083,3707,6323,4600],h:[6323,4600],c:[0,-1],o:[1,0],len:893},
-  {name:'Ulko-ovi',rect:[4580,8310,4820,9200],h:[4820,9200],c:[0,-1],o:[1,0],len:890,entry:true},
-];
-// Liukuovet
-const SLIDES = [
-  {rect:[10270,7400,10510,9770],v:true},
-  {rect:[1275,4950,2090,5190],v:false},
-];
-const R = (x0,y0,x1,y1) => [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-const ROOMS = [
-  {id:'master', name:'Päämakuuhuone', poly:R(6600,0,10270,3370), mat:'wood', at:[8435,2420]},
-  {id:'mbath', name:'Pääkylpyhuone', poly:R(4820,0,6360,2080), mat:'antislip', at:[5980,1780]},
-  {id:'kid', name:'Lastenhuone', poly:R(1820,0,4580,3370), mat:'wood', at:[3380,2330]},
-  {id:'gbath', name:'Vieraskylpyhuone', poly:R(2420,3610,4580,4950), mat:'antislip', at:[3760,4620]},
-  {id:'laundry', name:'Pyykkiparveke', poly:R(0,3610,2180,4950), mat:'antislip', at:[1250,4330]},
-  {id:'child', name:'Nuortenhuone', poly:R(6323,3610,10270,6370), mat:'wood', at:[8850,4850]},
-  {id:'kitchen', name:'Keittiö', poly:R(0,5190,2180,7960), mat:'tile600', at:[1300,6500]},
-  {id:'dining', name:'Ruokailutila', poly:[[2420,5190],[4820,5190],[4820,7960],[2420,7960],[2420,7400],[2180,7400],[2180,5796],[2420,5796]], mat:'tile800', at:[3900,5520]},
-  {id:'hall', name:'Käytävä', poly:[[4820,2320],[6360,2320],[6360,3370],[6083,3370],[6083,6610],[4820,6610]], mat:'tile800', at:[5450,4450]},
-  {id:'living', name:'Olohuone', poly:R(4820,6610,10270,10560), mat:'tile800', at:[7600,7560]},
-  {id:'balcony', name:'Oleskeluparveke', poly:R(10510,6610,11850,10560), mat:'walnut', at:[11180,9450]},
-  {id:'bay1', name:'Päämakuuhuoneen erkkeri', poly:[[10270,800],[10510,800],[10510,760],[11030,760],[11030,2650],[10510,2650],[10510,2600],[10270,2600]], mat:'marble', counted:false},
-  {id:'bay2', name:'Nuortenhuoneen erkkeri', poly:[[10270,4260],[10510,4260],[10510,4210],[11030,4210],[11030,5785],[10510,5785],[10510,5740],[10270,5740]], mat:'marble', counted:false},
-];
+// Demo: examples/demo-unit.json, assumed/archive_drawing; ei vahvistettuja kenttämittoja.
+// Rakennusgeometria johdetaan unit-v1:stä; vanhaa koordinaattilistaa ei säilytetä.
+let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null;
 const MATS = {
   wood:    {name:'Tammiparketti', price:55, sw:'#d8b88a'},
   walnut:  {name:'Pähkinäparketti', price:75, sw:'#9b7250'},
@@ -201,44 +130,53 @@ function defaultFurniture(){ return [
 ];}
 
 function defaultState(){
-  const rooms = {}; ROOMS.forEach(r => rooms[r.id] = {name:r.name, mat:r.mat});
-  return {furniture:defaultFurniture(), rooms, demolished:[], measures:[]};
+  const unit = structuredClone(window.UnitModel.demoUnit), projection = window.UnitModel.projectUnit(unit);
+  const rooms = Object.fromEntries(projection.rooms.map(r => [r.id, {name:r.name, mat:MATS[r.mat] ? r.mat : 'wood'}]));
+  return {schema_version:'kodin-design-v2', unit, furniture:defaultFurniture(), rooms, measures:[]};
 }
 
-const STORE = 'huxing-design-v1';
-function load(){
-  try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && Array.isArray(s.furniture)) return fixState(s); } catch(e) {}
-  return null;
+const defaults = defaultState();
+const defaultBaseline = JSON.stringify(defaults.unit.baseline);
+function isDefaultUnit(){ return JSON.stringify(state.unit.baseline) === defaultBaseline; }
+let storageBlocked = false, state;
+try { state = window.UnitModel.loadDesign(localStorage, defaults) || structuredClone(defaults); }
+catch (error) { state = structuredClone(defaults); storageBlocked = true; setTimeout(() => toast(tr('Tallennus on virheellinen. Palauta tai tuo suunnitelma ennen muokkauksia.', 'Saved plan is invalid. Reset or import a plan before editing.')), 0); console.error(error); }
+function demolishedIds(){ return new Set(PLAN.demolishedWalls.map(w=>w.id)); }
+function project(){
+  PLAN = window.UnitModel.projectUnit(state.unit);
+  ROOMS = PLAN.rooms.map(r => ({...r, ...state.rooms[r.id], mat:MATS[state.rooms[r.id]?.mat] ? state.rooms[r.id].mat : (MATS[r.mat] ? r.mat : 'wood')}));
+  WALLS = PLAN.walls; OPENINGS = PLAN.openings; FIXTURES = PLAN.fixtures || [];
 }
-function fixState(s){
-  const d = defaultState();
-  s.rooms = Object.assign(d.rooms, s.rooms || {});
-  s.demolished = s.demolished || []; s.measures = s.measures || [];
-  return s;
-}
+project();
 
 const PX_MM = 25.4 / 96;                       // 1 CSS px = 0.2646 mm
 const COARSE = matchMedia('(pointer:coarse)').matches;   // iPad / puhelin ym. ensisijaisesti kosketusnäytölliset laitteet
 const TAP = COARSE ? 9 : 4;                    // sormen on liikuttava yli tämän pikselimäärän, jotta se lasketaan vedoksi
 const narrow = () => matchMedia('(max-width:1100px)').matches;
-const BOUNDS = {x:-1850, y:-1750, w:15600, h:14100};
+const BOUNDS = {
+  get x(){return isDefaultUnit() ? -1850 : PLAN.bounds.x}, get y(){return isDefaultUnit() ? -1750 : PLAN.bounds.y},
+  get w(){return isDefaultUnit() ? 15600 : (PLAN.bounds.w || 10000)}, get h(){return isDefaultUnit() ? 14100 : (PLAN.bounds.h || 10000)},
+};
 const $ = s => document.querySelector(s);
 const svg = $('#plan');
 
 
 /* ======================= Tila / historia / tallennus ======================= */
-let state = load() || defaultState();
 const ui = {tool:'select', sel:null, mA:null, mCur:null,
   layers:{dims:true, labels:true, furn:true, grid:false, bearing:false, wallSnap:true}};
 let view = {x0:0, y0:0, s:.06};
 const undoStack = [], redoStack = [];
 
-function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch(e) {} }
+function save(){
+  if (storageBlocked) return;
+  try { window.UnitModel.saveDesign(localStorage, state); }
+  catch(e) { toast(tr('Tallennus epäonnistui', 'Could not save plan')); console.error(e); }
+}
 const snap = () => JSON.stringify(state);
 function commit(before){ undoStack.push(before); if (undoStack.length > 150) undoStack.shift(); redoStack.length = 0; save(); }
-function mutate(fn){ const b = snap(); fn(); commit(b); renderAll(); }
-function undo(){ if (!undoStack.length) return toast(tr('Ei kumottavaa', 'Nothing to undo')); redoStack.push(snap()); state = JSON.parse(undoStack.pop()); validateSel(); save(); renderAll(); }
-function redo(){ if (!redoStack.length) return; undoStack.push(snap()); state = JSON.parse(redoStack.pop()); validateSel(); save(); renderAll(); }
+function mutate(fn){ const b = snap(); fn(); project(); commit(b); renderAll(); }
+function undo(){ if (!undoStack.length) return toast(tr('Ei kumottavaa', 'Nothing to undo')); redoStack.push(snap()); state = JSON.parse(undoStack.pop()); project(); validateSel(); save(); renderAll(); }
+function redo(){ if (!redoStack.length) return; undoStack.push(snap()); state = JSON.parse(redoStack.pop()); project(); validateSel(); save(); renderAll(); }
 function validateSel(){ if (ui.sel?.kind==='furn' && !getF(ui.sel.id)) ui.sel = null; }
 const getF = id => state.furniture.find(f => f.id === id);
 
@@ -249,7 +187,13 @@ const bbox = poly => { const xs = poly.map(p=>p[0]), ys = poly.map(p=>p[1]); ret
 function aabb(f){ const a = f.rot*Math.PI/180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a)); return {hw:f.w/2*c + f.d/2*s, hh:f.w/2*s + f.d/2*c}; }
 const fmt = (n, d=2) => n.toFixed(d);
 const norm = a => ((Math.round(a) % 360) + 360) % 360;
-function snapRects(){ return WALLS.filter((w,i) => !state.demolished.includes('w'+i)).concat(WINS); }
+function snapRects(){
+  // ponytail: kalustesnap tukee akselinsuuntaisia seiniä; vinojen snap vaatii segmenttiprojektion.
+  const rect = poly => { const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; };
+  const axisAligned = (a,b) => Math.abs(a[0]-b[0])<1 || Math.abs(a[1]-b[1])<1;
+  return WALLS.flatMap(w=>w.segments.filter(s=>axisAligned(s.a,s.b)).map(s=>rect(s.polygon)))
+    .concat(OPENINGS.filter(o=>o.kind==='window'&&axisAligned(o.a,o.b)).map(o=>rect(o.polygon)));
+}
 
 /* ======================= Värit / materiaalikuviot ======================= */
 function hex2rgb(h){ h = h.replace('#',''); if (h.length===3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
@@ -391,60 +335,64 @@ function furnSVG(t,w,d,c){
 const NOLABEL = ['plant','floorlamp','sidetable','barstool','beanbag'];
 function renderRooms(){
   let s = '';
-  ROOMS.forEach(r => s += `<polygon class="room" data-room="${r.id}" points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="url(#m-${state.rooms[r.id].mat})"/>`);
-  const sill = ([a,b,c,d]) => `<rect x="${a}" y="${b}" width="${c-a}" height="${d-b}" fill="#e2dacb" stroke="#b9b0a0" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
-  DOORS.forEach(d => s += sill(d.rect)); SLIDES.forEach(d => s += sill(d.rect));
+  ROOMS.forEach(r => s += `<polygon class="room" data-room="${esc(r.id)}" points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="url(#m-${state.rooms[r.id].mat})"/>`);
+  OPENINGS.filter(o=>o.kind==='door'||o.kind==='sliding_door').forEach(o=>s+=`<polygon points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="#e2dacb" stroke="#b9b0a0" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>`);
   $('#gRooms').innerHTML = s;
 }
 
 function renderFurn(){
   const g = $('#gFurn');
   g.setAttribute('display', ui.layers.furn ? 'inline' : 'none');
-  g.innerHTML = state.furniture.map(f => {
+  const furniture = state.furniture.map(f => {
     const fs0 = Math.max(80, Math.min(170, Math.min(f.w,f.d)*.2));
-    const lab = LANG === 'en' ? nm(f.name) : (SHORT_FI[f.name] ?? f.name);
+    const lab = LANG === 'en' ? nm(f.name) : (Object.hasOwn(SHORT_FI,f.name) ? SHORT_FI[f.name] : f.name);
     const fs = Math.max(60, Math.min(fs0, aabb(f).hw*2 / (lab.length*.55)));   // pitkä teksti pienennetään mahtumaan
     const label = Math.min(f.w,f.d) >= 380 && !NOLABEL.includes(f.type)
       ? `<text transform="rotate(${-f.rot})" font-size="${fs}" text-anchor="middle" dominant-baseline="central" fill="#4a443c" opacity=".8" pointer-events="none">${esc(lab)}</text>` : '';
-    return `<g class="furn" data-fid="${f.id}" transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">${furnSVG(f.type,f.w,f.d,f.color)}${label}</g>`;
+    return `<g class="furn" data-fid="${esc(f.id)}" transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">${furnSVG(f.type,f.w,f.d,f.color)}${label}</g>`;
   }).join('');
+  const types = {wc:'toilet',sink:'vanity',stove:'stove',cabinet:'cabinet',shower:'shower',bathtub:'bathtub',grab_bar:'cabinet'};
+  const fixtures = FIXTURES.map(f => `<g data-fixture="${esc(f.id)}" pointer-events="none" transform="translate(${f.x} ${f.y}) rotate(${f.rotation_deg})">${furnSVG(types[f.kind] || 'cabinet',f.width,f.depth,'#d8d1c5')}</g>`).join('');
+  g.innerHTML = furniture + fixtures;
 }
 
 function renderWalls(){
-  $('#gWalls').innerHTML = WALLS.map((w,i) => {
-    const [x0,y0,x1,y1,k] = w, id = 'w'+i, dem = state.demolished.includes(id);
-    let fill = k==='b' ? (ui.layers.bearing ? '#b8412c' : '#26241f') : k==='low' ? '#e9e3d8' : k==='e' ? '#8f897d' : '#a7a195';
-    let ex = k==='low' ? 'stroke="#8f897d" stroke-width="1" vector-effect="non-scaling-stroke"' : '';
-    if (dem){ fill = 'rgba(198,91,58,.12)'; ex = 'stroke="#c65b3a" stroke-width="1.2" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"'; }
-    return `<rect class="wall" data-wall="${id}" x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" fill="${fill}" ${ex}/>`;
+  const removed = demolishedIds(), walls = [...WALLS, ...PLAN.demolishedWalls];
+  $('#gWalls').innerHTML = walls.map(w => {
+    const dem = removed.has(w.id), kind = w.kind;
+    const fill = dem ? 'rgba(198,91,58,.12)' : kind === 'load_bearing' ? (ui.layers.bearing ? '#b8412c' : '#26241f') : kind === 'external' || kind === 'party' ? '#8f897d' : w.height ? '#e9e3d8' : '#a7a195';
+    const ex = dem ? 'stroke="#c65b3a" stroke-width="1.2" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"' : w.height ? 'stroke="#8f897d" stroke-width="1" vector-effect="non-scaling-stroke"' : '';
+    const parts = dem ? [w.polygon] : w.segments.map(s => s.polygon);
+    return parts.map((poly, i) => `<polygon class="wall" data-wall="${esc(w.id)}" data-wall-part="${i}" data-kind="${esc(kind)}" points="${poly.map(p=>p.join(',')).join(' ')}" fill="${fill}" ${ex}/>`).join('');
   }).join('');
 }
 
 function renderOpenings(){
   const WS = 'stroke="#4f7394" stroke-width="1" vector-effect="non-scaling-stroke"';
   let s = '';
-  WINS.forEach(([x0,y0,x1,y1]) => {
-    const w = x1-x0, h = y1-y0;
-    s += `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#f7fbfd" ${WS}/>`;
-    if (w >= h) [1/3,2/3].forEach(t => s += `<line x1="${x0}" y1="${y0+h*t}" x2="${x1}" y2="${y0+h*t}" ${WS}/>`);
-    else [1/3,2/3].forEach(t => s += `<line x1="${x0+w*t}" y1="${y0}" x2="${x0+w*t}" y2="${y1}" ${WS}/>`);
+  OPENINGS.filter(o => o.kind === 'window' || o.kind === 'opening').forEach(o => {
+    const [a,b] = o.a, [c,d] = o.b, dx=c-a, dy=d-b, n=Math.hypot(dx,dy)||1;
+    s += `<polygon data-opening="${esc(o.id)}" points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="${o.kind==='window'?'#f7fbfd':'transparent'}" ${o.kind==='window'?WS:'pointer-events="none"'}/>`;
+    if(o.kind==='window') [1/3,2/3].forEach(t => { const off=(t-.5)*o.thickness, ox=-dy/n*off, oy=dx/n*off; s += `<line x1="${a+ox}" y1="${b+oy}" x2="${c+ox}" y2="${d+oy}" ${WS}/>`; });
   });
   const DS = 'stroke="#3d3a34" stroke-width="1" vector-effect="non-scaling-stroke"';
-  DOORS.forEach(d => {
-    const [hx,hy] = d.h, L = d.len, T = 40;
-    const ox = hx + d.o[0]*L, oy = hy + d.o[1]*L, cx = hx + d.c[0]*L, cy = hy + d.c[1]*L;
-    const sweep = d.o[0]*d.c[1] - d.o[1]*d.c[0] > 0 ? 1 : 0;
-    const col = d.entry ? '#b5653a' : '#3d3a34';
-    s += `<polygon points="${hx},${hy} ${ox},${oy} ${ox+d.c[0]*T},${oy+d.c[1]*T} ${hx+d.c[0]*T},${hy+d.c[1]*T}" fill="#fff" stroke="${col}" stroke-width="${d.entry?1.8:1}" vector-effect="non-scaling-stroke"/>`;
-    s += `<path d="M${ox} ${oy}A${L} ${L} 0 0 ${sweep} ${cx} ${cy}" fill="none" ${DS} stroke-dasharray="5 3" opacity=".7"/>`;
+  OPENINGS.filter(o => o.kind !== 'window').forEach(o => {
+    const [ax,ay] = o.a, [bx,by] = o.b, L = o.width, [hx,hy] = o.h || o.a;
+    const col = o.entry ? '#b5653a' : '#3d3a34';
+    if (o.kind === 'sliding_door') {
+      const dx=(bx-ax)/(L||1),dy=(by-ay)/(L||1), nx=Math.abs(dy)>Math.abs(dx)?dy:-dy,ny=Math.abs(dy)>Math.abs(dx)?-dx:dx, plen=L*.55, off=25;
+      const panel=(start,sign)=>{const x0=ax+dx*start+nx*(off*sign-20),y0=ay+dy*start+ny*(off*sign-20),x1=x0+dx*plen,y1=y0+dy*plen;return `<polygon data-opening="${esc(o.id)}" points="${x0},${y0} ${x1},${y1} ${x1+nx*40},${y1+ny*40} ${x0+nx*40},${y0+ny*40}" fill="#fff" ${DS}/>`;};
+      s += panel(0,-1)+panel(L-plen,1);
+    } else if (o.kind === 'door') {
+      const dx=(bx-ax)/(L||1),dy=(by-ay)/(L||1), [cx,cy]=o.c || [dx,dy];
+      const swing=o.o || (o.swing==='right' ? [dy,-dx] : [-dy,dx]), [ox,oy]=swing;
+      const sweep=ox*cy-oy*cx>0?1:0;
+      const endx=hx+cx*L, endy=hy+cy*L, openx=hx+ox*L, openy=hy+oy*L;
+      const tx=cx*Math.max(25,o.thickness*.16),ty=cy*Math.max(25,o.thickness*.16);
+      s += `<polygon data-opening="${esc(o.id)}" points="${hx},${hy} ${openx},${openy} ${openx+tx},${openy+ty} ${hx+tx},${hy+ty}" fill="#fff" stroke="${col}" stroke-width="${o.entry?1.8:1}" vector-effect="non-scaling-stroke"/><path d="M${openx} ${openy}A${L} ${L} 0 0 ${sweep} ${endx} ${endy}" fill="none" ${DS} stroke-dasharray="5 3" opacity=".7"/>`;
+    }
+    if (o.entry) s += `<path d="M${ax} ${ay}L${bx} ${by}" fill="none" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke"/><text x="${ax}" y="${ay-120}" font-size="180" fill="#b5653a">${tr('Sisäänkäynti','Entry')}</text>`;
   });
-  SLIDES.forEach(({rect:[x0,y0,x1,y1],v}) => {
-    if (v){ const L = y1-y0, m = (x0+x1)/2; s += `<rect x="${m-45}" y="${y0}" width="40" height="${L*.55}" fill="#fff" ${DS}/><rect x="${m+5}" y="${y1-L*.55}" width="40" height="${L*.55}" fill="#fff" ${DS}/>`; }
-    else { const L = x1-x0, m = (y0+y1)/2; s += `<rect x="${x0}" y="${m-45}" width="${L*.55}" height="40" fill="#fff" ${DS}/><rect x="${x1-L*.55}" y="${m+5}" width="${L*.55}" height="40" fill="#fff" ${DS}/>`; }
-  });
-  // Sisäänkäynnin merkintä
-  s += `<path d="M3350 8755H4350M4150 8600L4400 8755L4150 8910" fill="none" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke"/>
-        <text x="3380" y="8600" font-size="200" fill="#b5653a">${tr('Sisäänkäynti','Entry')}</text>`;
   $('#gOpen').innerHTML = s;
 }
 
@@ -459,6 +407,7 @@ function renderLabels(){
 }
 
 function renderDims(){
+  $('#gDims').setAttribute('display', isDefaultUnit() ? 'inline' : 'none');
   const DC = '#7d7160', LS = `stroke="${DC}" stroke-width="1" vector-effect="non-scaling-stroke"`, TK = `stroke="${DC}" stroke-width="2" vector-effect="non-scaling-stroke"`;
   const txt = (x,y,v,rot) => `<text x="${x}" y="${y}" font-size="${v<400?140:200}" text-anchor="middle" fill="${DC}" ${rot?`transform="rotate(-90 ${x} ${y})"`:''}>${v}</text>`;
   const chain = (horiz, at, start, segs) => {
@@ -476,7 +425,7 @@ function renderDims(){
     chain(true,11350,0,[2180,240,2160,240,5450,240,1340]) + chain(true,11850,0,[11850]) +
     chain(false,-800,0,[3370,1580,240,2770,240,2360]) + chain(false,-1300,0,[10560]) +
     chain(false,12750,0,[3370,240,2760,240,3950]) + chain(false,13250,0,[10560]);
-  g.setAttribute('display', ui.layers.dims ? 'inline' : 'none');
+  g.setAttribute('display', isDefaultUnit() && ui.layers.dims ? 'inline' : 'none');
 }
 
 function renderGrid(){
@@ -528,13 +477,15 @@ function renderSel(){
 }
 
 function renderAll(){
-  renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
+  renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderOpenings(); renderDims(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
   window.View3D?.sync();
 }
 
 function updateHeader(){
   const tot = ROOMS.filter(r => r.counted !== false).reduce((a,r) => a + area(r.poly), 0);
-  $('#subtitle').textContent = tr(`Nettopinta-ala noin ${fmt(tot)} m² · Mitat mm · Alkuperäinen mittakaava 1:60`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm · Original scale 1:60`);
+  $('#subtitle').textContent = isDefaultUnit()
+    ? tr(`Nettopinta-ala noin ${fmt(tot)} m² · Mitat mm · Alkuperäinen mittakaava 1:60`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm · Original scale 1:60`)
+    : tr(`Nettopinta-ala noin ${fmt(tot)} m² · Mitat mm`, `Net floor area ≈ ${fmt(tot)} m² · Units: mm`);
   $('#undo').disabled = !undoStack.length; $('#redo').disabled = !redoStack.length;
   $('#undo').style.opacity = undoStack.length ? 1 : .4; $('#redo').style.opacity = redoStack.length ? 1 : .4;
 }
@@ -553,7 +504,7 @@ function renderPanel(){
 function overviewPanel(){
   const rows = ROOMS.map(r => {
     const st = state.rooms[r.id];
-    return `<tr class="click" data-room="${r.id}"><td><span class="sw" style="background:${MATS[st.mat].sw}"></span>${esc(nm(st.name))}${r.counted===false?' <span class="muted">*</span>':''}</td>
+    return `<tr class="click" data-room="${esc(r.id)}"><td><span class="sw" style="background:${MATS[st.mat].sw}"></span>${esc(nm(st.name))}${r.counted===false?' <span class="muted">*</span>':''}</td>
       <td class="r">${fmt(area(r.poly))} m²</td></tr>`;
   }).join('');
   const tot = ROOMS.filter(r => r.counted !== false).reduce((a,r) => a + area(r.poly), 0);
@@ -562,8 +513,8 @@ function overviewPanel(){
   let cost = 0;
   const matRows = Object.entries(byMat).map(([m,a]) => { const c = a*MATS[m].price*1.05; cost += c;
     return `<tr><td><span class="sw" style="background:${MATS[m].sw}"></span>${nm(MATS[m].name)}</td><td class="r">${fmt(a,1)} m²</td><td class="r">${Math.round(c).toLocaleString('fi-FI')} €</td></tr>`; }).join('');
-  const dem = state.demolished.map(id => WALLS[+id.slice(1)]);
-  const demLen = dem.reduce((a,w) => a + Math.max(w[2]-w[0], w[3]-w[1]), 0) / 1000;
+  const removed = demolishedIds(), dem = PLAN.demolishedWalls.filter(w => removed.has(w.id));
+  const demLen = dem.reduce((a,w) => a + Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]), 0) / 1000;
   return `
   <section><h3>${tr('Huoneiden pinta-alat','Room Areas')} <small>${tr('Napsauta nähdäksesi / vaihtaaksesi lattian','Click to view / change flooring')}</small></h3>
     <table>${rows}</table>
@@ -681,7 +632,11 @@ function roomPanel(r){
 function bindRoomPanel(){
   const id = ui.sel.id;
   $('#rName').onchange = e => mutate(() => state.rooms[id].name = e.target.value.trim() || state.rooms[id].name);
-  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => mutate(() => state.rooms[id].mat = b.dataset.mat));
+  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => mutate(() => {
+    const changes=state.unit.changes ?? [];
+    state.unit.changes=[...changes,{op:'change_finish',room:id,floor:b.dataset.mat}];
+    state.rooms[id].mat=b.dataset.mat;
+  }));
   document.querySelectorAll('#panel tr[data-fid]').forEach(tr => tr.onclick = () => select({kind:'furn', id:tr.dataset.fid}));
   $('#back').onclick = () => select(null);
 }
@@ -752,12 +707,17 @@ function addItem(it, x, y){
   toast(tr(`Lisätty "${name}" ${w}×${d}`, `Added "${nm(name)}" ${w}×${d}`));
 }
 function toggleWall(id){
-  const w = WALLS[+id.slice(1)];
-  if (w[4]==='b') return toast(tr('Kantavia seiniä (mustat) ei voi purkaa', 'Load-bearing walls (black) cannot be removed'));
-  if (w[4]==='e') return toast(tr('Ulkoseinät kuuluvat rakennuksen vaippaan, eikä niitä suositella purettavaksi', 'Exterior walls are part of the building envelope and should not be removed'));
-  const on = state.demolished.includes(id);
-  mutate(() => state.demolished = on ? state.demolished.filter(x => x!==id) : [...state.demolished, id]);
-  toast(on ? tr('Seinä palautettu', 'Wall restored') : tr(`Merkitty purettavaksi ${Math.max(w[2]-w[0], w[3]-w[1])} mm seinää`, `Marked ${Math.max(w[2]-w[0], w[3]-w[1])} mm of wall for removal`));
+  const active=WALLS.find(w=>w.id===id), w=active || PLAN.demolishedWalls.find(w=>w.id===id);
+  if (!w) return;
+  if (w.kind === 'load_bearing') return toast(tr('Kantavia seiniä ei voi purkaa', 'Load-bearing walls cannot be removed'));
+  if (w.kind === 'external' || w.kind === 'party') return toast(tr('Ulkoseinää ei voi purkaa', 'External walls cannot be removed'));
+  const length=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]);
+  if(active){ mutate(()=>{state.unit.changes=[...(state.unit.changes??[]),{op:'demolish_wall',target:id}];}); toast(tr(`Merkitty purettavaksi ${Math.round(length)} mm seinää`, `Marked ${Math.round(length)} mm of wall for removal`)); return; }
+  const candidate=structuredClone(state.unit), changes=candidate.changes??[], index=changes.map((c,i)=>c.op==='demolish_wall'&&c.target===id?i:-1).filter(i=>i>=0).at(-1);
+  if(index==null)return;
+  candidate.changes=changes.filter((_,i)=>i!==index);
+  try{window.UnitModel.projectUnit(candidate);}catch(error){toast(tr('Seinää ei voi palauttaa tässä muutosjärjestyksessä','This wall cannot be restored in this change order'));return;}
+  mutate(()=>state.unit=candidate);toast(tr('Seinä palautettu', 'Wall restored'));
 }
 
 function setTool(t){
@@ -1099,7 +1059,7 @@ document.querySelectorAll('#viewSeg .btn').forEach(b => b.onclick = () => setVie
 document.querySelectorAll('#tools .btn').forEach(b => b.onclick = () => setTool(b.dataset.tool));
 document.querySelectorAll('#layers .btn').forEach(b => b.onclick = () => {
   const k = b.dataset.layer; ui.layers[k] = !ui.layers[k]; b.classList.toggle('on', ui.layers[k]);
-  if (k === 'dims') $('#gDims').setAttribute('display', ui.layers.dims ? 'inline' : 'none');
+  if (k === 'dims') $('#gDims').setAttribute('display', isDefaultUnit() && ui.layers.dims ? 'inline' : 'none');
   else if (k !== 'wallSnap') renderAll();
 });
 $('#zoomIn').onclick = () => zoomCenter(1.25);
@@ -1142,12 +1102,12 @@ $('#importJson').onclick = () => $('#fileIn').click();
 $('#fileIn').onchange = e => {
   const file = e.target.files[0]; if (!file) return;
   file.text().then(txt => {
-    try { const s = JSON.parse(txt); if (!Array.isArray(s.furniture)) throw 0; const b = snap(); state = fixState(s); ui.sel = null; commit(b); renderAll(); toast(tr('Suunnitelma tuotu', 'Plan imported')); }
-    catch(err){ toast(tr('Virheellinen tiedostomuoto', 'Invalid file format')); }
+    try { const next=window.UnitModel.parseDesign(JSON.parse(txt), defaults), b=snap(); state=next; storageBlocked=false; project(); ui.sel=null; commit(b); fitView(); renderAll(); toast(tr('Suunnitelma tuotu', 'Plan imported')); }
+    catch(err){ console.error(err); toast(tr('Virheellinen tiedostomuoto', 'Invalid file format')); }
   });
   e.target.value = '';
 };
-$('#reset').onclick = () => { if (confirm(tr('Palautetaanko oletussuunnitelma? (voi kumota)', 'Reset to the default design? (undoable)'))){ const b = snap(); state = defaultState(); ui.sel = null; commit(b); renderAll(); } };
+$('#reset').onclick = () => { if (confirm(tr('Palautetaanko oletussuunnitelma? (voi kumota)', 'Reset to the default design? (undoable)'))){ const b = snap(); state = structuredClone(defaults); storageBlocked=false; project(); ui.sel = null; commit(b); fitView(); renderAll(); } };
 // Näytön suunnan vaihto, otsikkorivin rivitys ym. muuttavat piirtoalueen kokoa; kun koko palautuu nollasta (esim. ensimmäinen asettelu), sovitetaan ikkunaan uudelleen
 // muissa kokomuutoksissa (paneelien piilotus / näyttö ym.) näkymän keskikohta pysyy paikallaan
 let lastW = 0, lastH = 0;

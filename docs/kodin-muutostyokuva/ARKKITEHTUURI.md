@@ -1,6 +1,6 @@
 # Kodin muutostyökuva — arkkitehtuuri
 
-Tila: suunnitteludokumentti, luonnos 2 (K1–K3 päätetty)
+Tila: suunnitteludokumentti, luonnos 2 (K1–K3 päätetty), V0-toteutus kuvattu §6.4
 Päivä: 2026-09-29
 Toteutuksen tarkistuslista: [CHECKLIST.md](CHECKLIST.md)
 
@@ -81,6 +81,9 @@ jokaiselle vastaanottajalle oma paperi ja tarkistus.**
 ---
 
 ## 3. Nykytila: mitä on jo olemassa ja mitä puuttuu
+
+Luku 3 kuvaa suunnittelun lähtötilannetta ennen V0:aa. V0:n toteutunut rakenne
+ja tietovirta kuvataan §6.4:ssä ja valmistuminen tarkistuslistassa.
 
 ### 3.1 floorplan-3d
 
@@ -431,6 +434,33 @@ Nykyinen yhden tiedoston rakenne ei kanna kenttäsovellusta ja tietomallia. Pä�
   ladataan samaa reittiä kuin mikä tahansa malli.
 - Nykyinen käytös säilytetään: siirto Viteen tehdään ensin sellaisenaan (sama
   toiminnallisuus, savutesti vihreänä), ja vasta sitten aletaan muuttaa rakennetta.
+
+**V0:n editorikytkentä:** `examples/demo-unit.json` on rakenteen ainoa totuuslähde.
+`src/model/render-unit.ts` johtaa `apply(baseline, changes)`-tuloksesta samat
+seinät, aukot ja huoneet 2D:lle ja 3D:lle. Seinän keskilinjan normaalista lasketaan
+paksuus ja aukot leikataan isäntäseinän suunnassa; vinoille seinille ei käytetä
+akselisuuntaista korvaavaa suorakaidetta. Näyttökoordinaattien muunnos pysyy
+`src/io/unit.ts`:ssä.
+
+Moduulijako on rajattu integraation tarpeeseen: `src/plan2d/editor.js` ja
+`src/view3d/view3d.js` säilyttävät nykyisen esityskoodin JavaScriptinä. Uusi
+adapteri ja `src/io/design.ts` ovat TypeScriptiä. Koko kalusterenderöijän
+tyyppisiirto ei ole V0:n edellytys. Demoasunnon esitysasetukset (nimien asemointi,
+erkkerien pinta-alakäytäntö, matala seinä) ovat erillisiä rakenteen koordinaateista.
+
+`unit-v1` ei sisällä editorin irtokalustekirjaston kaikkia tyyppejä eikä huoneen
+näyttönimen muutosoperaatiota. Siksi versioitu **suunnitelmakuori**
+`kodin-design-v2` sisältää `unit`-mallin lisäksi irtokalusteet, huoneiden
+esitystiedot ja vanhat näyttömittaukset. Tämä ei laajenna kanonista skeemaa.
+Lattiamateriaalit kirjoitetaan `change_finish`-operaatioina; kuoren materiaalin
+on vastattava tavoitetilaa. Kanonisen mallin mittausten alkuperä säilyy eikä
+näyttömittauksia ylennetä kenttämittauksiksi.
+
+Tallennussiirto validoi vanhan JSONin ja muodostaa purkuoperaatiot vanhoista
+seinä-id:istä. Vasta onnistunut validointi ja kirjoitus luovat uuden avaimen.
+Vanha `huxing-design-v1`-avain jätetään koskemattomaksi ja alkuperäinen sisältö
+säilytetään myös suunnitelman `legacy`-kentässä. Virheellinen tuonti ei vaihda
+aktiivista tilaa. Vioittunut tallennus estää automaattisen ylikirjoituksen.
 
 ### 6.5 Pohjapiirustus lähtöaineistona (V1)
 

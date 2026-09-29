@@ -12,8 +12,9 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 
 const stage = $('#stage'), host = $('#view3d');
-const OX = 6000, OY = 5300, H = 2.8, FOV = 45;       // asunnon keskipiste maailman origossa, kattokorkeus 2,8 m
-const wx = x => (x - OX) / 1000, wz = y => (y - OY) / 1000, M = v => v / 1000;
+const H = 2.8, FOV = 45;
+const origin = () => ({x:PLAN.bounds.x+PLAN.bounds.w/2,y:PLAN.bounds.y+PLAN.bounds.h/2});
+const wx = x => (x - origin().x) / 1000, wz = y => (y - origin().y) / 1000, M = v => v / 1000;
 const SW = () => stage.clientWidth, SH = () => stage.clientHeight;
 const opt = {cut:2.8, furn:true, labels:true, night:false, hour:10, mode:'orbit'};
 
@@ -764,19 +765,17 @@ function buildFurniture(f){
 
 /* ======================= Rakennus ======================= */
 function clearGroup(g){ g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); g.clear(); }
-function wallBox([x0, y0, x1, y1], yb, yt, m){
-  if (yt - yb <= .001) return;
-  const o = new THREE.Mesh(new THREE.BoxGeometry(M(x1-x0), yt-yb, M(y1-y0)), m || [wallMat, wallMat, capMat, wallMat, wallMat, wallMat]);
-  o.position.set(wx((x0+x1)/2), (yb+yt)/2, wz((y0+y1)/2)); o.castShadow = o.receiveShadow = true; archUp.add(o);
-  // Kävelyapu: seinien reunaviivat + jalkalistat, jotta viereiset seinät ja nurkat erottuvat helposti (näkyy vain kävelytilassa)
-  const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry), edgeMat); ln.position.copy(o.position); ln.userData.walkOnly = true; ln.visible = opt.mode === 'walk'; archUp.add(ln);
-  if (yb <= .001){
-    const p = o.geometry.parameters, sh = Math.min(.12, yt), sk = new THREE.Mesh(new THREE.BoxGeometry(p.width + .02, sh, p.depth + .02), skirtMat);
-    sk.position.set(o.position.x, sh/2, o.position.z); sk.userData.walkOnly = true; sk.visible = opt.mode === 'walk'; archUp.add(sk);
-  }
-}
 const edgeMat = new THREE.LineBasicMaterial({color:0x6f675b}), skirtMat = new THREE.MeshStandardMaterial({color:'#8b7f6e', roughness:.6});
 function shapeOf(poly, flip){ const s = new THREE.Shape(); poly.forEach(([x, y], i) => s[i ? 'lineTo' : 'moveTo'](wx(x), flip ? wz(y) : -wz(y))); return s; }
+function wallLinear(a,b,thickness,yb,yt,id,part){
+  if (yt <= yb) return;
+  const dx=b[0]-a[0],dy=b[1]-a[1],length=M(Math.hypot(dx,dy)),angle=-Math.atan2(dy,dx),x=wx((a[0]+b[0])/2),z=wz((a[1]+b[1])/2),depth=M(thickness);
+  const geo=new THREE.BoxGeometry(length,yt-yb,depth),o=new THREE.Mesh(geo,[wallMat,wallMat,capMat,wallMat,wallMat,wallMat]);
+  o.position.set(x,(yb+yt)/2,z);o.rotation.y=angle;o.castShadow=o.receiveShadow=true;o.userData.wallId=id;o.userData.wallPart=part;archUp.add(o);
+  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat);edges.position.copy(o.position);edges.rotation.y=angle;edges.userData.walkOnly=true;edges.visible=opt.mode==='walk';archUp.add(edges);
+  const sh=Math.min(.12,yt);if(yb<=.001){const sk=new THREE.Mesh(new THREE.BoxGeometry(length+.02,sh,depth+.02),skirtMat);sk.position.set(x,sh/2,z);sk.rotation.y=angle;sk.userData.walkOnly=true;sk.visible=opt.mode==='walk';archUp.add(sk);}
+}
+function wallCollider(poly){ colliders.push(poly.map(([x,y]) => [wx(x), wz(y)])); }
 
 function buildArch(){
   clearGroup(archFloor); clearGroup(archUp); lampG.clear(); doors.length = 0; colliders = [];
@@ -788,7 +787,6 @@ function buildArch(){
     const fl = new THREE.Mesh(geo, bay ? [m, mat('#e9e4da')] : m);
     fl.receiveShadow = true; fl.userData.room = r.id;
     if (bay){ fl.castShadow = true; archUp.add(fl); } else archFloor.add(fl);
-    // katto: normaali osoittaa alas, näkyy vain sisällä ylöspäin katsottaessa
     const cg = new THREE.ShapeGeometry(shapeOf(r.poly, true)); cg.rotateX(Math.PI/2);
     const ceil = new THREE.Mesh(cg, mat('#fbfaf7', {roughness:1})); ceil.position.y = H; ceil.visible = top >= H; archUp.add(ceil);
     if (r.at){
@@ -797,46 +795,38 @@ function buildArch(){
       const pl = new THREE.PointLight(0xffd9a8, 0, 7, 1.6); pl.position.set(wx(r.at[0]), H - .25, wz(r.at[1])); lampG.add(pl);
     }
   });
-  [...DOORS, ...SLIDES].forEach(d => { const [x0, y0, x1, y1] = d.rect; const s = box(M(x1-x0), .012, M(y1-y0), mat('#d8d0c0', {roughness:.3}), wx((x0+x1)/2), 0, wz((y0+y1)/2)); s.castShadow = false; archFloor.add(s); });
-  WALLS.forEach((w, i) => {
-    if (state.demolished.includes('w'+i)) return;
-    wallBox(w, 0, w[4] === 'low' ? Math.min(1, top) : top);
-    colliders.push([wx(w[0]), wz(w[1]), wx(w[2]), wz(w[3])]);
-  });
-  // ovi- ja erkkeriaukkojen yläpuoliset palkit
-  [...DOORS.map(d => [d.rect, 2.1]), ...SLIDES.map(s => [s.rect, s.v ? 2.4 : 2.1]), [[10270,800,10510,2600], 2.4], [[10270,4260,10510,5740], 2.4]]
-    .forEach(([r, h]) => { if (top > h) wallBox(r, h, top); });
-  WINS.forEach((r, i) => {
-    const sill = i === 0 ? 1.4 : i >= 6 ? .45 : .9, head = 2.4;
-    wallBox(r, 0, Math.min(sill, top)); if (top > head) wallBox(r, head, top);
-    colliders.push([wx(r[0]), wz(r[1]), wx(r[2]), wz(r[3])]);
-    const gTop = Math.min(head, top); if (gTop <= sill) return;
-    const [x0, y0, x1, y1] = r, hz = (x1-x0) >= (y1-y0), L = M(hz ? x1-x0 : y1-y0), gh = gTop - sill, cx = wx((x0+x1)/2), cz = wz((y0+y1)/2);
-    const pane = new THREE.Mesh(new THREE.BoxGeometry(hz ? L : .01, gh, hz ? .01 : L), glassMat); pane.position.set(cx, sill + gh/2, cz); archUp.add(pane);
-    const n = Math.max(1, Math.round(L/.9));
-    for (let k = 0; k <= n; k++){ const t = -L/2 + k*L/n, mu = new THREE.Mesh(new THREE.BoxGeometry(hz ? .04 : .06, gh, hz ? .06 : .04), frameMat);
-      mu.position.set(cx + (hz ? t : 0), sill + gh/2, cz + (hz ? 0 : t)); mu.castShadow = true; archUp.add(mu); }
-    [sill + .02, gTop - .02].forEach(y => { const tr = new THREE.Mesh(new THREE.BoxGeometry(hz ? L : .06, .04, hz ? .06 : L), frameMat); tr.position.set(cx, y, cz); archUp.add(tr); });
-  });
-  DOORS.forEach(d => {
-    const pivot = new THREE.Group(), L = M(d.len), dh = Math.min(2.05, top);
-    pivot.position.set(wx(d.h[0]), 0, wz(d.h[1]));
-    const leaf = box(L, dh, .04, mat(d.entry ? '#6b4f3a' : '#efe6d8', {roughness:.5}), L/2);
-    const knob = new THREE.Mesh(new THREE.SphereGeometry(.03, 12, 8), metal()); knob.position.set(L - .07, Math.min(1, dh - .05), 0); knob.scale.z = 2.2;
-    pivot.add(leaf, knob);
-    const ang = v => Math.atan2(-v[1], v[0]), door = {pivot, a0:ang(d.c), a1:ang(d.o), open:true};
-    if (door.a1 - door.a0 > Math.PI) door.a1 -= Math.PI*2; if (door.a0 - door.a1 > Math.PI) door.a1 += Math.PI*2;
-    door.cur = door.a1; pivot.rotation.y = door.cur; leaf.userData.door = knob.userData.door = door;
-    doors.push(door); archUp.add(pivot);
-  });
-  SLIDES.forEach(({rect:[x0, y0, x1, y1], v}) => {
-    const L = M(v ? y1-y0 : x1-x0), ph = Math.min(v ? 2.4 : 2.1, top), pl = L*.55;
-    [[-1, -.02], [1, .02]].forEach(([s, off]) => {
-      const c = s < 0 ? -L/2 + pl/2 : L/2 - pl/2, x = v ? wx((x0+x1)/2) + off : wx(x0) + L/2 + c, z = v ? wz(y0) + L/2 + c : wz((y0+y1)/2) + off;
-      const p = new THREE.Mesh(new THREE.BoxGeometry(v ? .02 : pl, ph, v ? pl : .02), glassMat); p.position.set(x, ph/2, z); archUp.add(p);
-      [ph - .03, .03].forEach(y => { const fr = new THREE.Mesh(new THREE.BoxGeometry(v ? .04 : pl, .05, v ? pl : .04), frameMat); fr.position.set(x, y, z); archUp.add(fr); });
-      [-1, 1].forEach(e => { const fr = new THREE.Mesh(new THREE.BoxGeometry(.04, ph, .04), frameMat); fr.position.set(v ? x : x + e*pl/2, ph/2, v ? z + e*pl/2 : z); archUp.add(fr); });
-    });
+  WALLS.forEach(w => w.segments.forEach((seg, i) => {
+    const ht = w.height ? Math.min(M(w.height), top) : top;
+    wallLinear(seg.a,seg.b,w.thickness,0,ht,w.id,i); wallCollider(seg.polygon);
+  }));
+    OPENINGS.forEach(o => {
+    const [ax,ay]=o.a, [bx,by]=o.b, cx=(ax+bx)/2, cy=(ay+by)/2, length=M(o.width), thick=Math.max(.025,M(o.thickness));
+    const sill=M(o.sill||0), height=M(o.height||2100), head=Math.min(top,sill+height), angle=Math.atan2(-(by-ay),bx-ax);
+    if(o.kind==='door'||o.kind==='sliding_door'){const floor=box(length,.012,thick,mat('#d8d0c0',{roughness:.3}),wx(cx),.006,wz(cy));floor.rotation.y=angle;floor.castShadow=false;archFloor.add(floor);}
+    if(sill>0) wallLinear(o.a,o.b,o.thickness,0,Math.min(sill,top),o.host_wall,`sill-${o.id}`);
+    if(top>head) wallLinear(o.a,o.b,o.thickness,head,top,o.host_wall,`lintel-${o.id}`);
+    if(sill>0 || o.kind==='window') wallCollider(o.polygon);
+    if(o.kind==='window'){
+      const gh=head-sill; if(gh<=0)return;
+      const frame=new THREE.Group();frame.position.set(wx(cx),sill,wz(cy));frame.rotation.y=angle;frame.userData.openingId=o.id;
+      const add=(w,h,d,x,y,z,m)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);mesh.position.set(x,y,z);frame.add(mesh);};
+      add(length,gh,.012,0,gh/2,0,glassMat);const n=Math.max(1,Math.round(length/.9));
+      for(let k=0;k<=n;k++)add(.045,gh,.06,-length/2+k*length/n,gh/2,0,frameMat);
+      [.02,gh-.02].forEach(y=>add(length,.04,.06,0,y,0,frameMat));archUp.add(frame);return;
+    }
+    if(o.kind==='sliding_door'){
+      const ph=Math.min(height,top),plen=length*.55,panels=new THREE.Group();panels.position.set(wx(cx),0,wz(cy));panels.rotation.y=angle;panels.userData.openingId=o.id;
+      [[-length*.225,-.02],[length*.225,.02]].forEach(([x,z])=>{const pane=new THREE.Mesh(new THREE.BoxGeometry(plen,ph,.018),glassMat);pane.position.set(x,ph/2,z);panels.add(pane);[ph-.03,.03].forEach(y=>{const rail=new THREE.Mesh(new THREE.BoxGeometry(plen,.05,.06),frameMat);rail.position.set(x,y,z);panels.add(rail);});[-1,1].forEach(e=>{const side=new THREE.Mesh(new THREE.BoxGeometry(.04,ph,.06),frameMat);side.position.set(x+e*plen/2,ph/2,z);panels.add(side);});});archUp.add(panels);return;
+    }
+    if(o.kind!=='door') return;
+    const h=o.h||o.a, dx=(bx-ax)/(o.width||1), dy=(by-ay)/(o.width||1), c=o.c||[dx,dy];
+    const swing=o.o||(o.swing==='right'?[c[1],-c[0]]:[-c[1],c[0]]), pivot=new THREE.Group(), dh=Math.min(Math.max(.1,height-.05),top);
+    pivot.position.set(wx(h[0]),0,wz(h[1]));
+    const leaf=box(length,dh,.04,mat(o.entry?'#6b4f3a':'#efe6d8',{roughness:.5}),length/2), knob=new THREE.Mesh(new THREE.SphereGeometry(.03,12,8),metal());
+    knob.position.set(length-.07,Math.min(1,dh-.05),0); knob.scale.z=2.2; pivot.add(leaf,knob);
+    const ang=v=>Math.atan2(-v[1],v[0]), door={pivot,a0:ang(c),a1:ang(swing),open:true,id:o.id,length};
+    if(door.a1-door.a0>Math.PI)door.a1-=Math.PI*2;if(door.a0-door.a1>Math.PI)door.a1+=Math.PI*2;
+    door.cur=door.a1;pivot.rotation.y=door.cur;leaf.userData.door=knob.userData.door=door;doors.push(door);archUp.add(pivot);
   });
   applyLight(); applyGrow();
 }
@@ -844,6 +834,8 @@ function buildArch(){
 function buildFurn(){
   clearGroup(furnG);
   state.furniture.forEach(f => furnG.add(buildFurniture(f)));
+  const fixtureTypes={wc:'toilet',sink:'vanity',shower:'shower',bathtub:'bathtub',stove:'stove',cabinet:'cabinet',grab_bar:'cabinet'};
+  FIXTURES.forEach(f => { const g=buildFurniture({id:`fixture:${f.id}`,type:fixtureTypes[f.kind]||'cabinet',name:f.kind,cx:f.x,cy:f.y,w:f.width,d:f.depth,rot:f.rotation_deg,color:'#d8d1c5'}); delete g.userData.fid; g.userData.fixtureId=f.id; furnG.add(g); });
   furnG.visible = opt.furn; selKey = null; applyGrow();
 }
 
@@ -855,7 +847,7 @@ function buildLabels(){
     const o = new CSS2DObject(el); o.position.set(wx(r.at[0]), opt.cut + .15, wz(r.at[1])); o.visible = labelG.visible; labelG.add(o);
   });
   const counted = ROOMS.filter(r => r.counted !== false);
-  $('#roomList').innerHTML = counted.map(r => `<button data-room="${r.id}"><span>${esc(nm(state.rooms[r.id].name))}</span><small>${area(r.poly).toFixed(2)} m²</small></button>`).join('')
+  $('#roomList').innerHTML = counted.map(r => `<button data-room="${esc(r.id)}"><span>${esc(nm(state.rooms[r.id].name))}</span><small>${area(r.poly).toFixed(2)} m²</small></button>`).join('')
     + `<button data-room="__all"><span>${tr('Koko koti', 'Whole home')}</span><small>${counted.reduce((a, r) => a + area(r.poly), 0).toFixed(2)} m²</small></button>`;
   document.querySelectorAll('#roomList button').forEach(b => b.onclick = () => {
     document.querySelectorAll('#roomList button').forEach(x => x.classList.toggle('on', x === b));
@@ -867,7 +859,7 @@ function buildLabels(){
 // rakennetaan uudelleen vain muuttuneet osat
 function sync(force){
   if (!inited || (!active && !force)) return;
-  const a = JSON.stringify([state.rooms, state.demolished, opt.cut]), f = JSON.stringify(state.furniture), l = JSON.stringify([state.rooms, opt.cut]);
+  const a = JSON.stringify([state.unit, opt.cut]), f = JSON.stringify([state.furniture,FIXTURES]), l = JSON.stringify([state.rooms, opt.cut]);
   if (force || a !== sigArch){ sigArch = a; buildArch(); }
   if (force || f !== sigFurn){ sigFurn = f; buildFurn(); }
   if (force || l !== sigLabels){ sigLabels = l; buildLabels(); }
@@ -912,8 +904,8 @@ function isoFrom(P){
   const d = THREE.MathUtils.clamp(P.p.y, 5, 30), dir = new THREE.Vector3(.3, .82, .49).normalize();
   return pose(P.t.clone(), P.t.clone().addScaledVector(dir, d));
 }
-const isoWhole = () => pose(new THREE.Vector3(0, 0, 0), new THREE.Vector3(5.5, 15.5, 10));
-const topWhole = () => pose(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 19, 1e-4));
+const isoWhole = () => {const size=Math.max(3,M(Math.max(PLAN.bounds.w,PLAN.bounds.h)));return pose(new THREE.Vector3(0,0,0),new THREE.Vector3(size*.35,size,size*.65));};
+const topWhole = () => {const size=Math.max(3,M(Math.max(PLAN.bounds.w,PLAN.bounds.h)));return pose(new THREE.Vector3(0,0,0),new THREE.Vector3(0,size*1.25,1e-4));};
 const curPose = () => pose(orbit.target.clone(), camera.position.clone());
 // pallokoordinaatti-interpolointi kohdepisteen ympärillä: kamera kallistuu ja kiertää kaarta pitkin suoran viivan sijaan
 function camTween(A, B, e){
@@ -1007,7 +999,7 @@ function groundAt(x, y){
   const px = v => new THREE.Vector2(v.x*r.width/2, v.y*r.height/2), a = px(hit.clone().project(camera));
   const s = Math.max(a.distanceTo(px(hit.clone().add(new THREE.Vector3(1, 0, 0)).project(camera))),
                      a.distanceTo(px(hit.clone().add(new THREE.Vector3(0, 0, 1)).project(camera)))) / 1000;
-  return {x:hit.x*1000 + OX, y:hit.z*1000 + OY, s};
+  const o=origin(); return {x:hit.x*1000 + o.x, y:hit.z*1000 + o.y, s};
 }
 function updateSel(){
   const key = ui.sel?.kind === 'furn' ? ui.sel.id : '';
@@ -1063,7 +1055,8 @@ function setMode(m){
     window.select(null);
     if (opt.cut < H){ opt.cut = H; syncCutBtns(); sync(); }
     orbit.enabled = false; fly = null;
-    camera.position.set(wx(4200), 1.6, wz(8755)); camera.lookAt(wx(7000), 1.5, wz(8755));   // ulko-oven ulkopuolella
+    const start=isDefaultUnit() ? [4200,8755] : (ROOMS.find(r=>r.at)?.at || [origin().x,origin().y]);
+    camera.position.set(wx(start[0]),1.6,wz(start[1])); camera.lookAt(wx(start[0])+2.8,1.5,wz(start[1]));
     $('#walkOverlay').style.display = 'flex';
     syncHint3d();
   } else {
@@ -1076,9 +1069,18 @@ function setMode(m){
   archUp.traverse(o => { if (o.userData.walkOnly) o.visible = m === 'walk'; });
 }
 function blocked(x, z, r = .22){
-  for (const [x0, z0, x1, z1] of colliders) if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) return true;
+  for (const poly of colliders){
+    let inside=false, distance=Infinity;
+    for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+      const [ax,az]=poly[i],[bx,bz]=poly[j];
+      if((az>z)!==(bz>z)&&x<(bx-ax)*(z-az)/(bz-az)+ax)inside=!inside;
+      const dx=bx-ax,dz=bz-az,t=clamp01(((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz||1));
+      distance=Math.min(distance,Math.hypot(x-(ax+t*dx),z-(az+t*dz)));
+    }
+    if(inside||distance<r)return true;
+  }
   for (const d of doors){
-    const a = d.pivot.rotation.y, px = d.pivot.position.x, pz = d.pivot.position.z, ex = px + Math.cos(a)*.9, ez = pz - Math.sin(a)*.9;
+    const a = d.pivot.rotation.y, px = d.pivot.position.x, pz = d.pivot.position.z, ex = px + Math.cos(a)*d.length, ez = pz - Math.sin(a)*d.length;
     const t = clamp01(((x-px)*(ex-px) + (z-pz)*(ez-pz)) / ((ex-px)**2 + (ez-pz)**2));
     if (Math.hypot(x - (px + t*(ex-px)), z - (pz + t*(ez-pz))) < r*.8) return true;
   }
@@ -1159,4 +1161,14 @@ function shot(){ const a = document.createElement('a'); a.download = tr('sisustu
 
 function relang(){ syncWalkTexts(); if (inited) buildLabels(); }
 
-window.View3D = {enter, exit, relang, sync:() => sync(), shot, groundAt, flyToRoom:id => active && !anim && flyToRoom(id), walking:() => active && opt.mode === 'walk'};
+window.View3D = {enter, exit, relang, sync:() => sync(), shot, groundAt,
+    inspect:walkPoint => {
+      const walls=new Map();
+      archUp.children.filter(o=>o.userData.wallId&&Number.isInteger(o.userData.wallPart)).forEach(o=>{
+        const b=new THREE.Box3().setFromObject(o),size=b.getSize(new THREE.Vector3()), row=walls.get(o.userData.wallId)||{id:o.userData.wallId,length:0,segments:[]};
+        row.length+=o.geometry.parameters.width;row.segments.push({position:o.position.toArray(),bounds:[size.x,size.y,size.z],rotationY:o.rotation.y});walls.set(row.id,row);
+      });
+      return {walls:[...walls.values()],fixtures:furnG.children.filter(o=>o.userData.fixtureId).map(o=>o.userData.fixtureId),
+        ...(walkPoint ? {blocked:blocked(wx(walkPoint[0]),wz(walkPoint[1]))} : {})};
+  },
+  flyToRoom:id => active && !anim && flyToRoom(id), walking:() => active && opt.mode === 'walk'};

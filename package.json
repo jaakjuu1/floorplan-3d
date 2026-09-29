@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "test:unit": "tsx --test tests/unit.test.ts",
+    "test:unit": "tsx --test tests/*.test.ts",
     "types:generate": "node tools/generate-unit-types.mjs",
     "types:check": "node tools/generate-unit-types.mjs --check"
   },

@@ -1,0 +1,579 @@
+{
+  "furniture": [
+    {
+      "id": "fmun2pago1",
+      "type": "bed",
+      "name": "Parisänky",
+      "cx": 8300,
+      "cy": 1000,
+      "w": 1800,
+      "d": 2000,
+      "rot": 0,
+      "color": "#c9d6df"
+    },
+    {
+      "id": "fmun2pago2",
+      "type": "nightstand",
+      "name": "Yöpöytä",
+      "cx": 7150,
+      "cy": 220,
+      "w": 450,
+      "d": 400,
+      "rot": 0,
+      "color": "#e8dccb"
+    },
+    {
+      "id": "fmun2pago3",
+      "type": "nightstand",
+      "name": "Yöpöytä",
+      "cx": 9450,
+      "cy": 220,
+      "w": 450,
+      "d": 400,
+      "rot": 0,
+      "color": "#e8dccb"
+    },
+    {
+      "id": "fmun2pago4",
+      "type": "wardrobe",
+      "name": "Vaatekaappi",
+      "cx": 8800,
+      "cy": 3070,
+      "w": 2400,
+      "d": 600,
+      "rot": 180,
+      "color": "#efe6d8"
+    },
+    {
+      "id": "fmun2pago5",
+      "type": "baycushion",
+      "name": "Erkkeripenkin tyyny",
+      "cx": 10770,
+      "cy": 1705,
+      "w": 520,
+      "d": 1800,
+      "rot": 0,
+      "color": "#e7dccd"
+    },
+    {
+      "id": "fmun2pago6",
+      "type": "shower",
+      "name": "Suihkukaappi",
+      "cx": 5270,
+      "cy": 450,
+      "w": 900,
+      "d": 900,
+      "rot": 0,
+      "color": "#e4edf2"
+    },
+    {
+      "id": "fmun2pago7",
+      "type": "toilet",
+      "name": "WC-istuin",
+      "cx": 5170,
+      "cy": 1500,
+      "w": 400,
+      "d": 700,
+      "rot": 270,
+      "color": "#ffffff"
+    },
+    {
+      "id": "fmun2pago8",
+      "type": "vanity",
+      "name": "Pesukaappi",
+      "cx": 6110,
+      "cy": 700,
+      "w": 800,
+      "d": 500,
+      "rot": 90,
+      "color": "#eef1f3"
+    },
+    {
+      "id": "fmun2pago9",
+      "type": "bed",
+      "name": "Yhden hengen sänky",
+      "cx": 2420,
+      "cy": 1000,
+      "w": 1200,
+      "d": 2000,
+      "rot": 0,
+      "color": "#e8d5b5"
+    },
+    {
+      "id": "fmun2pago10",
+      "type": "desk",
+      "name": "Työpöytä",
+      "cx": 2120,
+      "cy": 2700,
+      "w": 1200,
+      "d": 600,
+      "rot": 270,
+      "color": "#e2cfb4"
+    },
+    {
+      "id": "fmun2pago11",
+      "type": "chair",
+      "name": "Tuoli",
+      "cx": 2700,
+      "cy": 2700,
+      "w": 450,
+      "d": 480,
+      "rot": 90,
+      "color": "#cfc6b8"
+    },
+    {
+      "id": "fmun2pago12",
+      "type": "wardrobe",
+      "name": "Vaatekaappi",
+      "cx": 4280,
+      "cy": 1000,
+      "w": 1600,
+      "d": 600,
+      "rot": 90,
+      "color": "#efe6d8"
+    },
+    {
+      "id": "fmun2pago13",
+      "type": "bookshelf",
+      "name": "Kirjahylly",
+      "cx": 3500,
+      "cy": 150,
+      "w": 800,
+      "d": 300,
+      "rot": 0,
+      "color": "#e2cfb4"
+    },
+    {
+      "id": "fmun2pago14",
+      "type": "shower",
+      "name": "Suihkualue",
+      "cx": 2870,
+      "cy": 4280,
+      "w": 900,
+      "d": 1340,
+      "rot": 0,
+      "color": "#e4edf2"
+    },
+    {
+      "id": "fmun2pago15",
+      "type": "toilet",
+      "name": "WC-istuin",
+      "cx": 3560,
+      "cy": 3960,
+      "w": 400,
+      "d": 700,
+      "rot": 0,
+      "color": "#ffffff"
+    },
+    {
+      "id": "fmun2pago16",
+      "type": "vanity",
+      "name": "Pesukaappi",
+      "cx": 4150,
+      "cy": 3850,
+      "w": 700,
+      "d": 480,
+      "rot": 0,
+      "color": "#eef1f3"
+    },
+    {
+      "id": "fmun2pago17",
+      "type": "washer",
+      "name": "Pyykinpesukone",
+      "cx": 300,
+      "cy": 3960,
+      "w": 600,
+      "d": 600,
+      "rot": 270,
+      "color": "#e6ebee"
+    },
+    {
+      "id": "fmun2pago18",
+      "type": "vanity",
+      "name": "Pyykkiallas",
+      "cx": 250,
+      "cy": 4600,
+      "w": 600,
+      "d": 500,
+      "rot": 270,
+      "color": "#eef1f3"
+    },
+    {
+      "id": "fmun2pago19",
+      "type": "counter",
+      "name": "Keittiötaso",
+      "cx": 300,
+      "cy": 6575,
+      "w": 2770,
+      "d": 600,
+      "rot": 270,
+      "color": "#e9e5de"
+    },
+    {
+      "id": "fmun2pago20",
+      "type": "counter",
+      "name": "Keittiötaso",
+      "cx": 1390,
+      "cy": 7660,
+      "w": 1580,
+      "d": 600,
+      "rot": 180,
+      "color": "#e9e5de"
+    },
+    {
+      "id": "fmun2pago21",
+      "type": "stove",
+      "name": "Kaasuliesi",
+      "cx": 300,
+      "cy": 6200,
+      "w": 750,
+      "d": 450,
+      "rot": 270,
+      "color": "#dcdcdc"
+    },
+    {
+      "id": "fmun2pago22",
+      "type": "ksink",
+      "name": "Allas",
+      "cx": 1400,
+      "cy": 7680,
+      "w": 800,
+      "d": 450,
+      "rot": 180,
+      "color": "#e1e6ea"
+    },
+    {
+      "id": "fmun2pago23",
+      "type": "fridge",
+      "name": "Jääkaappi",
+      "cx": 2770,
+      "cy": 5540,
+      "w": 700,
+      "d": 700,
+      "rot": 0,
+      "color": "#dfe4e8"
+    },
+    {
+      "id": "fmun2pago24",
+      "type": "table",
+      "name": "Ruokapöytä",
+      "cx": 3600,
+      "cy": 6650,
+      "w": 1400,
+      "d": 800,
+      "rot": 90,
+      "color": "#e2cfb4"
+    },
+    {
+      "id": "fmun2pago25",
+      "type": "chair",
+      "name": "Ruokatuoli",
+      "cx": 2940,
+      "cy": 6320,
+      "w": 450,
+      "d": 480,
+      "rot": 270,
+      "color": "#cfc6b8"
+    },
+    {
+      "id": "fmun2pago26",
+      "type": "chair",
+      "name": "Ruokatuoli",
+      "cx": 2940,
+      "cy": 6980,
+      "w": 450,
+      "d": 480,
+      "rot": 270,
+      "color": "#cfc6b8"
+    },
+    {
+      "id": "fmun2pago27",
+      "type": "chair",
+      "name": "Ruokatuoli",
+      "cx": 4260,
+      "cy": 6320,
+      "w": 450,
+      "d": 480,
+      "rot": 90,
+      "color": "#cfc6b8"
+    },
+    {
+      "id": "fmun2pago28",
+      "type": "chair",
+      "name": "Ruokatuoli",
+      "cx": 4260,
+      "cy": 6980,
+      "w": 450,
+      "d": 480,
+      "rot": 90,
+      "color": "#cfc6b8"
+    },
+    {
+      "id": "fmun2pago29",
+      "type": "cabinet",
+      "name": "Senkki",
+      "cx": 3500,
+      "cy": 7785,
+      "w": 1600,
+      "d": 350,
+      "rot": 180,
+      "color": "#efe6d8"
+    },
+    {
+      "id": "fmun2pago30",
+      "type": "rug",
+      "name": "Matto",
+      "cx": 7600,
+      "cy": 8950,
+      "w": 2600,
+      "d": 1800,
+      "rot": 0,
+      "color": "#d9cbb8"
+    },
+    {
+      "id": "fmun2pago31",
+      "type": "tvstand",
+      "name": "TV-taso",
+      "cx": 7600,
+      "cy": 6810,
+      "w": 2400,
+      "d": 400,
+      "rot": 0,
+      "color": "#e2cfb4"
+    },
+    {
+      "id": "fmun2pago32",
+      "type": "sofa",
+      "name": "3-istuttava sohva",
+      "cx": 7600,
+      "cy": 10110,
+      "w": 3000,
+      "d": 900,
+      "rot": 180,
+      "color": "#b7c4b0"
+    },
+    {
+      "id": "fmun2pago33",
+      "type": "coffeetable",
+      "name": "Sohvapöytä",
+      "cx": 7600,
+      "cy": 8900,
+      "w": 1300,
+      "d": 650,
+      "rot": 0,
+      "color": "#e8dccb"
+    },
+    {
+      "id": "fmun2pago34",
+      "type": "armchair",
+      "name": "Nojatuoli",
+      "cx": 9500,
+      "cy": 8900,
+      "w": 850,
+      "d": 850,
+      "rot": 90,
+      "color": "#d6b99a"
+    },
+    {
+      "id": "fmun2pagp35",
+      "type": "shoecab",
+      "name": "Kenkäkaappi",
+      "cx": 4995,
+      "cy": 9900,
+      "w": 1000,
+      "d": 350,
+      "rot": 270,
+      "color": "#efe6d8"
+    },
+    {
+      "id": "fmun2pagp36",
+      "type": "plant",
+      "name": "Kasvi",
+      "cx": 9950,
+      "cy": 10250,
+      "w": 500,
+      "d": 500,
+      "rot": 0,
+      "color": "#a9c39b"
+    },
+    {
+      "id": "fmun2pagp37",
+      "type": "plant",
+      "name": "Kasvi",
+      "cx": 5250,
+      "cy": 7050,
+      "w": 500,
+      "d": 500,
+      "rot": 0,
+      "color": "#a9c39b"
+    },
+    {
+      "id": "fmun2pagp38",
+      "type": "bed",
+      "name": "Parisänky",
+      "cx": 7323,
+      "cy": 5500,
+      "w": 1500,
+      "d": 2000,
+      "rot": 270,
+      "color": "#d8c7dc"
+    },
+    {
+      "id": "fmun2pagp39",
+      "type": "wardrobe",
+      "name": "Vaatekaappi",
+      "cx": 8500,
+      "cy": 3910,
+      "w": 2000,
+      "d": 600,
+      "rot": 0,
+      "color": "#efe6d8"
+    },
+    {
+      "id": "fmun2pagp40",
+      "type": "desk",
+      "name": "Työpöytä",
+      "cx": 9500,
+      "cy": 6070,
+      "w": 1200,
+      "d": 600,
+      "rot": 180,
+      "color": "#e2cfb4"
+    },
+    {
+      "id": "fmun2pagp41",
+      "type": "chair",
+      "name": "Tuoli",
+      "cx": 9500,
+      "cy": 5480,
+      "w": 450,
+      "d": 480,
+      "rot": 0,
+      "color": "#cfc6b8"
+    },
+    {
+      "id": "fmun2pagp42",
+      "type": "baycushion",
+      "name": "Erkkeripenkin tyyny",
+      "cx": 10770,
+      "cy": 4997,
+      "w": 520,
+      "d": 1575,
+      "rot": 0,
+      "color": "#e7dccd"
+    },
+    {
+      "id": "fmun2pagp43",
+      "type": "roundtable",
+      "name": "Teepöytä",
+      "cx": 11180,
+      "cy": 8200,
+      "w": 600,
+      "d": 600,
+      "rot": 0,
+      "color": "#e2cfb4"
+    },
+    {
+      "id": "fmun2pagp44",
+      "type": "armchair",
+      "name": "Lepotuoli",
+      "cx": 11180,
+      "cy": 7520,
+      "w": 750,
+      "d": 750,
+      "rot": 0,
+      "color": "#d6b99a"
+    },
+    {
+      "id": "fmun2pagp45",
+      "type": "armchair",
+      "name": "Lepotuoli",
+      "cx": 11180,
+      "cy": 8880,
+      "w": 750,
+      "d": 750,
+      "rot": 180,
+      "color": "#d6b99a"
+    },
+    {
+      "id": "fmun2pagp46",
+      "type": "plant",
+      "name": "Kasvi",
+      "cx": 11550,
+      "cy": 10250,
+      "w": 500,
+      "d": 500,
+      "rot": 0,
+      "color": "#a9c39b"
+    },
+    {
+      "id": "fmun2pciv47",
+      "type": "bed",
+      "name": "Parisänky 1.8m",
+      "cx": 5183,
+      "cy": 6190,
+      "w": 1800,
+      "d": 2000,
+      "rot": 0,
+      "color": "#c9d6df"
+    }
+  ],
+  "rooms": {
+    "master": {
+      "name": "Päämakuuhuone",
+      "mat": "wood"
+    },
+    "mbath": {
+      "name": "Pääkylpyhuone",
+      "mat": "antislip"
+    },
+    "kid": {
+      "name": "Lastenhuone",
+      "mat": "wood"
+    },
+    "gbath": {
+      "name": "Vieraskylpyhuone",
+      "mat": "antislip"
+    },
+    "laundry": {
+      "name": "Pyykkiparveke",
+      "mat": "antislip"
+    },
+    "child": {
+      "name": "Nuortenhuone",
+      "mat": "wood"
+    },
+    "kitchen": {
+      "name": "Keittiö",
+      "mat": "tile600"
+    },
+    "dining": {
+      "name": "Ruokailutila",
+      "mat": "tile800"
+    },
+    "hall": {
+      "name": "Käytävä",
+      "mat": "tile800"
+    },
+    "living": {
+      "name": "Olohuone",
+      "mat": "tile800"
+    },
+    "balcony": {
+      "name": "Oleskeluparveke",
+      "mat": "walnut"
+    },
+    "bay1": {
+      "name": "Päämakuuhuoneen erkkeri",
+      "mat": "marble"
+    },
+    "bay2": {
+      "name": "Nuortenhuoneen erkkeri",
+      "mat": "marble"
+    }
+  },
+  "demolished": [
+    "w26"
+  ],
+  "measures": []
+}

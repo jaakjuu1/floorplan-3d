@@ -45,9 +45,11 @@ Niitä ei kuitata valmiiksi; ne tarvitaan ennen vastaavia kenttä- ja
 hyväksymistestejä. Ensimmäisen teknisen osuuden rajaus ja työnjako:
 [V0-SOPIMUS.md](V0-SOPIMUS.md).
 
-**Valmis osuus:** kanoninen mallisopimus, yhteiset testit ja Vite-selainpohja.
-V0:n lopullinen valmistumisehto ei vielä täyty. Editorin semanttinen mallikytkentä,
-demoasunnon muunto ja tallennustilan siirto ovat seuraava yhtenäinen osuus.
+**V0:n tekninen valmistumisehto täyttyy:** demo ladataan kanonisesta JSONista,
+2D/3D-geometria vastaa lähtöversiota, muutoskerros ja palautettava tallennussiirto
+ovat käytössä. RK validoi saman demon. Paikalliset tarkistukset: 41 TypeScript-
+testiä, 109 Python-testiä ja 6 Chromium-testiä (työpöytä ja 390×844-kosketus).
+Testipuhelimella tehtävä kenttä- ja suorituskykytesti kuuluu edelleen V1:een.
 
 ### Skeema (§5)
 - [x] **[RK]** Uusi moduuli `src/rakennuskuva/unit_models.py`: `UnitInputs`,
@@ -81,24 +83,29 @@ demoasunnon muunto ja tallennustilan siirto ovat seuraava yhtenäinen osuus.
       kalusteen lisäys, seinän purku, JSON-vienti (§12.2)
 - [x] **[FP]** Siirto Viteen *sellaisenaan*: `package.json`, Vite + TypeScript,
       Three.js npm-paketista CDN:n sijaan, sama toiminnallisuus. Savutesti vihreänä
-- [ ] **[FP]** Jako hakemistoihin: `src/model/`, `src/plan2d/`, `src/view3d/`,
+- [x] **[FP]** Jako hakemistoihin: `src/model/`, `src/plan2d/`, `src/view3d/`,
       `src/io/` (§6.4). Savutesti vihreänä jaon jälkeen
 - [x] **[FP]** Skeeman TypeScript-tyypit generoidaan `unit-input-v1.schema.json`-
       tiedostosta (generointi osana käännöstä tai CI-tarkistus)
 - [x] **[FP]** CI: tyyppitarkistus, testit (esim. Vitest) ja Playwright-savutesti
 - [x] **[FP]** README päivitetty: `npm install`, `npm run dev`, `npm run build`
 - [x] **[FP]** `src/io/unit.ts`: tuonti ja vienti. y-akselin kääntö vain tässä (§5.2)
-      Rajapinta testattu erillisenä; editorin nykyinen JSON-tuonti ja renderöinti
-      kytketään siihen jäljempänä olevissa vielä avoimissa kohdissa
-- [ ] **[FP]** Keskilinjaseinät (`a`, `b`, `thickness`) → nykyinen 2D- ja
+      Editorin JSON-tuonti ja renderöintiadapteri käyttävät samaa rajapintaa
+- [x] **[FP]** Keskilinjaseinät (`a`, `b`, `thickness`) → nykyinen 2D- ja
       3D-renderöinti. Vinot seinät vähintään piirtyvät oikein
-- [ ] **[FP]** Aukot `host_wall` + `along_wall` -mallista → nykyiset ikkuna-, ovi- ja
+- [x] **[FP]** Aukot `host_wall` + `along_wall` -mallista → nykyiset ikkuna-, ovi- ja
       liukuovirakenteet
-- [ ] **[FP]** Kovakoodatut vakiot poistettu. Demo ladataan `examples/demo-unit.json`sta
-- [ ] **[FP]** Nykyinen `state.demolished` korvataan muutoskerroksella
+- [x] **[FP]** Kovakoodatut rakennegeometrian vakiot poistettu. Demo ladataan
+      `examples/demo-unit.json`sta; kalustekirjasto ja demoasettelun esitysasetukset säilyvät
+- [x] **[FP]** Nykyinen `state.demolished` korvataan muutoskerroksella
       (`changes[]`, op `demolish_wall`). Vanhan `localStorage`-tilan siirto
       (`huxing-design-v1`)
-- [ ] **[FP]** Kalusteet ja lattiamateriaalit toimivat kuten ennen
+- [x] **[FP]** Kalusteet ja lattiamateriaalit toimivat kuten ennen.
+      Selainregressio kattaa myös mittaukset, kumoa/tee uudelleen, JSON/PNG-viennin,
+      tuonnin, tallennuksen uudelleenavauksen, kävelytilan ja kosketuskäytön.
+      Vinon seinän aukko ja 3D-suunta tarkistetaan toteutuneesta geometriasta.
+      Sol-katselmoinnin kaksi P2-löydöstä korjattu: aukon positiivisen `sill_z`:n
+      törmäysalue ja tyhjän mallin oletusrajaus. Selainregressio tarkistaa molemmat.
 
 ### Muutoskerros (§5.6)
 - [x] **[RK]** `apply(baseline, changes)` Pythonissa
