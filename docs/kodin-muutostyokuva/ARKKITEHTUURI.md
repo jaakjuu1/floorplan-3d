@@ -1,7 +1,7 @@
 # Kodin muutostyökuva — arkkitehtuuri
 
-Tila: suunnitteludokumentti, luonnos 2 (K1–K3 päätetty), V0-toteutus kuvattu §6.4
-Päivä: 2026-09-29
+Tila: suunnitteludokumentti, luonnos 2 (K1–K3 päätetty), V0 §6.4 ja V1.1 §6.5
+Päivä: 2026-09-30
 Toteutuksen tarkistuslista: [CHECKLIST.md](CHECKLIST.md)
 
 Tämä dokumentti kuvaa, miten kolmesta olemassa olevasta palasta rakennetaan yksi
@@ -463,6 +463,42 @@ säilytetään myös suunnitelman `legacy`-kentässä. Virheellinen tuonti ei va
 aktiivista tilaa. Vioittunut tallennus estää automaattisen ylikirjoituksen.
 
 ### 6.5 Pohjapiirustus lähtöaineistona (V1)
+
+**V1.1:n toteutunut rajaus 2026-09-30:** PDF/PNG/JPEG tuodaan vain yhden
+aktiivisen pohjakuvan lähtöaineistoksi. PDF.js renderöi vektori- ja skannatut
+sivut paikallisesti; monisivuisessa aineistossa käyttäjä valitsee sivun esikatselusta.
+Huoneiden, seinien ja aukkojen jäljentäminen on seuraava erillinen osuus.
+Pilottikohteen ja liite-esimerkkien keskeneräisyys on käyttäjän sallima
+etenemispoikkeama; kenttätestejä, offline-kokonaisuutta tai koko V1:tä ei kuitata.
+
+Suunnitelmakuoren `kodin-design-v2.background` säilyttää muuttumattoman alkuperäisen
+liitteen base64-tavuina, SHA-256-tunnisteen, nimen, MIME:n, koon sekä sivuvalinnan
+ja sivun koon/kierron. Kanoninen `unit-v1` ja RK säilyvät ennallaan.
+Renderöity PNG on rajattu istuntovälimuisti, ei alkuperäisen korvike.
+Sekä paikallistallennus että JSON-vienti sisältävät alkuperäisen tiedoston.
+Vanha v2 ilman taustaa ja V0:n palautettava siirto toimivat edelleen.
+
+`src/io/background.ts` keskittää liite→malli→näyttö-muunnoksen käyttäen
+`src/io/unit.ts`:n y-akselimuunnosta. Liitekoordinaatit ovat orientoituja
+kuvapikseleitä tai PDF:n kierretyn scale=1-viewportin pisteitä, y alaspäin.
+Kohdistus on mallin millimetrejä, y ylöspäin, kierto vastapäivään.
+Kalibrointi tallentaa kaksi liitepistettä, etäisyyden sekä
+`inferred/archive_drawing`-alkuperän ja `attachment:<digest>/page:<numero>`-viitteen.
+Tarkkuutta tai kuittaajaa ei keksitä; mallin mittoihin ei kirjoiteta mitään.
+Zoom, laitteen pikselitiheys ja renderöintiresoluutio eivät ole mittakaavan lähteitä.
+Tiedoston/sivun vaihtaminen luo uuden kohdistuksen ilman vanhaa kalibrointia.
+
+Paikallistallennuksen vuoksi lähdeliite on enintään 2 MiB; PDF enintään 100 sivua,
+kuvan purkukoko 20 miljoonaa ja renderöinti 4 miljoonaa pikseliä, pitkä sivu
+enintään 8192 pikseliä. PDF.js-worker
+on paketoitu käännökseen. Enintään kaksi esikatselua välimuistissa;
+AbortSignal ja sukupolvitunniste peruuttavat vanhat renderöinnit ja estävät
+myöhäisiä tuloksia korvaamasta uudempaa valintaa. JSON-tuonnissa alkuperäiset
+tavut, digest ja todelliset sivutiedot tarkistetaan ennen tallennusta ja tilan vaihtoa.
+Kiintiövirhe peruu muutoksen. Liite ja kohdistus kulkevat yhteisen historian kautta;
+historiapino on enintään 150 tilaa ja 16 MiB kumpaakin pinoa kohden.
+
+Rajapinnat ja tarkka tallennusmuoto: [V1.1-SOPIMUS.md](V1.1-SOPIMUS.md).
 
 Käyttäjän tarkennus 2026-09-29: kartoituksen voi aloittaa myös olemassa olevasta
 pohjapiirustuksesta. Käyttäjän tuoman tiedoston tuki kuuluu V1:een; arkistojen

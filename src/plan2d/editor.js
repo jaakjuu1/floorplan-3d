@@ -166,17 +166,48 @@ const ui = {tool:'select', sel:null, mA:null, mCur:null,
   layers:{dims:true, labels:true, furn:true, grid:false, bearing:false, wallSnap:true}};
 let view = {x0:0, y0:0, s:.06};
 const undoStack = [], redoStack = [];
+let planImportGeneration = 0;
+const cancelPlanImport = () => { planImportGeneration++; };
+const backgroundUI = window.createBackgroundUI({
+  getBackground: () => state.background ?? null,
+  replace: background => {
+    if (storageBlocked){ toast(tr('Tuo kelvollinen suunnitelma tai palauta oletus ennen pohjakuvan tallennusta.','Import a valid plan or reset before saving a drawing.')); return false; }
+    return mutate(() => { state.background = background; });
+  },
+  update: fn => mutate(() => { if (state.background) fn(state.background); }),
+  getBounds: () => ({x:BOUNDS.x,y:BOUNDS.y,w:BOUNDS.w,h:BOUNDS.h}),
+  getView: () => view, toMM: e => toMM(e), toast: msg => toast(msg),
+  closeDrawers: () => closeDrawers(), is3D: () => is3D(), cancelPlanImport,
+  onLoadError: () => { storageBlocked=true; },
+});
 
 function save(){
-  if (storageBlocked) return;
-  try { window.UnitModel.saveDesign(localStorage, state); }
-  catch(e) { toast(tr('Tallennus epäonnistui', 'Could not save plan')); console.error(e); }
+  if (storageBlocked) return true;
+  try { window.UnitModel.saveDesign(localStorage, state); return true; }
+  catch(e) { toast(tr('Tallennus epäonnistui. Aiempi suunnitelma säilyi.', 'Could not save. The previous plan was preserved.')); console.error(e); return false; }
 }
 const snap = () => JSON.stringify(state);
-function commit(before){ undoStack.push(before); if (undoStack.length > 150) undoStack.shift(); redoStack.length = 0; save(); }
-function mutate(fn){ const b = snap(); fn(); project(); commit(b); renderAll(); }
-function undo(){ if (!undoStack.length) return toast(tr('Ei kumottavaa', 'Nothing to undo')); redoStack.push(snap()); state = JSON.parse(undoStack.pop()); project(); validateSel(); save(); renderAll(); }
-function redo(){ if (!redoStack.length) return; undoStack.push(snap()); state = JSON.parse(redoStack.pop()); project(); validateSel(); save(); renderAll(); }
+function pushHistory(stack, snapshot){
+  stack.push(snapshot);
+  // ponytail: JSON history is capped at 16 MiB per stack; use shared revisions if larger attachments become necessary.
+  let bytes = stack.reduce((sum, item) => sum + item.length * 2, 0);
+  while (stack.length > 1 && (stack.length > 150 || bytes > 16 * 1024 * 1024)) bytes -= stack.shift().length * 2;
+}
+function commit(before){
+  cancelPlanImport();
+  if (!save()){ state=JSON.parse(before); project(); validateSel(); return false; }
+  pushHistory(undoStack, before); redoStack.length=0; return true;
+}
+function mutate(fn){ const b=snap(); fn(); project(); const ok=commit(b); renderAll(); return ok; }
+function restoreHistory(from, to){
+  if (!from.length) return;
+  cancelPlanImport(); backgroundUI.cancelPending();
+  const before=snap(); state=JSON.parse(from[from.length-1]);
+  if (!save()){ state=JSON.parse(before); return; }
+  from.pop(); pushHistory(to,before); project(); validateSel(); renderAll();
+}
+function undo(){ if (!undoStack.length) return toast(tr('Ei kumottavaa','Nothing to undo')); restoreHistory(undoStack,redoStack); }
+function redo(){ restoreHistory(redoStack,undoStack); }
 function validateSel(){ if (ui.sel?.kind==='furn' && !getF(ui.sel.id)) ui.sel = null; }
 const getF = id => state.furniture.find(f => f.id === id);
 
@@ -478,6 +509,7 @@ function renderSel(){
 
 function renderAll(){
   renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderOpenings(); renderDims(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
+  backgroundUI.render();
   window.View3D?.sync();
 }
 
@@ -745,6 +777,7 @@ function applyView(){
   $('#sbBar').style.width = nice*view.s + 'px';
   $('#sbText').textContent = nice >= 1000 ? `${nice/1000} m` : `${nice} mm`;
   renderSel(); renderMeasure();
+  backgroundUI.render();
 }
 function fitView(){
   const W = svg.clientWidth, H = svg.clientHeight;
@@ -1067,7 +1100,17 @@ $('#zoomOut').onclick = () => zoomCenter(.8);
 $('#fit').onclick = fitView;
 $('#s60').onclick = () => { setRatio(60); toast(tr('Näytetään mittakaavassa 1:60 (sama kuin alkuperäisessä piirroksessa)', 'Showing at 1:60 (same scale as the original plan)')); };
 $('#s100').onclick = () => setRatio(100);
-$('#undo').onclick = undo; $('#redo').onclick = redo;
+// Touch releases remain responsive even when Chromium suppresses the click after a drag.
+for (const [id, action] of [['undo',undo],['redo',redo]]){
+  const button=$('#'+id); let down=null;
+  button.onpointerdown=e=>{down={x:e.clientX,y:e.clientY};};
+  button.onpointerup=e=>{
+    if ((e.pointerType==='touch'||e.pointerType==='pen') && down && Math.hypot(e.clientX-down.x,e.clientY-down.y)<TAP) action();
+    down=null;
+  };
+  button.onpointercancel=()=>{down=null;};
+  button.onclick=e=>{if(e.pointerType!=='touch'&&e.pointerType!=='pen')action();};
+}
 $('#clearAll').onclick = clearLayout;
 
 /* Koko näyttö: standardi-API + Safarin (iPad) webkit-etuliitteellinen versio */
@@ -1101,13 +1144,30 @@ $('#exportJson').onclick = () => download(tr('sisustussuunnitelma', 'floor-plan-
 $('#importJson').onclick = () => $('#fileIn').click();
 $('#fileIn').onchange = e => {
   const file = e.target.files[0]; if (!file) return;
-  file.text().then(txt => {
-    try { const next=window.UnitModel.parseDesign(JSON.parse(txt), defaults), b=snap(); state=next; storageBlocked=false; project(); ui.sel=null; commit(b); fitView(); renderAll(); toast(tr('Suunnitelma tuotu', 'Plan imported')); }
-    catch(err){ console.error(err); toast(tr('Virheellinen tiedostomuoto', 'Invalid file format')); }
-  });
+  backgroundUI.cancelPending(); const generation=++planImportGeneration;
+  (async () => {
+    try {
+      if (file.size > 8 * 1024 * 1024) throw new Error('Suunnitelma ylittää 8 MiB:n rajan');
+      const next=window.UnitModel.parseDesign(JSON.parse(await file.text()), defaults);
+      await backgroundUI.prepare(next.background ?? null);
+      if (generation !== planImportGeneration) return;
+      // Persist before swapping the live plan, including recovery from corrupt storage.
+      window.UnitModel.saveDesign(localStorage,next);
+      const b=snap(); state=next; storageBlocked=false; cancelPlanImport();
+      pushHistory(undoStack,b); redoStack.length=0; project(); ui.sel=null;
+      fitView(); renderAll(); toast(tr('Suunnitelma tuotu','Plan imported'));
+    } catch(err){
+      if (generation !== planImportGeneration) return;
+      console.error(err); toast(tr('Virheellinen tuonti tai tallennus epäonnistui. Aiempi suunnitelma säilyi.','Invalid import or save failed. Previous plan preserved.'));
+    }
+  })();
   e.target.value = '';
 };
-$('#reset').onclick = () => { if (confirm(tr('Palautetaanko oletussuunnitelma? (voi kumota)', 'Reset to the default design? (undoable)'))){ const b = snap(); state = structuredClone(defaults); storageBlocked=false; project(); ui.sel = null; commit(b); fitView(); renderAll(); } };
+$('#reset').onclick = () => { if (confirm(tr('Palautetaanko oletussuunnitelma? (voi kumota)', 'Reset to the default design? (undoable)'))){
+  cancelPlanImport(); backgroundUI.cancelPending(); const b=snap(), wasBlocked=storageBlocked;
+  state=structuredClone(defaults); storageBlocked=false; project(); ui.sel=null;
+  if (!commit(b)) storageBlocked=wasBlocked; fitView(); renderAll();
+} };
 // Näytön suunnan vaihto, otsikkorivin rivitys ym. muuttavat piirtoalueen kokoa; kun koko palautuu nollasta (esim. ensimmäinen asettelu), sovitetaan ikkunaan uudelleen
 // muissa kokomuutoksissa (paneelien piilotus / näyttö ym.) näkymän keskikohta pysyy paikallaan
 let lastW = 0, lastH = 0;

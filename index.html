@@ -14,7 +14,7 @@
   --accent:#b5653a; --accent-soft:#f3e3d8; --teal:#2f5d62;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;overscroll-behavior:none;touch-action:manipulation;
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:clip;overscroll-behavior:none;touch-action:manipulation;
   -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
   font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
 button,input,select{font:inherit;color:inherit}
@@ -154,6 +154,28 @@ main.animating #hint3d{opacity:0}
   border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:0 10px 30px rgba(40,30,20,.14);z-index:20;animation:fadeIn .2s ease}
 .menu-pop .btn{text-align:left}
 .range span{font-variant-numeric:tabular-nums;color:var(--ink)}
+.background-controls{padding:12px 16px;border-bottom:1px solid var(--line);background:#faf6ef}
+.background-controls h3{margin:0 0 8px;font-size:13px}
+.background-controls label{display:flex;flex-direction:column;gap:4px;margin-top:8px;font-size:12px;color:var(--muted)}
+.background-controls input{width:100%;min-height:38px;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff}
+.background-controls input[type=range]{padding:0;accent-color:var(--accent)}
+.background-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.background-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.background-grid label,.background-controls input{min-width:0}
+.background-controls [data-role=hint]{font-size:12px;color:var(--muted);min-height:1em}
+.background-hint{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.background-mode{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:8;display:flex;align-items:center;gap:8px;max-width:calc(100% - 20px);padding:6px 8px 6px 12px;border-radius:12px;background:var(--ink);color:white;box-shadow:0 4px 18px #0003;pointer-events:none}
+.background-mode button{pointer-events:auto}
+.background-mode[hidden]{display:none}
+.background-mode span{font-size:12px}
+.background-controls dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:0 16px 50px #0004}
+.background-controls dialog::backdrop{background:#211d1980}
+.background-dialog{display:flex;flex-direction:column;gap:10px;padding:16px;max-height:calc(100dvh - 24px);overflow:auto}
+.background-dialog h3{margin:0}
+.background-dialog select{min-height:44px;font-size:16px;border:1px solid var(--line);border-radius:6px;padding:8px;background:white}
+.background-preview{display:grid;place-items:center;min-height:120px;max-height:50dvh;overflow:auto;background:#e9e4dc;border:1px solid var(--line);border-radius:8px}
+.background-preview img{display:block;max-width:100%;max-height:48dvh;object-fit:contain}
+@media(pointer:coarse){.background-controls{padding:12px}.background-controls .btn{min-height:44px}.background-controls input{font-size:16px}.background-grid{gap:8px}}
 /* ---------- Valinnan jälkeinen kelluva työkalupalkki ---------- */
 #fab{position:absolute;left:50%;bottom:16px;transform:translate(-50%,12px);display:flex;align-items:center;gap:4px;padding:5px;
   background:rgba(255,253,249,.97);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 26px rgba(40,30,20,.16);
@@ -297,6 +319,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
       <defs id="defs"></defs>
       <g id="gGrid"></g>
       <g id="gRooms"></g>
+      <g id="gBackground"></g>
       <g id="gFurn"></g>
       <g id="gWalls"></g>
       <g id="gOpen"></g>
@@ -320,7 +343,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
     <div id="fab"></div>
   </main>
 
-  <aside class="right"><div id="panel"></div></aside>
+  <aside class="right"><div id="backgroundHost"></div><div id="panel"></div></aside>
 
   <footer>
     <span class="only2d">X <b id="cx">—</b></span><span class="only2d">Y <b id="cy">—</b></span>
@@ -331,7 +354,6 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
   </footer>
 </div>
 <div id="toast"></div>
-
 
 <script type="module" src="/src/main.ts"></script>
 </body>

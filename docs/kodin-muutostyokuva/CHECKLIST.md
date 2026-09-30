@@ -124,6 +124,11 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
 
 ## Vaihe V1: Kenttäkartoitus laserilla
 
+**Etenemispoikkeama 2026-09-30:** käyttäjä sallii rajatun V1.1:n teknisen
+toteutuksen, vaikka pilottikohde ja liite-esimerkit ovat kesken. V1.1:n
+[rajapinnat ja tallennusmuoto](V1.1-SOPIMUS.md) on dokumentoitu.
+Kenttätestejä, PWA/offline-kokonaisuutta ja koko V1:tä ei kuitata valmiiksi.
+
 ### Kartoitustila (§6.1)
 - [ ] **[FP]** Uusi tila "Kartoitus" editorin rinnalle, suunniteltu ensin
       Android-puhelimen pystynäytölle ja yhden käden käyttöön (§6.0)
@@ -142,10 +147,15 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
 - [ ] **[FP]** Nykytilan lukitus ja kartoittajan kuittaus
 
 ### Pohjapiirustus lähtöaineistona (§6.5)
-- [ ] **[FP]** PDF:n sivun tai PNG/JPEG-kuvan tuonti 2D-taustaksi; lähdeliite
-      säilyy projektin mukana ja toimii offline-tilassa
-- [ ] **[FP]** Taustan kohdistus ja mittakaavan kalibrointi kahden pisteen ja
-      tunnetun matkan avulla; kalibrointimitan alkuperä kirjataan
+- [x] **[FP]** V1.1: PDF:n sivun tai PNG/JPEG-kuvan paikallinen tuonti 2D-taustaksi,
+      monisivuisen PDF:n esikatselu ja sivuvalinta. Alkuperäiset tavut, sivuvalinta
+      ja lähdetiedot säilyvät tallennuksessa ja JSON-viennissä. Yksi aktiivinen liite
+- [ ] **[FP]** Edellisen kohdan jatko: koko sovelluksen saatavuus offline-tilassa
+      (PWA ja projektivarasto, §6.3)
+- [x] **[FP]** V1.1: siirto, kierto, läpinäkyvyys, näkyvyys ja kohdistuksen lukitus;
+      kahden lähdepisteen millimetrikalibrointi, inferred/archive_drawing ja
+      liite-/sivuviite. Malli, baseline ja mittojen statukset säilyvät muuttumattomina.
+      Liitteen vaihto ja sivun vaihto nollaavat kalibroinnin; kumoa/tee uudelleen toimii
 - [ ] **[FP]** Huoneiden, seinien ja aukkojen jäljentäminen sekä piirustuksen
       mittojen käsisyöttö samaan huoneistomalliin; päivittyvä 2D/3D-esikatselu
 - [ ] **[MOL]** Piirustusmitat `inferred` / `archive_drawing`, lähdeviite
@@ -154,6 +164,12 @@ ja `apply`-testit ovat vihreitä molemmissa repoissa, ja `rk` validoi saman tied
 - [ ] **[FP]** Playwright-testit myös 390×844-kosketusnäkymässä: PDF/kuva →
       kalibrointi → huone ja aukko → 2D/3D → kenttämitta → tallennus ja avaus
       offline-tilassa; piirustuksen muut mitat eivät muutu `measured`-tilaan
+- [x] **[FP]** Edellisen kohdan V1.1-osuus: PDF/kuva → sivuvalinta → kalibrointi
+      → kohdistus → 2D/3D → tallennus, avaus ja JSON-kierros. V0-regressiot,
+      virhetilanteet, historian toiminta ja vanhan latauksen kilpailutilanteet
+      tarkistettu työpöydällä ja aidoin kosketustapahtumin 390×844-näkymässä.
+      50 TypeScript- ja 8 Chromium-testiä läpäisi; RK:n 109 testiä ja 31
+      sopimuskopiota säilyvät vihreinä.
 
 ### Geometria (§5.5)
 - [ ] **[FP]** Raakamittaukset + luonnos → seinien koordinaatit

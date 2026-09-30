@@ -1,0 +1,2 @@
+# PDF test sources must retain their exact bytes and xref offsets.
+fixtures/background/*.pdf binary

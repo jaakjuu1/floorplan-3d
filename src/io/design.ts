@@ -1,6 +1,7 @@
 import { apply } from '../model/apply';
 import type { UnitInputs } from '../model/unit-input-v1';
 import { parseUnit } from './unit';
+import { validateBackground, type Background } from './background';
 
 export const DEFAULT_STORE = 'kodin-design-v2';
 export const LEGACY_STORE = 'huxing-design-v1';
@@ -26,6 +27,8 @@ export interface Design {
   measures: { a: { x: number; y: number }; b: { x: number; y: number } }[];
   /** Exact old JSON payload, including fields the editor does not understand. */
   legacy?: unknown;
+  /** Local source drawing only; never changes the canonical unit. */
+  background?: Background | null;
 }
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
 type RecordValue = Record<string, unknown>;
@@ -82,6 +85,7 @@ export function parseDesign(input: unknown, defaults: Design): Design {
     const unit = parseUnit(data.unit);
     const rooms = roomDefaults(unit); // Also validates ordered changes with apply.
     validateEditor(data);
+    if (Object.hasOwn(data, 'background')) validateBackground(data.background);
     requireValue(Object.keys(record(data.rooms)).every(id => Object.hasOwn(rooms, id)), 'Unknown editor room');
     for (const [id, room] of Object.entries(record(data.rooms))) {
       requireValue((room as Design['rooms'][string]).mat === rooms[id].mat, 'Room material differs from change layer');

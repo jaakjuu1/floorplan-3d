@@ -78,7 +78,24 @@ tuo se uuteen osoitteeseen.
 Tiedosto → Tuo JSON hyväksyy kanonisen `unit-v1`-huoneistomallin, sovelluksen
 oman suunnitelmaviennin ja vanhan editorin JSON-viennin. Tuonti tarkistaa sekä
 rakenteen että muutosoperaatioiden lopputilan ennen nykyisen suunnitelman vaihtoa.
-PDF/PNG/JPEG-pohjapiirustustuonti kuuluu V1:een.
+Ominaisuudet → Pohjakuva → Tuo PDF/PNG/JPEG avaa paikallisen esikatselun.
+Valitse PDF-sivu ja hyväksy esikatselu. Avaa kohdistuksen lukitus, syötä tunnettu
+etäisyys millimetreinä ja napauta Kalibroi kaksi pistettä. Valitse kaksi pistettä
+pohjakuvasta; ensimmäisen pisteen sijainti säilyy. X/Y (mallin millimetrit,
+y ylöspäin), kierto, siirto sormella, läpinäkyvyys ja näkyvyys säätyvät samassa
+paneelissa. Lukitse kohdistus lopuksi. Sivun tai tiedoston vaihtaminen nollaa
+kalibroinnin. Piirustusmitta pysyy `inferred/archive_drawing`-tietona.
+
+Yksi alkuperäinen liite säilyy suunnitelmakuoren `background.source.data`-kentässä
+base64-muodossa sekä paikallistallennuksessa että JSON-viennissä. Liitettä ei
+lähetetä palvelimelle; PDF.js ja worker sisältyvät paikalliseen käännökseen.
+Tuonti ja kalibrointi eivät muuta huoneistomallia tai sen mittojen statuksia.
+Rajat: tiedosto 2 MiB, esikatselu 4 miljoonaa pikseliä, kuvan purkukoko
+20 miljoonaa pikseliä ja PDF 100 sivua. Tallennuskiintiön täyttyessä muutos
+perutaan ja aiempi suunnitelma säilyy. Historia rajataan myös 16 MiB:iin
+kumpaakin pinoa kohden. Tämä V1.1 ei sisällä jäljentämistä tai PWA/offline-asennusta.
+Puhelimessa avaa Ominaisuudet; kalibrointitila sulkee paneelin ja näyttää
+piirtoalueella Lopeta-painikkeen. Käytä yläreunan zoom-painikkeita tarvittaessa.
 
 Demoasunnon rakenne on `examples/demo-unit.json`:ssa. Sen mitat ovat vanhasta
 piirrostoteutuksesta siirrettyjä oletuksia (`assumed`, `archive_drawing`), eivät
@@ -95,6 +112,10 @@ Suunnitelmavienti on `kodin-design-v2`: se sisältää kanonisen mallin `unit`-k
 sekä irtokalusteet, huoneiden näyttönimet ja editorin näyttömittaukset. Jälkimmäiset
 eivät ole kanonisia kenttämittauksia. Pelkkä huoneistomalli voidaan viedä RK:hon
 suunnitelman `unit`-kentästä.
+
+V1.1 lisää valinnaisen `background`-kentän samaan suunnitelmakuoreen;
+vanhat v2-viennit ja V0:n siirto säilyvät luettavina. Tallennusmuoto ja
+koordinaatit: [V1.1-SOPIMUS.md](docs/kodin-muutostyokuva/V1.1-SOPIMUS.md).
 
 Vanha `huxing-design-v1` siirretään automaattisesti uuteen tallennusavaimeen.
 Alkuperäinen avain säilyy koskemattomana ja vanha JSON säilyy myös viennin
