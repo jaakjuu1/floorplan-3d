@@ -170,6 +170,9 @@ Kenttätestejä, PWA/offline-kokonaisuutta ja koko V1:tä ei kuitata valmiiksi.
       tarkistettu työpöydällä ja aidoin kosketustapahtumin 390×844-näkymässä.
       50 TypeScript- ja 8 Chromium-testiä läpäisi; RK:n 109 testiä ja 31
       sopimuskopiota säilyvät vihreinä.
+- [x] **[FP]** V1.1:n Sol-lukukatselmointi: kolme P2- ja yksi P3-löydös korjattu
+      ja tarkistettu uudelleen selaimessa. Pääagentti katsoi tallennetut puhelinkuvat.
+      [Tarkistukset, löydökset ja kuvat](V1.1-TOIMITUS.md)
 
 ### Geometria (§5.5)
 - [ ] **[FP]** Raakamittaukset + luonnos → seinien koordinaatit
