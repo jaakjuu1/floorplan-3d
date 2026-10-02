@@ -19,7 +19,7 @@ const SW = () => stage.clientWidth, SH = () => stage.clientHeight;
 const opt = {cut:2.8, furn:true, labels:true, night:false, hour:10, mode:'orbit'};
 
 let inited = false, active = false, raf = 0, anim = null, fly = null;
-let renderer, labelRenderer, scene, camera, orbit, walkCtl, hemi, sun, ground, glassMat, wallMat, capMat, frameMat;
+let renderer, labelRenderer, scene, camera, orbit, walkCtl, hemi, sun, ground, glassMat, wallMat, capMat, frameMat, newMat, ghostMat;
 let archFloor, archUp, furnG, labelG, lampG, colliders = [], selKey = null, selHelper = null;
 let sigArch = '', sigFurn = '', sigLabels = '', grow = 1, furnGrow = 1;
 const doors = [], keys = {};
@@ -58,6 +58,9 @@ function init(){
   const pm = new THREE.PMREMGenerator(renderer); envTex = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
   glassMat = new THREE.MeshPhysicalMaterial({color:0xcfe6ef, roughness:.05, transparent:true, opacity:.28, depthWrite:false, side:THREE.DoubleSide});
   wallMat = mat('#f4f1eb', {roughness:.92}); capMat = mat('#34312d', {roughness:.9}); frameMat = mat('#5d6166', {roughness:.5, metalness:.4});
+  // Change drawing colours (§5.6): new or changed in red, demolished as a yellow ghost.
+  newMat = mat('#c9443a', {roughness:.85});
+  ghostMat = new THREE.MeshStandardMaterial({color:'#e8c547', transparent:true, opacity:.35, depthWrite:false});
 
   archFloor = new THREE.Group(); archUp = new THREE.Group(); furnG = new THREE.Group(); labelG = new THREE.Group(); lampG = new THREE.Group();
   scene.add(archFloor, archUp, furnG, labelG, lampG);
@@ -107,8 +110,9 @@ function init(){
     }
     if (anim || opt.mode !== 'orbit' || !tap) return;
     const h = pick(e);
-    if (h?.door) h.door.open = !h.door.open;
+    if (h?.door){ h.door.open = !h.door.open; window.select({kind:'opening', id:h.door.id}); }
     else if (h?.fid) window.select({kind:'furn', id:h.fid});
+    else if (h?.element) window.select(h.element);
     else if (h?.room) window.select({kind:'room', id:h.room});
     else window.select(null);
   });
@@ -763,22 +767,84 @@ function buildFurniture(f){
   return g;
 }
 
+/* ======================= Mallin elementit Three.js-objekteina ======================= */
+// Each canonical element is one Object3D group with editing methods. A method never edits meshes:
+// it appends one validated change (src/model/edit.ts) through the editor's undo history, and the scene
+// is rebuilt from the model, so 2D, 3D, saving and the change drawing always agree.
+const edit = build => window.editUnit(build), EDITS = () => window.UnitModel.edit;
+class ElementObject extends THREE.Group {
+  constructor(kind, id, extra = {}){ super(); this.elementKind = kind; this.elementId = id; Object.assign(this.userData, {element:{kind, id}}, extra); }
+  get changeState(){ return this.userData.demolished ? 'demolished' : MARKS.added.has(this.elementId) ? 'added' : MARKS.modified.has(this.elementId) ? 'modified' : 'existing'; }
+  select(){ window.select({kind:this.elementKind, id:this.elementId}); return this; }
+  /** Client coordinates of the top centre of the element's largest visible part (a wall's centre may be a door gap). */
+  screenPosition(){
+    let box = null, volume = -1;
+    this.traverse(o => {
+      if (!o.isMesh || !o.visible || o.userData.walkOnly) return;
+      const b = new THREE.Box3().setFromObject(o), d = b.getSize(new THREE.Vector3()), v = d.x * d.y * d.z;
+      if (v > volume){ volume = v; box = b; }
+    });
+    box ??= new THREE.Box3().setFromObject(this);
+    const c = box.getCenter(new THREE.Vector3()); c.y = box.max.y;
+    const p = c.project(camera), r = renderer.domElement.getBoundingClientRect();
+    return {x:r.left + (p.x + 1) / 2 * r.width, y:r.top + (1 - p.y) / 2 * r.height};
+  }
+}
+class WallObject extends ElementObject {
+  constructor(id, demolished = false){ super('wall', id, {demolished}); }
+  demolish(){ return edit(u => EDITS().demolishWall(u, this.elementId)); }
+  restore(){ return edit(u => EDITS().restoreWall(u, this.elementId)); }
+}
+class OpeningObject extends ElementObject {
+  constructor(id){ super('opening', id); }
+  resize(size){ return edit(u => EDITS().modifyOpening(u, this.elementId, size)); }
+  removeThresholds(){
+    const ids = (TARGET.thresholds ?? []).filter(t => t.at_opening === this.elementId).map(t => t.id);
+    return ids.length > 0 && edit(u => ids.reduce((r, id) => EDITS().removeThreshold(r.unit, id), {unit:u}));
+  }
+}
+class RoomObject extends ElementObject {
+  constructor(id){ super('room', id); }
+  setFloor(material){ return edit(u => EDITS().setFloor(u, this.elementId, material)); }
+}
+class FixtureObject extends ElementObject {
+  constructor(id){ super('fixture', id, {fixtureId:id}); }
+  replaceWith(fixture){ return edit(u => EDITS().replaceFixture(u, this.elementId, fixture)); }
+}
+const elements = new Map();
+const register = o => { elements.set(`${o.elementKind}:${o.elementId}`, o); return o; };
+const forget = (...kinds) => { for (const key of [...elements.keys()]) if (kinds.includes(key.split(':')[0])) elements.delete(key); };
+const model = {
+  wall:id => elements.get(`wall:${id}`), opening:id => elements.get(`opening:${id}`),
+  room:id => elements.get(`room:${id}`), fixture:id => elements.get(`fixture:${id}`),
+  all:() => [...elements.values()],
+  addWall:(a, b, options) => edit(u => EDITS().addWall(u, a, b, options)),
+  addFixture:fixture => edit(u => EDITS().addFixture(u, fixture)),
+};
+
 /* ======================= Rakennus ======================= */
 function clearGroup(g){ g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); g.clear(); }
 const edgeMat = new THREE.LineBasicMaterial({color:0x6f675b}), skirtMat = new THREE.MeshStandardMaterial({color:'#8b7f6e', roughness:.6});
 function shapeOf(poly, flip){ const s = new THREE.Shape(); poly.forEach(([x, y], i) => s[i ? 'lineTo' : 'moveTo'](wx(x), flip ? wz(y) : -wz(y))); return s; }
-function wallLinear(a,b,thickness,yb,yt,id,part){
+function wallLinear(a,b,thickness,yb,yt,id,part,parent=archUp,face=wallMat){
   if (yt <= yb) return;
   const dx=b[0]-a[0],dy=b[1]-a[1],length=M(Math.hypot(dx,dy)),angle=-Math.atan2(dy,dx),x=wx((a[0]+b[0])/2),z=wz((a[1]+b[1])/2),depth=M(thickness);
-  const geo=new THREE.BoxGeometry(length,yt-yb,depth),o=new THREE.Mesh(geo,[wallMat,wallMat,capMat,wallMat,wallMat,wallMat]);
-  o.position.set(x,(yb+yt)/2,z);o.rotation.y=angle;o.castShadow=o.receiveShadow=true;o.userData.wallId=id;o.userData.wallPart=part;archUp.add(o);
-  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat);edges.position.copy(o.position);edges.rotation.y=angle;edges.userData.walkOnly=true;edges.visible=opt.mode==='walk';archUp.add(edges);
-  const sh=Math.min(.12,yt);if(yb<=.001){const sk=new THREE.Mesh(new THREE.BoxGeometry(length+.02,sh,depth+.02),skirtMat);sk.position.set(x,sh/2,z);sk.rotation.y=angle;sk.userData.walkOnly=true;sk.visible=opt.mode==='walk';archUp.add(sk);}
+  const geo=new THREE.BoxGeometry(length,yt-yb,depth),o=new THREE.Mesh(geo,[face,face,capMat,face,face,face]);
+  o.position.set(x,(yb+yt)/2,z);o.rotation.y=angle;o.castShadow=o.receiveShadow=true;o.userData.wallId=id;o.userData.wallPart=part;parent.add(o);
+  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat);edges.position.copy(o.position);edges.rotation.y=angle;edges.userData.walkOnly=true;edges.visible=opt.mode==='walk';parent.add(edges);
+  const sh=Math.min(.12,yt);if(yb<=.001){const sk=new THREE.Mesh(new THREE.BoxGeometry(length+.02,sh,depth+.02),skirtMat);sk.position.set(x,sh/2,z);sk.rotation.y=angle;sk.userData.walkOnly=true;sk.visible=opt.mode==='walk';parent.add(sk);}
+}
+// Demolished walls stay visible as a non-colliding ghost so they can be inspected and restored.
+function wallGhost(w, top){
+  const g = register(new WallObject(w.id, true)), [a, b] = [w.a, w.b], length = M(Math.hypot(b[0]-a[0], b[1]-a[1])), ht = w.height ? Math.min(M(w.height), top) : top;
+  const ghost = new THREE.Mesh(new THREE.BoxGeometry(length, ht, M(w.thickness)), ghostMat);
+  ghost.position.set(wx((a[0]+b[0])/2), ht/2, wz((a[1]+b[1])/2)); ghost.rotation.y = -Math.atan2(b[1]-a[1], b[0]-a[0]); ghost.renderOrder = 2;
+  g.add(ghost); archUp.add(g);
 }
 function wallCollider(poly){ colliders.push(poly.map(([x,y]) => [wx(x), wz(y)])); }
 
 function buildArch(){
-  clearGroup(archFloor); clearGroup(archUp); lampG.clear(); doors.length = 0; colliders = [];
+  clearGroup(archFloor); clearGroup(archUp); lampG.clear(); doors.length = 0; colliders = []; forget('wall', 'opening', 'room'); selKey = null;
   const top = opt.cut;
   ROOMS.forEach(r => {
     const m = floorMat(state.rooms[r.id].mat), bay = r.counted === false;
@@ -786,7 +852,8 @@ function buildArch(){
     geo.rotateX(-Math.PI/2);
     const fl = new THREE.Mesh(geo, bay ? [m, mat('#e9e4da')] : m);
     fl.receiveShadow = true; fl.userData.room = r.id;
-    if (bay){ fl.castShadow = true; archUp.add(fl); } else archFloor.add(fl);
+    const room = register(new RoomObject(r.id)); room.add(fl);
+    if (bay){ fl.castShadow = true; archUp.add(room); } else archFloor.add(room);
     const cg = new THREE.ShapeGeometry(shapeOf(r.poly, true)); cg.rotateX(Math.PI/2);
     const ceil = new THREE.Mesh(cg, mat('#fbfaf7', {roughness:1})); ceil.position.y = H; ceil.visible = top >= H; archUp.add(ceil);
     if (r.at){
@@ -795,16 +862,21 @@ function buildArch(){
       const pl = new THREE.PointLight(0xffd9a8, 0, 7, 1.6); pl.position.set(wx(r.at[0]), H - .25, wz(r.at[1])); lampG.add(pl);
     }
   });
-  WALLS.forEach(w => w.segments.forEach((seg, i) => {
-    const ht = w.height ? Math.min(M(w.height), top) : top;
-    wallLinear(seg.a,seg.b,w.thickness,0,ht,w.id,i); wallCollider(seg.polygon);
-  }));
+  WALLS.forEach(w => {
+    const g = register(new WallObject(w.id)), face = MARKS.added.has(w.id) ? newMat : wallMat; archUp.add(g);
+    w.segments.forEach((seg, i) => {
+      const ht = w.height ? Math.min(M(w.height), top) : top;
+      wallLinear(seg.a,seg.b,w.thickness,0,ht,w.id,i,g,face); wallCollider(seg.polygon);
+    });
+  });
+  PLAN.demolishedWalls.forEach(w => wallGhost(w, top));
     OPENINGS.forEach(o => {
     const [ax,ay]=o.a, [bx,by]=o.b, cx=(ax+bx)/2, cy=(ay+by)/2, length=M(o.width), thick=Math.max(.025,M(o.thickness));
     const sill=M(o.sill||0), height=M(o.height||2100), head=Math.min(top,sill+height), angle=Math.atan2(-(by-ay),bx-ax);
-    if(o.kind==='door'||o.kind==='sliding_door'){const floor=box(length,.012,thick,mat('#d8d0c0',{roughness:.3}),wx(cx),.006,wz(cy));floor.rotation.y=angle;floor.castShadow=false;archFloor.add(floor);}
-    if(sill>0) wallLinear(o.a,o.b,o.thickness,0,Math.min(sill,top),o.host_wall,`sill-${o.id}`);
-    if(top>head) wallLinear(o.a,o.b,o.thickness,head,top,o.host_wall,`lintel-${o.id}`);
+    const g=register(new OpeningObject(o.id)), changed=MARKS.modified.has(o.id), face=changed?newMat:wallMat; archUp.add(g);
+    if(o.kind==='door'||o.kind==='sliding_door'){const floor=box(length,.012,thick,changed?newMat:mat('#d8d0c0',{roughness:.3}),wx(cx),.006,wz(cy));floor.rotation.y=angle;floor.castShadow=false;g.add(floor);}
+    if(sill>0) wallLinear(o.a,o.b,o.thickness,0,Math.min(sill,top),o.host_wall,`sill-${o.id}`,g,face);
+    if(top>head) wallLinear(o.a,o.b,o.thickness,head,top,o.host_wall,`lintel-${o.id}`,g,face);
     if(sill>0 || o.kind==='window') wallCollider(o.polygon);
     if(o.kind==='window'){
       const gh=head-sill; if(gh<=0)return;
@@ -812,11 +884,11 @@ function buildArch(){
       const add=(w,h,d,x,y,z,m)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);mesh.position.set(x,y,z);frame.add(mesh);};
       add(length,gh,.012,0,gh/2,0,glassMat);const n=Math.max(1,Math.round(length/.9));
       for(let k=0;k<=n;k++)add(.045,gh,.06,-length/2+k*length/n,gh/2,0,frameMat);
-      [.02,gh-.02].forEach(y=>add(length,.04,.06,0,y,0,frameMat));archUp.add(frame);return;
+      [.02,gh-.02].forEach(y=>add(length,.04,.06,0,y,0,frameMat));g.add(frame);return;
     }
     if(o.kind==='sliding_door'){
       const ph=Math.min(height,top),plen=length*.55,panels=new THREE.Group();panels.position.set(wx(cx),0,wz(cy));panels.rotation.y=angle;panels.userData.openingId=o.id;
-      [[-length*.225,-.02],[length*.225,.02]].forEach(([x,z])=>{const pane=new THREE.Mesh(new THREE.BoxGeometry(plen,ph,.018),glassMat);pane.position.set(x,ph/2,z);panels.add(pane);[ph-.03,.03].forEach(y=>{const rail=new THREE.Mesh(new THREE.BoxGeometry(plen,.05,.06),frameMat);rail.position.set(x,y,z);panels.add(rail);});[-1,1].forEach(e=>{const side=new THREE.Mesh(new THREE.BoxGeometry(.04,ph,.06),frameMat);side.position.set(x+e*plen/2,ph/2,z);panels.add(side);});});archUp.add(panels);return;
+      [[-length*.225,-.02],[length*.225,.02]].forEach(([x,z])=>{const pane=new THREE.Mesh(new THREE.BoxGeometry(plen,ph,.018),glassMat);pane.position.set(x,ph/2,z);panels.add(pane);[ph-.03,.03].forEach(y=>{const rail=new THREE.Mesh(new THREE.BoxGeometry(plen,.05,.06),frameMat);rail.position.set(x,y,z);panels.add(rail);});[-1,1].forEach(e=>{const side=new THREE.Mesh(new THREE.BoxGeometry(.04,ph,.06),frameMat);side.position.set(x+e*plen/2,ph/2,z);panels.add(side);});});g.add(panels);return;
     }
     if(o.kind!=='door') return;
     const h=o.h||o.a, dx=(bx-ax)/(o.width||1), dy=(by-ay)/(o.width||1), c=o.c||[dx,dy];
@@ -826,16 +898,20 @@ function buildArch(){
     knob.position.set(length-.07,Math.min(1,dh-.05),0); knob.scale.z=2.2; pivot.add(leaf,knob);
     const ang=v=>Math.atan2(-v[1],v[0]), door={pivot,a0:ang(c),a1:ang(swing),open:true,id:o.id,length};
     if(door.a1-door.a0>Math.PI)door.a1-=Math.PI*2;if(door.a0-door.a1>Math.PI)door.a1+=Math.PI*2;
-    door.cur=door.a1;pivot.rotation.y=door.cur;leaf.userData.door=knob.userData.door=door;doors.push(door);archUp.add(pivot);
+    door.cur=door.a1;pivot.rotation.y=door.cur;leaf.userData.door=knob.userData.door=door;doors.push(door);g.add(pivot);
   });
   applyLight(); applyGrow();
 }
 
 function buildFurn(){
-  clearGroup(furnG);
+  clearGroup(furnG); forget('fixture');
   state.furniture.forEach(f => furnG.add(buildFurniture(f)));
   const fixtureTypes={wc:'toilet',sink:'vanity',shower:'shower',bathtub:'bathtub',stove:'stove',cabinet:'cabinet',grab_bar:'cabinet'};
-  FIXTURES.forEach(f => { const g=buildFurniture({id:`fixture:${f.id}`,type:fixtureTypes[f.kind]||'cabinet',name:f.kind,cx:f.x,cy:f.y,w:f.width,d:f.depth,rot:f.rotation_deg,color:'#d8d1c5'}); delete g.userData.fid; g.userData.fixtureId=f.id; furnG.add(g); });
+  FIXTURES.forEach(f => {
+    const color=MARKS.added.has(f.id)?'#e58f84':MARKS.modified.has(f.id)?'#efc27d':'#d8d1c5';
+    const g=buildFurniture({id:`fixture:${f.id}`,type:fixtureTypes[f.kind]||'cabinet',name:f.kind,cx:f.x,cy:f.y,w:f.width,d:f.depth,rot:f.rotation_deg,color});
+    delete g.userData.fid; const fixture=register(new FixtureObject(f.id)); fixture.add(g); furnG.add(fixture);
+  });
   furnG.visible = opt.furn; selKey = null; applyGrow();
 }
 
@@ -976,12 +1052,13 @@ function pick(e){
   const hits = ray.intersectObjects([...(opt.furn ? [furnG] : []), archUp, archFloor], true);
   for (const h of hits){
     let o = h.object;
-    if (o.material === glassMat) continue;
+    if (o.material === glassMat || !o.visible || o.isLine) continue;   // hidden walk-mode edges would win with the 1 m line threshold
     if (o.userData.door) return {door:o.userData.door, dist:h.distance};
     if (o.userData.room) return {room:o.userData.room};
-    while (o && !o.userData.fid && o !== scene) o = o.parent;
+    while (o && !o.userData.fid && !o.userData.element && o !== scene) o = o.parent;
     if (o?.userData.fid) return {fid:o.userData.fid};
-    return null;                                     // seinän peitossa
+    if (o?.userData.element) return {element:o.userData.element, dist:h.distance};
+    return null;
   }
   return null;
 }
@@ -994,7 +1071,7 @@ function groundAt(x, y){
   ray.setFromCamera(ptr, camera);
   if (!ray.ray.intersectPlane(ground0, hit) || hit.distanceTo(camera.position) > 60) return null;
   // kun katse osuu ensin seinään (tai erkkerin reunaan), pudotuskohdaksi otetaan osumakohta eikä näkymätön piste seinän takana
-  const wall = ray.intersectObjects([archUp, archFloor], true).find(h => h.object.material !== glassMat && h.object.visible);
+  const wall = ray.intersectObjects([archUp, archFloor], true).find(h => h.object.material !== glassMat && h.object.material !== ghostMat && h.object.visible);
   if (wall && wall.distance < hit.distanceTo(camera.position) - .01) hit.set(wall.point.x, 0, wall.point.z);
   const px = v => new THREE.Vector2(v.x*r.width/2, v.y*r.height/2), a = px(hit.clone().project(camera));
   const s = Math.max(a.distanceTo(px(hit.clone().add(new THREE.Vector3(1, 0, 0)).project(camera))),
@@ -1002,11 +1079,11 @@ function groundAt(x, y){
   const o=origin(); return {x:hit.x*1000 + o.x, y:hit.z*1000 + o.y, s};
 }
 function updateSel(){
-  const key = ui.sel?.kind === 'furn' ? ui.sel.id : '';
+  const kind = ui.sel?.kind, key = kind === 'furn' ? ui.sel.id : ['wall','opening','fixture'].includes(kind) ? `${kind}:${ui.sel.id}` : '';
   if (key !== selKey){
     selKey = key;
     if (selHelper){ scene.remove(selHelper); selHelper.geometry.dispose(); selHelper = null; }
-    const g = key && furnG.children.find(g => g.userData.fid === key);
+    const g = key && (kind === 'furn' ? furnG.children.find(g => g.userData.fid === key) : elements.get(key));
     if (g){ selHelper = new THREE.BoxHelper(g, 0xb5653a); scene.add(selHelper); }
   }
   if (selHelper) selHelper.update();
@@ -1015,7 +1092,7 @@ function updateSel(){
 /* ======================= Kävely ======================= */
 // Kosketuskävely: vasemman alakulman virtuaalisauva liikuttaa, kuvaa vetämällä käännytään (iPad ei tue hiiren osoittimen lukitusta)
 const HINT_ORBIT = () => COARSE ? tr('Yksi sormi kiertää · kaksi sormea zoomaa / panoroi · valitse kaluste ja vedä asettaaksesi · napauta ovea avataksesi', '1 finger orbits · 2 fingers zoom / pan · select furniture to drag it · tap doors to open')
-  : tr('Vasen veto kiertää · oikea veto panoroi · vieritys zoomaa · valitse kaluste ja vedä asettaaksesi · napsauta ovea avataksesi', 'Left-drag orbits · right-drag pans · scroll zooms · select furniture to drag it · click doors to open');
+  : tr('Vasen veto kiertää · oikea veto panoroi · vieritys zoomaa · napsauta seinää, aukkoa tai kiintokalustetta muokataksesi · vedä valittua kalustetta', 'Left-drag orbits · right-drag pans · scroll zooms · click a wall, opening or fixture to edit it · drag selected furniture');
 const HINT_TOUCHWALK = () => tr('Sauva liikuttaa · vedä kääntääksesi katsetta · napauta ovea avataksesi', 'Joystick moves · drag to look · tap doors to open');
 const HINT_WALK = () => tr('WASD liikkuu · hiiri katsoo · Shift juoksee · E avaa oven · Esc keskeyttää', 'WASD moves · mouse looks · Shift runs · E opens doors · Esc pauses');
 function syncHint3d(){ $('#hint3d').textContent = opt.mode === 'orbit' ? HINT_ORBIT() : touchWalk ? HINT_TOUCHWALK() : HINT_WALK(); }
@@ -1161,14 +1238,17 @@ function shot(){ const a = document.createElement('a'); a.download = tr('sisustu
 
 function relang(){ syncWalkTexts(); if (inited) buildLabels(); }
 
-window.View3D = {enter, exit, relang, sync:() => sync(), shot, groundAt,
+window.View3D = {enter, exit, relang, sync:() => sync(), shot, groundAt, model,
     inspect:walkPoint => {
       const walls=new Map();
-      archUp.children.filter(o=>o.userData.wallId&&Number.isInteger(o.userData.wallPart)).forEach(o=>{
+      const parts=[];archUp.traverse(o=>{if(o.userData.wallId&&Number.isInteger(o.userData.wallPart))parts.push(o);});
+      parts.forEach(o=>{
         const b=new THREE.Box3().setFromObject(o),size=b.getSize(new THREE.Vector3()), row=walls.get(o.userData.wallId)||{id:o.userData.wallId,length:0,segments:[]};
         row.length+=o.geometry.parameters.width;row.segments.push({position:o.position.toArray(),bounds:[size.x,size.y,size.z],rotationY:o.rotation.y});walls.set(row.id,row);
       });
       return {walls:[...walls.values()],fixtures:furnG.children.filter(o=>o.userData.fixtureId).map(o=>o.userData.fixtureId),
+        ghosts:model.all().filter(o=>o.changeState==='demolished').map(o=>o.elementId),
+        changed:model.all().filter(o=>o.changeState==='added'||o.changeState==='modified').map(o=>`${o.elementKind}:${o.elementId}:${o.changeState}`),
         ...(walkPoint ? {blocked:blocked(wx(walkPoint[0]),wz(walkPoint[1]))} : {})};
   },
   flyToRoom:id => active && !anim && flyToRoom(id), walking:() => active && opt.mode === 'walk'};

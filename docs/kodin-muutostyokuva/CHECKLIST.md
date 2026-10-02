@@ -277,6 +277,13 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
 ### Muutoksen suunnittelu
 - [ ] **[FP]** Muutosoperaatiot käyttöliittymässä: purku, uusi seinä, aukon muutos,
       kynnyksen poisto, kiintokalusteen lisäys ja vaihto, pintamateriaali
+- [x] **[FP]** Edellisen kohdan työpöytäosuus 2026-10-03: `src/model/edit.ts`
+      kaikille seitsemälle operaatiolle; 3D:n elementtiobjektit metodeineen;
+      seinän, aukon ja kiintokalusteen valinta 2D:ssä ja 3D:ssä; paneelista purku ja
+      palautus, aukon karmi- ja vapaa leveys, kynnyksen poisto ja kalusteen vaihto;
+      muutoslista ja yksittäinen peruminen; keltainen purku ja punainen uusi/muutettu.
+      Uuden seinän piirto ja kiintokalusteen lisäys ovat vielä vain rajapinnassa
+      (`View3D.model.addWall/addFixture`), ei työkaluna. Puhelinkäyttöä ei ole testattu
 - [ ] **[FP]** Nykytila / muutos -vaihto 2D:ssä ja 3D:ssä
 - [ ] **[FP]** Muutosvärit 2D-näkymässä (K7:n mukaisesti)
 

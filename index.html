@@ -56,7 +56,8 @@ main{position:relative;overflow:hidden;background:var(--paper)}
 #plan.panning{cursor:grabbing}
 #plan.tool-measure{cursor:crosshair}
 #plan .wall{pointer-events:none}
-#plan.tool-demolish .wall{pointer-events:all;cursor:pointer}
+#plan.tool-demolish .wall,#plan.tool-select .wall{pointer-events:all;cursor:pointer}
+#plan.tool-select .wall:hover{opacity:.82}
 #plan.tool-demolish .wall:hover{fill:#d9894f}
 #plan.tool-select .room:hover{opacity:.82}
 #plan .furn{cursor:move}
@@ -92,6 +93,8 @@ tr.click:hover td{background:#faf5ee}
 .form input[type=color]{padding:2px;height:30px}
 .actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .actions .btn{border:1px solid var(--line);background:#fff}
+.actions .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.actions .btn:disabled{opacity:.45;cursor:not-allowed}
 .mats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .mat{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;text-align:left}
 .mat.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
@@ -168,6 +171,9 @@ main.animating #hint3d{opacity:0}
 .background-mode{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:8;display:flex;align-items:center;gap:8px;max-width:calc(100% - 20px);padding:6px 8px 6px 12px;border-radius:12px;background:var(--ink);color:white;box-shadow:0 4px 18px #0003;pointer-events:none}
 .background-mode button{pointer-events:auto}
 .background-mode[hidden]{display:none}
+.prov{display:inline-block;margin-left:4px;padding:0 6px;border-radius:8px;font-size:10px;line-height:16px;white-space:nowrap;background:#eee;color:#555}
+.prov-measured{background:#dcefe0;color:#24603a}.prov-inferred{background:#e3ecf5;color:#2d4f74}.prov-assumed{background:#f6ead3;color:#7a5a1c}
+#panel [data-revert]{padding:2px 8px;border:1px solid var(--line)}
 .background-mode span{font-size:12px}
 .background-controls dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:0 16px 50px #0004}
 .background-controls dialog::backdrop{background:#211d1980}

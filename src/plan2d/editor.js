@@ -49,7 +49,7 @@ function applyStaticLang(){
 
 // Demo: examples/demo-unit.json, assumed/archive_drawing; ei vahvistettuja kenttämittoja.
 // Rakennusgeometria johdetaan unit-v1:stä; vanhaa koordinaattilistaa ei säilytetä.
-let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null;
+let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null, TARGET = null, MARKS = {added:new Set(), modified:new Set()};
 const MATS = {
   wood:    {name:'Tammiparketti', price:55, sw:'#d8b88a'},
   walnut:  {name:'Pähkinäparketti', price:75, sw:'#9b7250'},
@@ -146,6 +146,9 @@ function project(){
   PLAN = window.UnitModel.projectUnit(state.unit);
   ROOMS = PLAN.rooms.map(r => ({...r, ...state.rooms[r.id], mat:MATS[state.rooms[r.id]?.mat] ? state.rooms[r.id].mat : (MATS[r.mat] ? r.mat : 'wood')}));
   WALLS = PLAN.walls; OPENINGS = PLAN.openings; FIXTURES = PLAN.fixtures || [];
+  TARGET = window.UnitModel.edit.targetState(state.unit);
+  const marks = window.UnitModel.edit.changeMarks(state.unit);
+  MARKS = {added:new Set(marks.added), modified:new Set(marks.modified)};
 }
 project();
 
@@ -175,22 +178,27 @@ const backgroundUI = window.createBackgroundUI({
     return mutate(() => { state.background = background; });
   },
   update: fn => mutate(() => { if (state.background) fn(state.background); }),
-  // One accepted trace is one undoable baseline change; the pointer draft never enters state or history.
-  trace: build => {
-    if (storageBlocked){ toast(tr('Tuo kelvollinen suunnitelma tai palauta oletus ennen jäljentämistä.','Import a valid plan or reset before tracing.')); return false; }
-    let next;
-    try { next = build(state.unit); } catch (error) { toast(error.message); return false; }
-    return mutate(() => {
-      state.unit = next.unit;
-      const room = next.unit.baseline.rooms?.find(r => r.id === next.id);
-      if (room) state.rooms[room.id] = {name:room.name, mat:'wood'};
-    });
-  },
+  // The pointer draft never enters state or history; an accepted trace is one model edit.
+  trace: build => editUnit(build),
   getBounds: () => ({x:BOUNDS.x,y:BOUNDS.y,w:BOUNDS.w,h:BOUNDS.h}),
   getView: () => view, toMM: e => toMM(e), toast: msg => toast(msg),
   closeDrawers: () => closeDrawers(), is3D: () => is3D(), cancelPlanImport,
   onLoadError: () => { storageBlocked=true; },
 });
+
+/* One accepted model edit is one undoable step. build(unit) returns a validated detached candidate
+ * (src/model/edit.ts, trace.ts); the editor's room layer follows the target state's rooms and floors. */
+function editUnit(build){
+  if (storageBlocked){ toast(tr('Tuo kelvollinen suunnitelma tai palauta oletus ennen muokkausta.','Import a valid plan or reset before editing.')); return false; }
+  let next;
+  try { next = build(state.unit); } catch (error) { toast(error.message); return false; }
+  return mutate(() => {
+    state.unit = next.unit;
+    const rooms = window.UnitModel.edit.targetState(state.unit).rooms ?? [];
+    state.rooms = Object.fromEntries(rooms.map(r => [r.id, {name:state.rooms[r.id]?.name ?? r.name, mat:MATS[r.floor] ? r.floor : 'wood'}]));
+  });
+}
+const EDIT = () => window.UnitModel.edit;
 
 function save(){
   if (storageBlocked) return true;
@@ -219,7 +227,13 @@ function restoreHistory(from, to){
 }
 function undo(){ if (!undoStack.length) return toast(tr('Ei kumottavaa','Nothing to undo')); restoreHistory(undoStack,redoStack); }
 function redo(){ restoreHistory(redoStack,undoStack); }
-function validateSel(){ if (ui.sel?.kind==='furn' && !getF(ui.sel.id)) ui.sel = null; }
+function validateSel(){
+  const s = ui.sel; if (!s) return;
+  const ok = s.kind==='furn' ? !!getF(s.id) : s.kind==='room' ? ROOMS.some(r => r.id===s.id)
+    : s.kind==='wall' ? [...WALLS, ...PLAN.demolishedWalls].some(w => w.id===s.id)
+    : s.kind==='opening' ? OPENINGS.some(o => o.id===s.id) : s.kind==='fixture' ? FIXTURES.some(f => f.id===s.id) : false;
+  if (!ok) ui.sel = null;
+}
 const getF = id => state.furniture.find(f => f.id === id);
 
 /* ======================= Geometriatyökalut ======================= */
@@ -394,7 +408,8 @@ function renderFurn(){
     return `<g class="furn" data-fid="${esc(f.id)}" transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">${furnSVG(f.type,f.w,f.d,f.color)}${label}</g>`;
   }).join('');
   const types = {wc:'toilet',sink:'vanity',stove:'stove',cabinet:'cabinet',shower:'shower',bathtub:'bathtub',grab_bar:'cabinet'};
-  const fixtures = FIXTURES.map(f => `<g data-fixture="${esc(f.id)}" pointer-events="none" transform="translate(${f.x} ${f.y}) rotate(${f.rotation_deg})">${furnSVG(types[f.kind] || 'cabinet',f.width,f.depth,'#d8d1c5')}</g>`).join('');
+  const fixtureColor = id => MARKS.added.has(id) ? '#efb1a8' : MARKS.modified.has(id) ? '#f3d6a8' : '#d8d1c5';
+  const fixtures = FIXTURES.map(f => `<g data-fixture="${esc(f.id)}" transform="translate(${f.x} ${f.y}) rotate(${f.rotation_deg})">${furnSVG(types[f.kind] || 'cabinet',f.width,f.depth,fixtureColor(f.id))}</g>`).join('');
   g.innerHTML = furniture + fixtures;
 }
 
@@ -402,8 +417,8 @@ function renderWalls(){
   const removed = demolishedIds(), walls = [...WALLS, ...PLAN.demolishedWalls];
   $('#gWalls').innerHTML = walls.map(w => {
     const dem = removed.has(w.id), kind = w.kind;
-    const fill = dem ? 'rgba(198,91,58,.12)' : kind === 'load_bearing' ? (ui.layers.bearing ? '#b8412c' : '#26241f') : kind === 'external' || kind === 'party' ? '#8f897d' : w.height ? '#e9e3d8' : '#a7a195';
-    const ex = dem ? 'stroke="#c65b3a" stroke-width="1.2" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"' : w.height ? 'stroke="#8f897d" stroke-width="1" vector-effect="non-scaling-stroke"' : '';
+    const fill = dem ? 'rgba(232,197,71,.38)' : MARKS.added.has(w.id) ? '#c9443a' : kind === 'load_bearing' ? (ui.layers.bearing ? '#b8412c' : '#26241f') : kind === 'external' || kind === 'party' ? '#8f897d' : w.height ? '#e9e3d8' : '#a7a195';
+    const ex = dem ? 'stroke="#a8861c" stroke-width="1.2" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"' : w.height ? 'stroke="#8f897d" stroke-width="1" vector-effect="non-scaling-stroke"' : '';
     const parts = dem ? [w.polygon] : w.segments.map(s => s.polygon);
     return parts.map((poly, i) => `<polygon class="wall" data-wall="${esc(w.id)}" data-wall-part="${i}" data-kind="${esc(kind)}" points="${poly.map(p=>p.join(',')).join(' ')}" fill="${fill}" ${ex}/>`).join('');
   }).join('');
@@ -435,6 +450,7 @@ function renderOpenings(){
     }
     if (o.entry) s += `<path d="M${ax} ${ay}L${bx} ${by}" fill="none" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke"/><text x="${ax}" y="${ay-120}" font-size="180" fill="#b5653a">${tr('Sisäänkäynti','Entry')}</text>`;
   });
+  OPENINGS.filter(o => MARKS.modified.has(o.id)).forEach(o => s += `<polygon points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#c9443a" stroke-width="2.5" vector-effect="non-scaling-stroke" pointer-events="none"/>`);
   $('#gOpen').innerHTML = s;
 }
 
@@ -511,14 +527,18 @@ function renderSel(){
       s += `<text x="${f.cx}" y="${f.cy+hh+24*k}" font-size="${12*k}" text-anchor="middle" fill="#b5653a" font-weight="600" pointer-events="none"
         stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${f.w} × ${f.d}</text>`;
     }
+  } else if (ui.sel?.kind === 'wall' || ui.sel?.kind === 'opening'){
+    const el = ui.sel.kind === 'wall' ? [...WALLS, ...PLAN.demolishedWalls].find(w => w.id === ui.sel.id) : OPENINGS.find(o => o.id === ui.sel.id);
+    if (el) s += `<polygon points="${el.polygon.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.18)" stroke="#b5653a" stroke-width="2.5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   } else if (ui.sel?.kind === 'room'){
     const r = ROOMS.find(r => r.id === ui.sel.id);
-    s += `<polygon points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.08)" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
+    if (r) s += `<polygon points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.08)" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   }
   $('#gSel').innerHTML = s;
 }
 
 function renderAll(){
+  validateSel();
   renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderOpenings(); renderDims(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
   backgroundUI.render();
   window.View3D?.sync();
@@ -540,7 +560,9 @@ function renderPanel(){
   renderFab();
   const p = $('#panel');
   if (ui.sel?.kind === 'furn'){ const f = getF(ui.sel.id); if (f){ p.innerHTML = furnPanel(f); bindFurnPanel(f); return; } }
-  if (ui.sel?.kind === 'room'){ p.innerHTML = roomPanel(ROOMS.find(r => r.id === ui.sel.id)); bindRoomPanel(); return; }
+  if (ui.sel?.kind === 'room' && ROOMS.some(r => r.id === ui.sel.id)){ p.innerHTML = roomPanel(ROOMS.find(r => r.id === ui.sel.id)); bindRoomPanel(); return; }
+  const element = {wall:wallPanel, opening:openingPanel, fixture:fixturePanel}[ui.sel?.kind];
+  if (element){ const html = element(ui.sel.id); if (html){ p.innerHTML = html; bindElementPanel(ui.sel); return; } }
   p.innerHTML = overviewPanel(); bindOverview();
 }
 
@@ -558,7 +580,7 @@ function overviewPanel(){
     return `<tr><td><span class="sw" style="background:${MATS[m].sw}"></span>${nm(MATS[m].name)}</td><td class="r">${fmt(a,1)} m²</td><td class="r">${Math.round(c).toLocaleString('fi-FI')} €</td></tr>`; }).join('');
   const removed = demolishedIds(), dem = PLAN.demolishedWalls.filter(w => removed.has(w.id));
   const demLen = dem.reduce((a,w) => a + Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]), 0) / 1000;
-  return `
+  return `${changesSection()}
   <section><h3>${tr('Huoneiden pinta-alat','Room Areas')} <small>${tr('Napsauta nähdäksesi / vaihtaaksesi lattian','Click to view / change flooring')}</small></h3>
     <table>${rows}</table>
     <div class="total"><span>${tr('Nettopinta-ala','Net floor area')}</span><b>${fmt(tot)} m²</b></div>
@@ -596,7 +618,107 @@ function overviewPanel(){
     <kbd>⌘/Ctrl D</kbd><span>Duplicate</span><kbd>Delete</kbd><span>Delete</span><kbd>⌘/Ctrl Z</kbd><span>Undo</span><kbd>T</kbd><span>Toggle 2D / 3D</span><kbd>F</kbd><span>Fit to window</span><kbd>Esc</kbd><span>Deselect</span>
   </div></section>`)}`;
 }
+/* ======================= Muutoskerroksen paneelit ======================= */
+const STATUS = {measured:['mitattu','measured'], inferred:['päätelty','inferred'], assumed:['oletus','assumed']};
+const METHOD = {laser:['laser','laser'], tape:['mittanauha','tape'], lidar_scan:['LiDAR','LiDAR'], video:['video','video'],
+  archive_drawing:['piirustus','drawing'], registry:['rekisteri','registry'], derived:['laskettu','derived'], assumption:['suunnitelma','design']};
+const prov = m => m ? `${Math.round(m.value_mm)} mm <span class="prov prov-${esc(m.status)}">${tr(...STATUS[m.status])} · ${tr(...(METHOD[m.method] || [m.method, m.method]))}</span>` : '–';
+const WALL_KIND = {load_bearing:['Kantava','Load-bearing'], partition:['Väliseinä','Partition'], external:['Ulkoseinä','External'], party:['Huoneistojen välinen','Party wall']};
+const OPENING_KIND = {door:['Ovi','Door'], sliding_door:['Liukuovi','Sliding door'], window:['Ikkuna','Window'], opening:['Aukko','Opening']};
+const FIXTURE_KIND = {wc:['WC-istuin','WC'], sink:['Pesuallas','Sink'], shower:['Suihku','Shower'], bathtub:['Kylpyamme','Bathtub'], stove:['Liesi','Stove'], cabinet:['Kaappi','Cabinet'], grab_bar:['Tukikahva','Grab bar']};
+const changeIndexes = test => (state.unit.changes ?? []).map((c, i) => test(c) ? i : -1).filter(i => i >= 0);
+const elementState = id => MARKS.added.has(id) ? tr('Uusi (muutos)','New (change)') : MARKS.modified.has(id) ? tr('Muutettu','Changed') : tr('Nykytila','Existing');
+function changeLabel(c){
+  const room = id => esc(nm(state.rooms[id]?.name ?? id));
+  switch (c.op){
+    case 'demolish_wall': return tr(`Pura seinä ${esc(c.target)}`, `Demolish wall ${esc(c.target)}`);
+    case 'add_wall': return tr(`Uusi seinä ${esc(c.wall.id)}`, `New wall ${esc(c.wall.id)}`);
+    case 'modify_opening': return tr(`Muuta aukkoa ${esc(c.target)}`, `Change opening ${esc(c.target)}`) + (c.set.clear_width ? ` · ${Math.round(c.set.clear_width.value_mm)} mm` : c.set.width ? ` · ${Math.round(c.set.width.value_mm)} mm` : '');
+    case 'remove_threshold': return tr(`Poista kynnys ${esc(c.target)}`, `Remove threshold ${esc(c.target)}`);
+    case 'add_fixture': return tr(`Lisää ${tr(...FIXTURE_KIND[c.fixture.kind])} ${esc(c.fixture.id)}`, `Add ${tr(...FIXTURE_KIND[c.fixture.kind])} ${esc(c.fixture.id)}`);
+    case 'replace_fixture': return tr(`Vaihda kiintokaluste ${esc(c.target)}`, `Replace fixture ${esc(c.target)}`);
+    case 'change_finish': return tr(`Lattia ${room(c.room)}: ${esc(nm(MATS[c.floor]?.name ?? c.floor ?? ''))}`, `Floor ${room(c.room)}: ${esc(nm(MATS[c.floor]?.name ?? c.floor ?? ''))}`);
+  }
+  return esc(c.op);
+}
+function changesSection(){
+  const changes = state.unit.changes ?? [];
+  const rows = changes.map((c, i) => `<tr><td>${i + 1}. ${changeLabel(c)}</td><td class="r"><button class="btn" data-revert="${i}" title="${tr('Peru tämä muutos','Revert this change')}">${tr('Peru','Revert')}</button></td></tr>`).join('');
+  return `<section id="changeList"><h3>${tr('Muutokset','Changes')} <small>${tr(`${changes.length} kpl · nykytila säilyy`, `${changes.length} · survey stays unchanged`)}</small></h3>
+    <table>${rows || `<tr><td class="muted">${tr('Ei muutoksia. Valitse seinä, aukko tai kiintokaluste 2D- tai 3D-näkymästä.','No changes. Select a wall, opening or fixture in 2D or 3D.')}</td></tr>`}</table></section>`;
+}
+function wallPanel(id){
+  const live = WALLS.find(w => w.id === id), w = live || PLAN.demolishedWalls.find(w => w.id === id);
+  if (!w) return null;
+  const src = (live ? TARGET.walls : state.unit.baseline.walls).find(x => x.id === id), added = MARKS.added.has(id);
+  const locked = w.kind === 'load_bearing' || w.kind === 'external' || w.kind === 'party';
+  const action = !live ? `<button class="btn primary" data-edit="restoreWall">${tr('Palauta seinä','Restore wall')}</button>`
+    : added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista uusi seinä','Remove new wall')}</button>`
+    : `<button class="btn danger" data-edit="demolishWall" ${locked ? 'disabled' : ''}>${tr('Merkitse purettavaksi','Mark for demolition')}</button>`;
+  return `<section><h3>${tr('Seinä','Wall')} <small>${esc(id)}</small></h3>
+    <table><tr><td>${tr('Tila','State')}</td><td class="r">${live ? elementState(id) : tr('Purettava','To be demolished')}</td></tr>
+      <tr><td>${tr('Tyyppi','Type')}</td><td class="r">${tr(...WALL_KIND[w.kind])}</td></tr>
+      <tr><td>${tr('Pituus','Length')}</td><td class="r">${Math.round(Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]))} mm</td></tr>
+      <tr><td>${tr('Paksuus','Thickness')}</td><td class="r">${prov(src?.thickness)}</td></tr></table>
+    ${live && !added && locked ? `<p class="muted">${w.kind === 'load_bearing' ? tr('Kantavan seinän muutos vaatii rakennesuunnittelijan.','Changing a load-bearing wall needs a structural engineer.') : tr('Ulko- ja huoneistojen välisiä seiniä ei pureta tässä työkalussa.','External and party walls are not demolished in this tool.')}</p>` : ''}
+    <div class="actions">${action}<button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+}
+function openingPanel(id){
+  const o = OPENINGS.find(o => o.id === id), src = TARGET.openings?.find(x => x.id === id);
+  if (!o || !src) return null;
+  const thresholds = (TARGET.thresholds ?? []).filter(t => t.at_opening === id), modified = changeIndexes(c => c.op === 'modify_opening' && c.target === id);
+  return `<section><h3>${tr(...OPENING_KIND[o.kind])} <small>${esc(id)}</small></h3>
+    <table><tr><td>${tr('Tila','State')}</td><td class="r">${elementState(id)}</td></tr>
+      <tr><td>${tr('Karmiaukko','Frame opening')}</td><td class="r">${prov(src.width)}</td></tr>
+      <tr><td>${tr('Vapaa kulkuleveys','Clear width')}</td><td class="r">${prov(src.clear_width)}</td></tr>
+      ${thresholds.map(t => `<tr><td>${tr('Kynnys','Threshold')} ${esc(t.id)}</td><td class="r">${prov(t.height)} <button class="btn" data-edit="removeThreshold" data-target="${esc(t.id)}">${tr('Poista','Remove')}</button></td></tr>`).join('')}</table>
+    <div class="form" style="margin-top:10px">
+      <label>${tr('Uusi karmiaukko (mm)','New frame opening (mm)')}<input type="number" id="oWidth" min="1" step="10" placeholder="${Math.round(src.width.value_mm)}"></label>
+      <label>${tr('Uusi vapaa leveys (mm)','New clear width (mm)')}<input type="number" id="oClear" min="1" step="10" placeholder="${src.clear_width ? Math.round(src.clear_width.value_mm) : ''}"></label></div>
+    <p class="muted">${tr('Suunniteltu mitta tallentuu oletuksena (assumed), ei kenttämittauksena.','A planned size is saved as assumed, not as a field measurement.')}</p>
+    <div class="actions"><button class="btn primary" data-edit="modifyOpening">${tr('Tallenna muutos','Save change')}</button>
+      ${modified.length ? `<button class="btn" data-edit="revertOpening">${tr('Peru aukon muutokset','Revert opening changes')}</button>` : ''}
+      <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+}
+function fixturePanel(id){
+  const f = TARGET.fixtures?.find(x => x.id === id);
+  if (!f) return null;
+  const added = MARKS.added.has(id), kinds = Object.entries(FIXTURE_KIND).map(([k, l]) => `<option value="${k}" ${k === f.kind ? 'selected' : ''}>${tr(...l)}</option>`).join('');
+  return `<section><h3>${tr('Kiintokaluste','Fixture')} <small>${esc(id)}</small></h3>
+    <table><tr><td>${tr('Tila','State')}</td><td class="r">${elementState(id)}</td></tr>
+      <tr><td>${tr('Tyyppi','Type')}</td><td class="r">${tr(...FIXTURE_KIND[f.kind])}</td></tr>
+      <tr><td>${tr('Leveys','Width')}</td><td class="r">${prov(f.width)}</td></tr>
+      <tr><td>${tr('Syvyys','Depth')}</td><td class="r">${prov(f.depth)}</td></tr></table>
+    <div class="form" style="margin-top:10px">
+      <label class="full">${tr('Vaihda tyypiksi','Replace with')}<select id="xKind">${kinds}</select></label>
+      <label>${tr('Leveys','Width')} (mm)<input type="number" id="xW" min="1" step="10" value="${Math.round(f.width.value_mm)}"></label>
+      <label>${tr('Syvyys','Depth')} (mm)<input type="number" id="xD" min="1" step="10" value="${Math.round(f.depth.value_mm)}"></label></div>
+    <div class="actions"><button class="btn primary" data-edit="replaceFixture">${tr('Vaihda kaluste','Replace fixture')}</button>
+      ${added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista lisätty kaluste','Remove added fixture')}</button>` : ''}
+      <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+}
+function bindElementPanel(sel){
+  const E = EDIT(), id = sel.id, num = q => { const v = parseFloat($(q)?.value); return Number.isFinite(v) ? v : undefined; };
+  const revertAll = indexes => u => indexes.slice().reverse().reduce((r, i) => E.revertChange(r.unit, i), {unit:u, id});
+  document.querySelectorAll('#panel [data-edit]').forEach(b => b.onclick = () => {
+    const a = b.dataset.edit;
+    if (a === 'back') return select(null);
+    if (a === 'demolishWall') return toggleWall(id);
+    if (a === 'restoreWall') return toggleWall(id);
+    if (a === 'removeNew') return editUnit(revertAll(changeIndexes(c => (c.op === 'add_wall' && c.wall.id === id) || (c.op === 'add_fixture' && c.fixture.id === id))));
+    if (a === 'removeThreshold') return editUnit(u => E.removeThreshold(u, b.dataset.target));
+    if (a === 'revertOpening') return editUnit(revertAll(changeIndexes(c => c.op === 'modify_opening' && c.target === id)));
+    if (a === 'modifyOpening') return editUnit(u => E.modifyOpening(u, id, {width:num('#oWidth'), clear_width:num('#oClear')}));
+    if (a === 'replaceFixture'){
+      const f = TARGET.fixtures.find(x => x.id === id);
+      return editUnit(u => E.replaceFixture(u, id, {kind:$('#xKind').value, x:f.x.value_mm, y:f.y.value_mm, width:num('#xW'), depth:num('#xD'),
+        rotation_deg:f.rotation_deg ?? 0, ...(f.height ? {height:f.height.value_mm} : {})}));
+    }
+  });
+}
+
 function bindOverview(){
+  document.querySelectorAll('#panel [data-revert]').forEach(b => b.onclick = () => editUnit(u => EDIT().revertChange(u, Number(b.dataset.revert))));
   document.querySelectorAll('#panel tr[data-room]').forEach(tr => tr.onclick = () => { select({kind:'room', id:tr.dataset.room}); if (is3D()) window.View3D.flyToRoom(tr.dataset.room); });
   $('#clearMeasure').onclick = () => state.measures.length && mutate(() => state.measures = []);
   $('#clearFurn').onclick = clearLayout;
@@ -675,11 +797,7 @@ function roomPanel(r){
 function bindRoomPanel(){
   const id = ui.sel.id;
   $('#rName').onchange = e => mutate(() => state.rooms[id].name = e.target.value.trim() || state.rooms[id].name);
-  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => mutate(() => {
-    const changes=state.unit.changes ?? [];
-    state.unit.changes=[...changes,{op:'change_finish',room:id,floor:b.dataset.mat}];
-    state.rooms[id].mat=b.dataset.mat;
-  }));
+  document.querySelectorAll('#panel [data-mat]').forEach(b => b.onclick = () => editUnit(u => EDIT().setFloor(u, id, b.dataset.mat)));
   document.querySelectorAll('#panel tr[data-fid]').forEach(tr => tr.onclick = () => select({kind:'furn', id:tr.dataset.fid}));
   $('#back').onclick = () => select(null);
 }
@@ -755,12 +873,8 @@ function toggleWall(id){
   if (w.kind === 'load_bearing') return toast(tr('Kantavia seiniä ei voi purkaa', 'Load-bearing walls cannot be removed'));
   if (w.kind === 'external' || w.kind === 'party') return toast(tr('Ulkoseinää ei voi purkaa', 'External walls cannot be removed'));
   const length=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]);
-  if(active){ mutate(()=>{state.unit.changes=[...(state.unit.changes??[]),{op:'demolish_wall',target:id}];}); toast(tr(`Merkitty purettavaksi ${Math.round(length)} mm seinää`, `Marked ${Math.round(length)} mm of wall for removal`)); return; }
-  const candidate=structuredClone(state.unit), changes=candidate.changes??[], index=changes.map((c,i)=>c.op==='demolish_wall'&&c.target===id?i:-1).filter(i=>i>=0).at(-1);
-  if(index==null)return;
-  candidate.changes=changes.filter((_,i)=>i!==index);
-  try{window.UnitModel.projectUnit(candidate);}catch(error){toast(tr('Seinää ei voi palauttaa tässä muutosjärjestyksessä','This wall cannot be restored in this change order'));return;}
-  mutate(()=>state.unit=candidate);toast(tr('Seinä palautettu', 'Wall restored'));
+  if(active){ if(editUnit(u=>EDIT().demolishWall(u,id))) toast(tr(`Merkitty purettavaksi ${Math.round(length)} mm seinää`, `Marked ${Math.round(length)} mm of wall for removal`)); return; }
+  if(editUnit(u=>EDIT().restoreWall(u,id))) toast(tr('Seinä palautettu', 'Wall restored'));
 }
 
 function setTool(t){
@@ -853,7 +967,7 @@ function endDrag(cancel){
     renderMeasure(); return;                   // ei vetoa: säilytetään alkupiste ja odotetaan toista napsautusta
   }
   if (d.kind === 'pan'){
-    if (!cancel && !d.moved && ui.tool === 'select') select(d.room ? {kind:'room', id:d.room} : null);
+    if (!cancel && !d.moved && ui.tool === 'select') select(d.el || (d.room ? {kind:'room', id:d.room} : null));
     return;
   }
   if (d.moved){ commit(d.before); renderAll(); }
@@ -890,8 +1004,9 @@ svg.addEventListener('pointerdown', e => {
     if (ui.sel?.id !== f.id) select({kind:'furn', id:f.id});
     drag = {kind:'move', id:f.id, sx:e.clientX, sy:e.clientY, ox:p.x-f.cx, oy:p.y-f.cy, before:snap(), moved:false};
   } else {
-    const room = t.closest('[data-room]');
-    drag = {kind:'pan', sx:e.clientX, sy:e.clientY, x0:view.x0, y0:view.y0, room:room && room.dataset.room, moved:false};
+    const room = t.closest('[data-room]'), el = t.closest('[data-wall],[data-opening],[data-fixture]');
+    const pickEl = el && (el.dataset.wall ? {kind:'wall', id:el.dataset.wall} : el.dataset.opening ? {kind:'opening', id:el.dataset.opening} : {kind:'fixture', id:el.dataset.fixture});
+    drag = {kind:'pan', sx:e.clientX, sy:e.clientY, x0:view.x0, y0:view.y0, room:room && room.dataset.room, el:pickEl, moved:false};
   }
   svg.setPointerCapture(e.pointerId);
 });

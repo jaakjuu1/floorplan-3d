@@ -5,6 +5,7 @@ import { loadDesign, parseDesign, saveDesign } from './io/design';
 import { parseUnit } from './io/unit';
 import { projectUnit } from './model/render-unit';
 import { traceRoom, traceWall } from './model/trace';
+import * as UnitEdit from './model/edit';
 import type { UnitInputs } from './model/unit-input-v1';
 import editorScriptUrl from './plan2d/editor.js?url';
 import * as PlanBackground from './io/background';
@@ -23,12 +24,13 @@ declare global {
       saveDesign: typeof saveDesign;
       traceWall: typeof traceWall;
       traceRoom: typeof traceRoom;
+      edit: typeof UnitEdit;
     };
   }
 }
 
 window.UnitModel = {
-  demoUnit: parseUnit(JSON.parse(demoUnitJson)), projectUnit, parseDesign, loadDesign, saveDesign, traceWall, traceRoom,
+  demoUnit: parseUnit(JSON.parse(demoUnitJson)), projectUnit, parseDesign, loadDesign, saveDesign, traceWall, traceRoom, edit: UnitEdit,
 };
 window.PlanBackground = PlanBackground;
 window.AttachmentIO = AttachmentIO;

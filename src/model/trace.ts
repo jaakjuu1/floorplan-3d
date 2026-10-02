@@ -1,9 +1,9 @@
 import { attachmentToModel, sourceReference, type Background, type Point } from '../io/background';
-import { parseUnit } from '../io/unit';
-import { apply } from './apply';
+import { accept as acceptEdit, nextId, type Edited } from './edit';
 import type { Measurement, Point2D, Room, UnitInputs, Wall } from './unit-input-v1';
 
-export interface Traced { unit: UnitInputs; id: string }
+export type Traced = Edited;
+const accept = (unit: UnitInputs, id: string) => acceptEdit(unit, id, 'Jäljennös');
 
 /** Read from the drawing: never field accuracy or a surveyor's confirmation. */
 function drawn(value: number, ref: string): Measurement {
@@ -20,29 +20,6 @@ function modelPoint(p: Point, background: Background, ref: string): Point2D {
 function calibratedRef(background: Background | null): string {
   if (!background?.calibration) throw new Error('Kalibroi pohjakuva ennen jäljentämistä');
   return sourceReference(background);
-}
-
-function nextId(unit: UnitInputs, prefix: string): string {
-  const b = unit.baseline, used = new Set([b.walls, b.openings, b.rooms, b.fixtures, b.thresholds, b.measurements]
-    .flatMap(items => (items ?? []).map(item => item.id)));
-  for (const c of unit.changes ?? []) {
-    if (c.op === 'add_wall') used.add(c.wall.id);
-    if (c.op === 'add_fixture') used.add(c.fixture.id);
-  }
-  let n = 1;
-  while (used.has(`${prefix}-${n}`)) n++;
-  return `${prefix}-${n}`;
-}
-
-/** Validate the detached candidate, including the change layer, before the editor commits it. */
-function accept(unit: UnitInputs, id: string): Traced {
-  try {
-    const checked = parseUnit(unit);
-    apply(checked.baseline, checked.changes ?? []);
-    return { unit: checked, id };
-  } catch (error) {
-    throw new Error(`Jäljennös hylättiin: ${(error as Error).message}`);
-  }
 }
 
 /** Existing walls belong to the baseline; tracing is not an add_wall proposal. */

@@ -323,6 +323,30 @@ operaatioita:
 - `floorplan-3d`:n nykyinen `state.demolished` on käytännössä muutoskerroksen
   esiaste. Se korvataan `changes`-listalla.
 
+**Muutosten muokkaus 2026-10-03 (työpöytä ensin):** `src/model/edit.ts` on ainoa
+tie muutoskerrokseen: `demolishWall`, `restoreWall`, `addWall`, `modifyOpening`,
+`removeThreshold`, `setFloor`, `addFixture`, `replaceFixture` ja `revertChange`.
+Jokainen palauttaa irrotetun, `parseUnit` + `apply` -validoidun mallin, jossa on
+täsmälleen yksi uusi tai poistettu operaatio. Suunnitellut mitat ovat
+`assumed`/`assumption`, viite `design:<id>/<kenttä>`. Kantavaa, ulko- tai
+huoneistojen välistä seinää ei pureta. Editorin `editUnit` tekee hyväksytystä
+muutoksesta yhden kumottavan vaiheen.
+
+3D-näkymässä jokainen kanoninen elementti on yksi Three.js-ryhmä
+(`WallObject`, `OpeningObject`, `RoomObject`, `FixtureObject`), jolla on
+muokkausmetodit, esim. `View3D.model.wall('w2').demolish()` tai
+`View3D.model.opening('o1').resize({clear_width: 900})`. Metodi ei muuta
+meshejä: se lisää muutoksen yllä olevan rajapinnan kautta, ja näkymä rakennetaan
+mallista uudelleen. Kanoninen JSON pysyy ainoana totuuden lähteenä, koska
+mittojen alkuperä, nykytilan ja muutoksen ero sekä `rakennuskuva`n tulosteet
+eivät voi elää Three.js-näkymässä. Valinta toimii samoin 2D:ssä ja 3D:ssä;
+oikea paneeli näyttää mitat alkuperineen ja muutostoiminnot. Yleisnäkymän
+muutoslista sallii yksittäisen muutoksen perumisen.
+
+Värit: purettava keltaisena (2D katkoviiva, 3D läpikuultava haamu, josta seinän
+voi palauttaa), uusi punaisena ja muuttunut punaisella korostettuna.
+Viranomais- ja isännöitsijäpohjien tarkistus on yhä auki.
+
 ### 5.7 Kartoitus ja suostumus (`survey`)
 
 ```jsonc
