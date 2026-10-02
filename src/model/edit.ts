@@ -137,6 +137,14 @@ export function moveFixture(unit: UnitInputs, id: string, pose: { x: number; y: 
   return accept(next, id);
 }
 
+/** Turn a rule profile on or off; profiles are unit metadata, not part of the change layer. */
+export function setProfile(unit: UnitInputs, profile: string, on: boolean): Edited {
+  const next = structuredClone(unit), profiles = new Set(next.profiles ?? []);
+  if (on) profiles.add(profile); else profiles.delete(profile);
+  next.profiles = [...profiles];
+  return accept(next, profile);
+}
+
 /** Change-drawing classes: new elements in red, changed ones highlighted (§5.6). */
 export function changeMarks(unit: UnitInputs): { added: string[]; modified: string[] } {
   const added = new Set<string>(), modified = new Set<string>();

@@ -49,7 +49,7 @@ function applyStaticLang(){
 
 // Demo: examples/demo-unit.json, assumed/archive_drawing; ei vahvistettuja kenttämittoja.
 // Rakennusgeometria johdetaan unit-v1:stä; vanhaa koordinaattilistaa ei säilytetä.
-let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null, TARGET = null, MARKS = {added:new Set(), modified:new Set()};
+let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null, TARGET = null, MARKS = {added:new Set(), modified:new Set()}, FINDINGS = [];
 const MATS = {
   wood:    {name:'Tammiparketti', price:55, sw:'#d8b88a'},
   walnut:  {name:'Pähkinäparketti', price:75, sw:'#9b7250'},
@@ -149,6 +149,7 @@ function project(){
   TARGET = window.UnitModel.edit.targetState(state.unit);
   const marks = window.UnitModel.edit.changeMarks(state.unit);
   MARKS = {added:new Set(marks.added), modified:new Set(marks.modified)};
+  FINDINGS = window.UnitModel.rules.evaluate(state.unit);
 }
 project();
 
@@ -540,7 +541,9 @@ function renderSel(){
     const el = ui.sel.kind === 'wall' ? [...WALLS, ...PLAN.demolishedWalls].find(w => w.id === ui.sel.id) : OPENINGS.find(o => o.id === ui.sel.id);
     if (el) s += `<polygon points="${el.polygon.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.18)" stroke="#b5653a" stroke-width="2.5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   } else if (ui.sel?.kind === 'room'){
-    const r = ROOMS.find(r => r.id === ui.sel.id);
+    const r = ROOMS.find(r => r.id === ui.sel.id), c = elementFindings('room', ui.sel.id).find(f => f.circle)?.circle;
+    if (c && c.d > 0) s += `<g data-role="freeCircle" pointer-events="none"><circle cx="${c.x}" cy="${-c.y}" r="${c.d/2}" fill="rgba(47,93,98,.08)" stroke="#2f5d62" stroke-width="1.5" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>
+      <text x="${c.x}" y="${-c.y + c.d/2 - 14*k}" font-size="${12*k}" text-anchor="middle" dominant-baseline="central" fill="#2f5d62" font-weight="600" stroke="#fff" stroke-width="${3*k}" paint-order="stroke">Ø ${c.d} mm</text></g>`;
     if (r) s += `<polygon points="${r.poly.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.08)" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   }
   $('#gSel').innerHTML = s;
@@ -589,7 +592,7 @@ function overviewPanel(){
     return `<tr><td><span class="sw" style="background:${MATS[m].sw}"></span>${nm(MATS[m].name)}</td><td class="r">${fmt(a,1)} m²</td><td class="r">${Math.round(c).toLocaleString('fi-FI')} €</td></tr>`; }).join('');
   const removed = demolishedIds(), dem = PLAN.demolishedWalls.filter(w => removed.has(w.id));
   const demLen = dem.reduce((a,w) => a + Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]), 0) / 1000;
-  return `${toolSection()}${changesSection()}
+  return `${toolSection()}${changesSection()}${noticesSection()}
   <section><h3>${tr('Huoneiden pinta-alat','Room Areas')} <small>${tr('Napsauta nähdäksesi / vaihtaaksesi lattian','Click to view / change flooring')}</small></h3>
     <table>${rows}</table>
     <div class="total"><span>${tr('Nettopinta-ala','Net floor area')}</span><b>${fmt(tot)} m²</b></div>
@@ -650,6 +653,35 @@ function changeLabel(c){
   }
   return esc(c.op);
 }
+/* Advisory rules (rules/rules-v1.json): they appear when a change or the selection touches them and never block. */
+const SEVERITY = {ilmoitus:['Ilmoitus','Notice'], tarkista:['Tarkista','Check'], suositus:['Suositus','Recommendation'], info:['Tietoa','Info']};
+const elementFindings = (kind, id) => FINDINGS.filter(f => f.element?.kind === kind && f.element.id === id);
+function findingItem(f, selectable){
+  const lang = LANG === 'en' ? 'en' : 'fi', badge = f.ok && f.element ? `<span class="rule-badge ok">✓ ${tr('täyttyy','met')}</span>` : `<span class="rule-badge ${f.severity}">${tr(...SEVERITY[f.severity])}</span>`;
+  const target = selectable && f.element && f.element.kind !== 'threshold' ? ` data-rule-sel="${esc(f.element.kind)}:${esc(f.element.id)}"` : '';
+  return `<li class="rule${f.ok && f.element ? ' rule-ok' : ''}" data-rule="${esc(f.rule)}"${target}>${badge} <b>${esc(f.title[lang])}</b>
+    <div>${esc(f.message[lang])}</div>
+    <a href="${esc(f.source.url)}" target="_blank" rel="noopener noreferrer">${esc(f.source.label)} ${esc(f.source.section)}</a></li>`;
+}
+function rulesSection(findings, heading = tr('Säännöt ja suositukset','Rules and recommendations')){
+  if (!findings.length) return '';
+  return `<section class="rules"><h3>${heading} <small>${tr('ohjeellinen, ei estä muokkausta','advisory, never blocks editing')}</small></h3><ul>${findings.map(f => findingItem(f, false)).join('')}</ul></section>`;
+}
+function noticesSection(){
+  const profiles = state.unit.profiles ?? [], on = profiles.includes('esteettomyys');
+  const shown = window.UnitModel.rules.surfaced(FINDINGS, profiles);
+  return `<section class="rules" id="noticeList"><h3>${tr('Huomiot','Notices')} <small>${tr('näkyvät, kun muutos koskee niitä','shown when a change touches them')}</small></h3>
+    ${shown.length ? `<ul>${shown.map(f => findingItem(f, true)).join('')}</ul>` : `<p class="muted">${tr('Ei huomioita. Säännöt tulevat näkyviin, kun muutos tai valinta koskee niitä.','No notices. Rules appear when a change or selection touches them.')}</p>`}
+    <label class="rule-profile"><input type="checkbox" id="profileAccess" ${on ? 'checked' : ''}> ${tr('Näytä kaikki esteettömyyssuositukset','Show all accessibility recommendations')}</label></section>`;
+}
+function bindRules(){
+  document.querySelectorAll('#panel [data-rule-sel]').forEach(li => li.onclick = e => {
+    if (e.target.closest('a')) return;
+    const [kind, ...rest] = li.dataset.ruleSel.split(':'); select({kind, id:rest.join(':')});
+  });
+  if ($('#profileAccess')) $('#profileAccess').onchange = e => editUnit(u => EDIT().setProfile(u, 'esteettomyys', e.target.checked));
+}
+
 function changesSection(){
   const changes = state.unit.changes ?? [];
   const rows = changes.map((c, i) => `<tr><td>${i + 1}. ${changeLabel(c)}</td><td class="r"><button class="btn" data-revert="${i}" title="${tr('Peru tämä muutos','Revert this change')}">${tr('Peru','Revert')}</button></td></tr>`).join('');
@@ -670,7 +702,8 @@ function wallPanel(id){
       <tr><td>${tr('Pituus','Length')}</td><td class="r">${Math.round(Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]))} mm</td></tr>
       <tr><td>${tr('Paksuus','Thickness')}</td><td class="r">${prov(src?.thickness)}</td></tr></table>
     ${live && !added && locked ? `<p class="muted">${w.kind === 'load_bearing' ? tr('Kantavan seinän muutos vaatii rakennesuunnittelijan.','Changing a load-bearing wall needs a structural engineer.') : tr('Ulko- ja huoneistojen välisiä seiniä ei pureta tässä työkalussa.','External and party walls are not demolished in this tool.')}</p>` : ''}
-    <div class="actions">${action}<button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+    <div class="actions">${action}<button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
+    ${rulesSection(elementFindings('wall', id))}`;
 }
 function openingPanel(id){
   const o = OPENINGS.find(o => o.id === id), src = TARGET.openings?.find(x => x.id === id);
@@ -687,7 +720,8 @@ function openingPanel(id){
     <p class="muted">${tr('Suunniteltu mitta tallentuu oletuksena (assumed), ei kenttämittauksena.','A planned size is saved as assumed, not as a field measurement.')}</p>
     <div class="actions"><button class="btn primary" data-edit="modifyOpening">${tr('Tallenna muutos','Save change')}</button>
       ${modified.length ? `<button class="btn" data-edit="revertOpening">${tr('Peru aukon muutokset','Revert opening changes')}</button>` : ''}
-      <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+      <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
+    ${rulesSection([...elementFindings('opening', id), ...thresholds.flatMap(t => elementFindings('threshold', t.id))])}`;
 }
 function fixturePanel(id){
   const f = TARGET.fixtures?.find(x => x.id === id);
@@ -710,10 +744,12 @@ function fixturePanel(id){
     <p class="muted">${tr('Vedä kalustetta tai käytä nuolinäppäimiä (Shift 100 mm) ja R-näppäintä. Seinäkiinnitys asettaa sen seinää vasten.','Drag it or use the arrow keys (Shift 100 mm) and R. Wall snap puts it against a wall.')}</p>
     <div class="actions"><button class="btn primary" data-edit="moveFixture">${tr('Siirrä','Move')}</button>
       ${added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista lisätty kaluste','Remove added fixture')}</button>` : ''}
-      <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+      <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
+    ${rulesSection(elementFindings('fixture', id))}`;
 }
 function bindElementPanel(sel){
   const E = EDIT(), id = sel.id, num = q => { const v = parseFloat($(q)?.value); return Number.isFinite(v) ? v : undefined; };
+  bindRules();
   const revertAll = indexes => u => indexes.slice().reverse().reduce((r, i) => E.revertChange(r.unit, i), {unit:u, id});
   document.querySelectorAll('#panel [data-edit]').forEach(b => b.onclick = () => {
     const a = b.dataset.edit;
@@ -734,7 +770,7 @@ function bindElementPanel(sel){
 }
 
 function bindOverview(){
-  bindToolSection();
+  bindToolSection(); bindRules();
   document.querySelectorAll('#panel [data-revert]').forEach(b => b.onclick = () => editUnit(u => EDIT().revertChange(u, Number(b.dataset.revert))));
   document.querySelectorAll('#panel tr[data-room]').forEach(tr => tr.onclick = () => { select({kind:'room', id:tr.dataset.room}); if (is3D()) window.View3D.flyToRoom(tr.dataset.room); });
   $('#clearMeasure').onclick = () => state.measures.length && mutate(() => state.measures = []);
@@ -809,7 +845,8 @@ function roomPanel(r){
     <div class="total"><span>${tr('Arvioitu hinta','Estimated cost')}</span><b>${Math.round(a*MATS[st.mat].price*1.05).toLocaleString('fi-FI')} €</b></div></section>
   <section><h3>${tr('Kalusteet huoneessa','Furniture in room')} <small>${tr(`${inside.length} kpl`, `${inside.length} items`)}</small></h3>
     <table>${inside.map(f => `<tr class="click" data-fid="${f.id}"><td>${esc(nm(f.name))}</td><td class="r muted">${f.w}×${f.d}</td></tr>`).join('') || `<tr><td class="muted">${tr('Ei mitään','None')}</td></tr>`}</table>
-    <div class="actions"><button class="btn" id="back">${tr('← Takaisin yleisnäkymään','← Back to overview')}</button></div></section>`;
+    <div class="actions"><button class="btn" id="back">${tr('← Takaisin yleisnäkymään','← Back to overview')}</button></div></section>
+    ${rulesSection(elementFindings('room', r.id))}`;
 }
 function bindRoomPanel(){
   const id = ui.sel.id;

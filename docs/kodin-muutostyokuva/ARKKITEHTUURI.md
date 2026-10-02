@@ -575,6 +575,12 @@ hakupalvelut ja integraatiot jäävät V6:een.
 
 ## 7. Sääntömoottori (C4)
 
+**Päätös 2026-10-03 (käyttäjä):** editorissa säännöt ovat ohjeellisia eivätkä
+estä muokkausta. Ne näkyvät, kun muutos, valinta tai valittu profiili koskee niitä.
+Alla olevat `block`-tasot koskevat vain myöhempää virallisen tulosteen QA:ta
+(`rakennuskuva`, periaate 6). Toteutus, lähteet ja sääntölista:
+[SAANNOT.md](SAANNOT.md).
+
 ### 7.1 Sääntöprofiilit
 
 | Profiili | Käyttö | Esimerkkisääntöjä |

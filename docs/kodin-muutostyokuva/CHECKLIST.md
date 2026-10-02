@@ -235,6 +235,10 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
 ## Vaihe V2: Sääntömoottori ja pyörätuolisimulaatio
 
 ### Säännöt (§7)
+- [x] **[FP]** Ohjeellinen esikatseluarvioija 2026-10-03: `rules/rules-v1.json`
+      (10 sääntöä, lähteet Finlexistä) ja `src/model/rules.ts`. Säännöt näkyvät,
+      kun muutos tai valinta koskee niitä, eivätkä estä muokkausta (käyttäjän päätös).
+      Vapaa ympyrä ja wc:n sivutila lasketaan geometriasta. [Säännöt](SAANNOT.md)
 - [ ] **[MOL]** Sääntötiedostomuoto (`rules/*.json`) ja sen JSON Schema (§7.2)
 - [ ] **[MOL]** `check`-tyypit: `min`, `max`, `range`, `clear_circle`, `clear_rect`,
       `path_width`, `forbidden_change`, `requires_document`
@@ -251,8 +255,8 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
 - [ ] **[EI-KOODI]** Sääntölista tarkistettu isännöitsijän kanssa (K5)
 
 ### Profiili `esteettomyys`
-- [ ] **[EI-KOODI]** Viitearvot tarkistettu YM:n asetuksesta 241/2017 ja kirjattu
-      lähteineen
+- [x] **[EI-KOODI]** Viitearvot tarkistettu YM:n asetuksesta 241/2017 ja kirjattu
+      lähteineen ([SAANNOT.md](SAANNOT.md), 2026-10-03)
 - [ ] **[MOL]** Oviaukon vapaa leveys (`min`, käyttäjäkohtainen parametri, tarkkuus
       ≤ 5 mm)
 - [ ] **[MOL]** Kynnyskorkeus (`max`, menetelmä `tape`)
