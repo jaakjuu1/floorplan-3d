@@ -165,7 +165,8 @@ const svg = $('#plan');
 
 
 /* ======================= Tila / historia / tallennus ======================= */
-const ui = {tool:'select', sel:null, mA:null, mCur:null,
+const ui = {tool:'select', sel:null, mA:null, mCur:null, wA:null, wCur:null,
+  newWall:{thickness:100}, newFixture:{kind:'grab_bar', width:600, depth:80},
   layers:{dims:true, labels:true, furn:true, grid:false, bearing:false, wallSnap:true}};
 let view = {x0:0, y0:0, s:.06};
 const undoStack = [], redoStack = [];
@@ -505,6 +506,14 @@ function renderMeasure(){
   let s = state.measures.map(m => one(m.a,m.b)).join('');
   if (ui.mA && ui.mCur) s += one(ui.mA, ui.mCur, true);
   if (ui.mA) s += `<circle cx="${ui.mA.x}" cy="${ui.mA.y}" r="${3*k}" fill="#2f5d62"/>`;
+  if (ui.tool === 'wall' && ui.wA){
+    const a = ui.wA, b = ui.wCur || a, L = Math.hypot(b.x-a.x, b.y-a.y), t = ui.newWall.thickness/2;
+    if (L >= 1){
+      const nx = -(b.y-a.y)/L*t, ny = (b.x-a.x)/L*t;
+      s += `<polygon data-role="wallPreview" points="${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}" fill="rgba(201,68,58,.45)" stroke="#c9443a" stroke-width="1" vector-effect="non-scaling-stroke"/>` + one(a, b, true);
+    }
+    s += `<circle cx="${a.x}" cy="${a.y}" r="${4*k}" fill="#c9443a"/>`;
+  }
   $('#gMeasure').innerHTML = s;
 }
 
@@ -580,7 +589,7 @@ function overviewPanel(){
     return `<tr><td><span class="sw" style="background:${MATS[m].sw}"></span>${nm(MATS[m].name)}</td><td class="r">${fmt(a,1)} m²</td><td class="r">${Math.round(c).toLocaleString('fi-FI')} €</td></tr>`; }).join('');
   const removed = demolishedIds(), dem = PLAN.demolishedWalls.filter(w => removed.has(w.id));
   const demLen = dem.reduce((a,w) => a + Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]), 0) / 1000;
-  return `${changesSection()}
+  return `${toolSection()}${changesSection()}
   <section><h3>${tr('Huoneiden pinta-alat','Room Areas')} <small>${tr('Napsauta nähdäksesi / vaihtaaksesi lattian','Click to view / change flooring')}</small></h3>
     <table>${rows}</table>
     <div class="total"><span>${tr('Nettopinta-ala','Net floor area')}</span><b>${fmt(tot)} m²</b></div>
@@ -718,6 +727,7 @@ function bindElementPanel(sel){
 }
 
 function bindOverview(){
+  bindToolSection();
   document.querySelectorAll('#panel [data-revert]').forEach(b => b.onclick = () => editUnit(u => EDIT().revertChange(u, Number(b.dataset.revert))));
   document.querySelectorAll('#panel tr[data-room]').forEach(tr => tr.onclick = () => { select({kind:'room', id:tr.dataset.room}); if (is3D()) window.View3D.flyToRoom(tr.dataset.room); });
   $('#clearMeasure').onclick = () => state.measures.length && mutate(() => state.measures = []);
@@ -878,17 +888,19 @@ function toggleWall(id){
 }
 
 function setTool(t){
-  ui.tool = t; ui.mA = null; ui.mCur = null;
+  ui.tool = t; ui.mA = null; ui.mCur = null; ui.wA = null; ui.wCur = null;
   svg.setAttribute('class', 'tool-' + t);
   document.querySelectorAll('#tools .btn').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
   syncModeHint();
-  renderMeasure();
+  renderMeasure(); renderPanel();
 }
 function syncModeHint(){
   const hints = {select:'',
     measure:COARSE ? tr('Vedä mittaviiva tai napauta kaksi pistettä · kiinnittyy seiniin · poistu napauttamalla "Valitse"', 'Hold and drag a line, or tap two points · snaps to walls · tap "Select" to exit')
       : tr('Napsauta kahta pistettä (tai vedä) mitataksesi etäisyyden · kiinnittyy seiniin · Shift lukitsee vaaka-/pystysuuntaan · Esc peruu', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
-    demolish:tr('Napsauta harmaata ei-kantavaa seinää merkitäksesi sen purettavaksi, napsauta uudelleen palauttaaksesi · mustia kantavia seiniä ei voi purkaa', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed')};
+    demolish:tr('Napsauta harmaata ei-kantavaa seinää merkitäksesi sen purettavaksi, napsauta uudelleen palauttaaksesi · mustia kantavia seiniä ei voi purkaa', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed'),
+    wall:tr('Napsauta seinän alku- ja loppupiste · jatkuu edellisen päästä · kiinnittyy seinien päihin ja keskilinjoihin · Shift lukitsee vaaka-/pystysuuntaan · Esc lopettaa', 'Click the wall start and end · continues from the last end · snaps to wall ends and centre lines · Shift locks horizontal/vertical · Esc ends'),
+    fixture:tr('Napsauta kohtaa · seinän lähellä kaluste asettuu seinää vasten ja sen suuntaiseksi · tyyppi ja koko oikeassa paneelissa', 'Click a spot · near a wall the fixture sits flush and parallel to it · type and size in the right panel')};
   const h = $('#modehint'); h.textContent = hints[ui.tool]; h.classList.toggle('show', !!hints[ui.tool]);
 }
 
@@ -947,6 +959,78 @@ function snapPoint(p, shift){
   return {x, y};
 }
 
+/* ======================= Uusi seinä ja kiintokaluste (muutoskerros) ======================= */
+const FIXTURE_SIZE = {grab_bar:[600,80], wc:[400,700], sink:[600,450], shower:[900,900], bathtub:[1700,750], stove:[600,600], cabinet:[600,600]};
+// Screen mm (y down). Wall ends first, then a wall centre line, then the 10 mm grid.
+function wallSnap(p, shift){
+  const tol = 10/view.s;
+  let best = null, bd = tol;
+  for (const w of WALLS) for (const e of [w.a, w.b]){ const d = Math.hypot(e[0]-p.x, e[1]-p.y); if (d < bd){ bd = d; best = {x:e[0], y:e[1]}; } }
+  if (best) return best;
+  for (const w of WALLS){
+    const f = foot(p, w); if (f.d < bd){ bd = f.d; best = {x:f.x, y:f.y}; }
+  }
+  if (best) return best;
+  const q = {x:Math.round(p.x/10)*10, y:Math.round(p.y/10)*10};
+  if (shift && ui.wA){ if (Math.abs(q.x-ui.wA.x) > Math.abs(q.y-ui.wA.y)) q.y = ui.wA.y; else q.x = ui.wA.x; }
+  return q;
+}
+function foot(p, w){
+  const [ax,ay] = w.a, [bx,by] = w.b, L = Math.hypot(bx-ax, by-ay) || 1, ux = (bx-ax)/L, uy = (by-ay)/L;
+  const t = Math.max(0, Math.min(L, (p.x-ax)*ux + (p.y-ay)*uy)), x = ax + ux*t, y = ay + uy*t;
+  return {x, y, d:Math.hypot(p.x-x, p.y-y), ux, uy};
+}
+function placeWallPoint(q){
+  if (!ui.wA){ ui.wA = q; ui.wCur = q; renderMeasure(); return; }
+  if (Math.hypot(q.x-ui.wA.x, q.y-ui.wA.y) < 50) return;
+  const a = ui.wA, thickness_mm = ui.newWall.thickness;
+  // Model coordinates are y-up; planned values are recorded as assumptions by the edit API.
+  if (editUnit(u => EDIT().addWall(u, {x:a.x, y:-a.y}, {x:q.x, y:-q.y}, {thickness_mm}))){ ui.wA = q; ui.wCur = q; }
+  renderMeasure();
+}
+// Near a wall the fixture's back (local -y) sits on the wall face and its width runs along the wall.
+function placeFixture(p){
+  const f = ui.newFixture;
+  let best = null;
+  for (const w of WALLS){ const h = foot(p, w); if (h.d < 400 && (!best || h.d < best.d)) best = {...h, w}; }
+  let x = Math.round(p.x), y = Math.round(p.y), rot = 0;
+  if (best){
+    let nx = -best.uy, ny = best.ux;
+    if ((p.x-best.x)*nx + (p.y-best.y)*ny < 0){ nx = -nx; ny = -ny; }
+    const off = best.w.thickness/2 + f.depth/2;
+    x = Math.round(best.x + nx*off); y = Math.round(best.y + ny*off);
+    rot = Math.atan2(-nx, ny) * 180 / Math.PI;
+  }
+  const modelRot = Math.round(((-rot % 360) + 360) % 360 * 10) / 10;
+  let id = null;
+  if (editUnit(u => { const r = EDIT().addFixture(u, {kind:f.kind, x, y:-y, width:f.width, depth:f.depth, rotation_deg:modelRot}); id = r.id; return r; })){
+    setTool('select'); select({kind:'fixture', id});
+  }
+}
+function toolSection(){
+  if (ui.tool === 'wall') return `<section id="toolOptions"><h3>${tr('Uusi seinä','New wall')} <small>${tr('muutos, ei nykytila','a change, not the survey')}</small></h3>
+    <div class="form"><label class="full">${tr('Paksuus (mm)','Thickness (mm)')}<input type="number" id="nwThickness" min="20" step="10" value="${ui.newWall.thickness}"></label></div>
+    <p class="muted">${tr('Uusi seinä on väliseinä ja sen mitat tallentuvat suunnitelmana (assumed). Esc lopettaa ketjun.','The new wall is a partition; its sizes are saved as planned (assumed). Esc ends the chain.')}</p></section>`;
+  if (ui.tool === 'fixture'){
+    const f = ui.newFixture, kinds = Object.entries(FIXTURE_KIND).map(([k, l]) => `<option value="${k}" ${k === f.kind ? 'selected' : ''}>${tr(...l)}</option>`).join('');
+    return `<section id="toolOptions"><h3>${tr('Lisää kiintokaluste','Add fixture')} <small>${tr('muutos','a change')}</small></h3>
+      <div class="form"><label class="full">${tr('Tyyppi','Type')}<select id="nfKind">${kinds}</select></label>
+        <label>${tr('Leveys','Width')} (mm)<input type="number" id="nfW" min="10" step="10" value="${f.width}"></label>
+        <label>${tr('Syvyys','Depth')} (mm)<input type="number" id="nfD" min="10" step="10" value="${f.depth}"></label></div>
+      <p class="muted">${tr('Napsauta pohjaa. Seinän lähellä kaluste kiinnittyy seinään.','Click the plan. Near a wall the fixture attaches to it.')}</p></section>`;
+  }
+  return '';
+}
+function bindToolSection(){
+  const n = q => parseFloat($(q)?.value);
+  if ($('#nwThickness')) $('#nwThickness').onchange = () => { if (n('#nwThickness') > 0) ui.newWall.thickness = n('#nwThickness'); };
+  if ($('#nfKind')){
+    $('#nfKind').onchange = e => { const [w, d] = FIXTURE_SIZE[e.target.value]; ui.newFixture = {kind:e.target.value, width:w, depth:d}; renderPanel(); };
+    $('#nfW').onchange = () => { if (n('#nfW') > 0) ui.newFixture.width = n('#nfW'); };
+    $('#nfD').onchange = () => { if (n('#nfD') > 0) ui.newFixture.depth = n('#nfD'); };
+  }
+}
+
 /* ======================= Osoittimen käsittely ======================= */
 let drag = null, pinch = null;
 const touches = new Map();                     // sormet, jotka ovat tällä hetkellä pohjapiirroksen päällä
@@ -994,6 +1078,8 @@ svg.addEventListener('pointerdown', e => {
     else { const a = ui.mA; ui.mA = null; ui.mCur = null; if (Math.hypot(q.x-a.x, q.y-a.y) > 20) mutate(() => state.measures.push({a, b:q})); }
     renderMeasure(); return;
   }
+  if (ui.tool === 'wall'){ placeWallPoint(wallSnap(p, e.shiftKey)); return; }
+  if (ui.tool === 'fixture'){ placeFixture(p); return; }
   const h = t.closest('[data-handle]');
   if (h && ui.sel?.kind === 'furn'){
     drag = {kind:h.dataset.handle, id:ui.sel.id, sx:e.clientX, sy:e.clientY, before:snap(), moved:false};
@@ -1025,6 +1111,7 @@ svg.addEventListener('pointermove', e => {
     const room = e.target.closest && e.target.closest('[data-room]');
     $('#hover').innerHTML = room ? `<b>${esc(state.rooms[room.dataset.room].name)}</b> ${fmt(area(ROOMS.find(r=>r.id===room.dataset.room).poly))} m²` : '';
     if (ui.tool === 'measure' && ui.mA){ ui.mCur = snapPoint(p, e.shiftKey); renderMeasure(); }
+    if (ui.tool === 'wall' && ui.wA){ ui.wCur = wallSnap(p, e.shiftKey); renderMeasure(); }
     return;
   }
   const far = Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) >= TAP;
@@ -1087,14 +1174,16 @@ document.addEventListener('keydown', e => {
   if (k === '[' || k === ']'){ drawer(k === '[' ? 'lib' : 'panel'); return; }
   if (k === 'f' && e.shiftKey){ toggleFullscreen(); return; }
   if (k === 't') setView(is3D() ? '2d' : '3d');
-  else if (is3D() && ['v','m','x','f','+','=','-'].includes(k)) return;
+  else if (is3D() && ['v','m','x','w','k','f','+','=','-'].includes(k)) return;
   else if (k === 'v') setTool('select');
   else if (k === 'm') setTool('measure');
   else if (k === 'x') setTool('demolish');
+  else if (k === 'w') setTool('wall');
+  else if (k === 'k') setTool('fixture');
   else if (k === 'f') fitView();
   else if (k === 'r') rotateSel(e.shiftKey ? -90 : 90);
   else if (k === 'delete' || k === 'backspace'){ e.preventDefault(); deleteSel(); }
-  else if (k === 'escape'){ if (ui.mA){ ui.mA = null; renderMeasure(); } else { if (ui.tool !== 'select') setTool('select'); select(null); } }
+  else if (k === 'escape'){ if (ui.mA){ ui.mA = null; renderMeasure(); } else if (ui.wA){ ui.wA = ui.wCur = null; renderMeasure(); } else { if (ui.tool !== 'select') setTool('select'); select(null); } }
   else if (k.startsWith('arrow') && ui.sel?.kind === 'furn'){
     e.preventDefault(); const st = e.shiftKey ? 100 : 10;
     mutate(() => { const f = getF(ui.sel.id); if (k==='arrowleft') f.cx -= st; if (k==='arrowright') f.cx += st; if (k==='arrowup') f.cy -= st; if (k==='arrowdown') f.cy += st; });

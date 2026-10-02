@@ -282,8 +282,9 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
       seinän, aukon ja kiintokalusteen valinta 2D:ssä ja 3D:ssä; paneelista purku ja
       palautus, aukon karmi- ja vapaa leveys, kynnyksen poisto ja kalusteen vaihto;
       muutoslista ja yksittäinen peruminen; keltainen purku ja punainen uusi/muutettu.
-      Uuden seinän piirto ja kiintokalusteen lisäys ovat vielä vain rajapinnassa
-      (`View3D.model.addWall/addFixture`), ei työkaluna. Puhelinkäyttöä ei ole testattu
+      2D-työkalut "Uusi seinä" (W: ketjutus, kiinnitys seinien päihin ja
+      keskilinjoihin, Shift vaaka/pysty) ja "Kiintokaluste" (K: seinän lähellä
+      seinää vasten ja sen suuntaisesti, esim. tukikahva). Puhelinkäyttöä ei ole testattu
 - [ ] **[FP]** Nykytila / muutos -vaihto 2D:ssä ja 3D:ssä
 - [ ] **[FP]** Muutosvärit 2D-näkymässä (K7:n mukaisesti)
 

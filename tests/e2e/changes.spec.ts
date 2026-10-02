@@ -117,3 +117,72 @@ test('walls, openings, thresholds and fixtures are changed as element objects in
   expect((await saved()).unit).toEqual(final.unit);
   expect(errors).toEqual([]);
 });
+
+test('a new wall and a grab bar are drawn in 2D as planned changes and appear in 3D', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Change editing is desktop-first');
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const saved = async () => JSON.parse((await page.evaluate(() => localStorage.getItem('kodin-design-v2')))!);
+  const changes = async () => (await saved()).unit.changes;
+  const planned = (value_mm: number, ref: string) => ({ value_mm, status: 'assumed', method: 'assumption', source_refs: [`design:${ref}`], confidence_mm: null });
+  // Click a plan point given in display millimetres (y down).
+  const click = async (x: number, y: number) => {
+    const p = await page.evaluate(([x, y]) => {
+      const svg = document.querySelector('#plan') as SVGSVGElement, pt = svg.createSVGPoint(); pt.x = x; pt.y = y;
+      const r = pt.matrixTransform(svg.getScreenCTM()!); return { x: r.x, y: r.y };
+    }, [x, y]);
+    await page.mouse.click(p.x, p.y);
+  };
+
+  await page.goto('/');
+  await page.locator('#fileIn').setInputFiles({ name: 'accessibility-unit.json', mimeType: 'application/json',
+    buffer: await readFile(join(process.cwd(), 'examples/accessibility-unit.json')) });
+  await expect(page.locator('#toast')).toContainText('Suunnitelma tuotu');
+  await page.locator('#fit').click(); await page.locator('#zoomOut').click();
+  const baseline = (await saved()).unit.baseline;
+
+  // New wall: start on w1's centre line, end on w2's; the second click snaps onto the line.
+  await page.keyboard.press('w');
+  await expect(page.locator('[data-tool="wall"]')).toHaveClass(/on/);
+  await page.locator('#nwThickness').fill('80'); await page.locator('#nwThickness').press('Tab');
+  await click(2500, 30);
+  await page.mouse.move(10, 10);
+  await click(2500, -1980);
+  await expect.poll(async () => (await changes()).length).toBe(1);
+  await expect(page.locator('[data-role="wallPreview"]')).toHaveCount(0); // chain waits for the next end
+  await page.keyboard.press('Escape');
+  const wall = (await changes())[0].wall;
+  expect(wall).toMatchObject({ id: 'w-new-1', kind: 'partition', thickness: planned(80, 'w-new-1/thickness') });
+  expect(wall.a.y).toEqual(planned(0, 'w-new-1/position'));
+  expect(wall.b.y).toEqual(planned(2000, 'w-new-1/position'));
+  expect(Math.abs(wall.a.x.value_mm - 2500)).toBeLessThan(30);
+  await expect(page.locator('#gWalls [data-wall="w-new-1"]').first()).toHaveAttribute('fill', '#c9443a');
+
+  // Grab bar near the bearing wall: flush against its face, parallel to it, then selected for editing.
+  await page.keyboard.press('k');
+  await expect(page.locator('#nfKind')).toHaveValue('grab_bar');
+  await click(3200, -150);
+  await expect.poll(async () => (await changes()).length).toBe(2);
+  const bar = (await changes())[1].fixture;
+  expect(bar).toMatchObject({ id: 'f-new-1', kind: 'grab_bar', rotation_deg: 180,
+    y: planned(90, 'f-new-1/position'), width: planned(600, 'f-new-1/size'), depth: planned(80, 'f-new-1/size') });
+  expect(Math.abs(bar.x.value_mm - 3200)).toBeLessThan(30);
+  await expect(page.locator('[data-tool="select"]')).toHaveClass(/on/);
+  await expect(page.locator('#panel')).toContainText('Tukikahva');
+  await expect(page.locator('#panel')).toContainText('Uusi (muutos)');
+  await page.screenshot({ path: join(process.cwd(), 'docs/kodin-muutostyokuva/screenshots/v13-desktop-2d-new-wall-grab-bar.png') });
+  await page.locator('#undo').click();
+  await expect.poll(async () => (await changes()).length).toBe(1);
+  await page.locator('#redo').click();
+  await expect.poll(async () => (await changes()).length).toBe(2);
+
+  // 3D: the planned wall is red and blocks walking; the survey baseline is untouched.
+  await page.locator('[data-view="3d"]').click();
+  await expect(page.locator('#view3d canvas')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('body')).not.toHaveClass(/busy/);
+  await expect.poll(() => page.evaluate(() => (window as any).View3D.inspect().changed.sort()))
+    .toEqual(['fixture:f-new-1:added', 'wall:w-new-1:added']);
+  expect(await page.evaluate(() => (window as any).View3D.inspect([2500, -1000]).blocked)).toBe(true);
+  expect((await saved()).unit.baseline).toEqual(baseline);
+  expect(errors).toEqual([]);
+});

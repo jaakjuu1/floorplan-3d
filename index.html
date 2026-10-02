@@ -54,7 +54,7 @@ aside.right{border-right:0;border-left:1px solid var(--line)}
 main{position:relative;overflow:hidden;background:var(--paper)}
 #plan{width:100%;height:100%;display:block;touch-action:none;cursor:default}
 #plan.panning{cursor:grabbing}
-#plan.tool-measure{cursor:crosshair}
+#plan.tool-measure,#plan.tool-wall,#plan.tool-fixture{cursor:crosshair}
 #plan .wall{pointer-events:none}
 #plan.tool-demolish .wall,#plan.tool-select .wall{pointer-events:all;cursor:pointer}
 #plan.tool-select .wall:hover{opacity:.82}
@@ -261,6 +261,8 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
       <button class="btn on" data-tool="select" title="Valitse / siirrä (V)" data-en-title="Select / Move (V)" data-en="Select">Valitse</button>
       <button class="btn" data-tool="measure" title="Mittaa (M)" data-en-title="Measure (M)" data-en="Measure">Mittaa</button>
       <button class="btn" data-tool="demolish" title="Pura ei-kantavia seiniä (X)" data-en-title="Demolish non-bearing walls (X)" data-en="Demolish">Purku</button>
+      <button class="btn" data-tool="wall" title="Uusi seinä (W)" data-en-title="New wall (W)" data-en="New wall">Uusi seinä</button>
+      <button class="btn" data-tool="fixture" title="Lisää kiintokaluste, esim. tukikahva (K)" data-en-title="Add fixture, e.g. grab bar (K)" data-en="Fixture">Kiintokaluste</button>
     </div>
     <div class="grp only2d">
       <button class="btn" id="zoomOut" title="Loitonna" data-en-title="Zoom out">−</button>

@@ -343,6 +343,11 @@ eivät voi elää Three.js-näkymässä. Valinta toimii samoin 2D:ssä ja 3D:ss�
 oikea paneeli näyttää mitat alkuperineen ja muutostoiminnot. Yleisnäkymän
 muutoslista sallii yksittäisen muutoksen perumisen.
 
+2D:n työkalut "Uusi seinä" ja "Kiintokaluste" käyttävät samaa rajapintaa: uusi
+väliseinä ketjutetaan ja kiinnitetään olemassa olevien seinien päihin tai
+keskilinjoihin, ja kiintokaluste (esim. tukikahva) asettuu seinän lähellä seinän
+pintaa vasten ja sen suuntaisesti.
+
 Värit: purettava keltaisena (2D katkoviiva, 3D läpikuultava haamu, josta seinän
 voi palauttaa), uusi punaisena ja muuttunut punaisella korostettuna.
 Viranomais- ja isännöitsijäpohjien tarkistus on yhä auki.
