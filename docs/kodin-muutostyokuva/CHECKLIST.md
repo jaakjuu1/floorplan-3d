@@ -259,7 +259,7 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
       globaalin 50 mm:n sijaan
 
 ### Pyörätuolisimulaatio (§7.4)
-- [ ] **[FP]** `blocked()` (`index.html:2593`) yleistetty: törmäysmuoto parametrina
+- [ ] **[FP]** `blocked()` (`src/view3d/view3d.js:1071`) yleistetty: törmäysmuoto parametrina
 - [ ] **[FP]** Pyörätuolin mitat käyttäjäkohtaisista parametreista
 - [ ] **[FP]** 2D: kääntöympyrät ja kapeikot näkyviin
 - [ ] **[FP]** "Aja reitti" -toiminto, kapein kohta raportoidaan

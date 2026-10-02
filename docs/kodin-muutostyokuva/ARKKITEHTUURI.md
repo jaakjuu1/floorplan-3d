@@ -82,7 +82,8 @@ jokaiselle vastaanottajalle oma paperi ja tarkistus.**
 
 ## 3. Nykytila: mitä on jo olemassa ja mitä puuttuu
 
-Luku 3 kuvaa suunnittelun lähtötilannetta ennen V0:aa. V0:n toteutunut rakenne
+Luku 3 kuvaa suunnittelun lähtötilannetta ennen V0:aa (commit `859a40f`; rivi­viittaukset
+koskevat sitä versiota). V0:n toteutunut rakenne
 ja tietovirta kuvataan §6.4:ssä ja valmistuminen tarkistuslistassa.
 
 ### 3.1 floorplan-3d
@@ -398,8 +399,10 @@ Tavoiteaika tavalliselle kaksiolle: alle 60 min. Todennetaan kenttätestissä (l
 
 ### 6.2 Mittojen syöttö puhelimella
 
-- Iso numeronäppäimistö, oletusyksikkö millimetri. Senttimetrit ja metrit
-  tunnistetaan desimaalierottimesta (esim. `3,42` → 3420 mm).
+- Iso numeronäppäimistö, oletusyksikkö millimetri. Desimaalierottimella (pilkku
+  tai piste) syötetty luku tulkitaan metreiksi (esim. `3,42` → 3420 mm).
+  Senttimetrejä ei arvata, koska `84,2` voisi olla yhtä hyvin senttejä kuin metrejä;
+  epäuskottavan arvon tarkistus (alla) havaitsee väärän yksikön.
 - "Seuraava"-painike siirtää suoraan seuraavaan puuttuvaan mittaan. Ei valikoiden
   selaamista kesken mittauksen.
 - Menetelmä (`laser` / `tape`) muistetaan edellisestä, vaihdettavissa yhdellä
@@ -750,7 +753,7 @@ Yksityiskohtainen tarkistuslista: [CHECKLIST.md](CHECKLIST.md).
 
 | Riski | Vaikutus | Varautuminen |
 |---|---|---|
-| Kartoitus kestää liian kauan | Palvelu ei kannata | Kenttätesti ennen V2:ta, ohjattu mittauslista, laser-integraatio |
+| Kartoitus kestää liian kauan | Palvelu ei kannata | Kenttätesti ennen V2:ta, ohjattu mittauslista, nopea käsisyöttö (§6.2). Laserin Bluetooth-integraatio arvioidaan uudelleen vain, jos käsisyöttö osoittautuu pullonkaulaksi (K3) |
 | Kantavuus arvataan väärin | Vakava rakenteellinen vahinko | Kantavuus ei koskaan `measured` ilman lähdettä. Muutostyöprofiili estää kantavan tai tuntemattoman seinän muutoksen ilman asiantuntijaa |
 | Tuloste luullaan viralliseksi | Vastuukysymys | Luonnosmerkintä ja estolista kuten `rakennuskuva`ssa. Kuittaaja nimetään |
 | Kaksi toteutusta (Python/JS) eriytyy | Eri tulos kentällä ja tulosteessa | Yhteiset testitapaukset molempien CI:ssä, Python kanoninen |
