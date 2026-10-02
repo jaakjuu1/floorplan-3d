@@ -175,6 +175,17 @@ const backgroundUI = window.createBackgroundUI({
     return mutate(() => { state.background = background; });
   },
   update: fn => mutate(() => { if (state.background) fn(state.background); }),
+  // One accepted trace is one undoable baseline change; the pointer draft never enters state or history.
+  trace: build => {
+    if (storageBlocked){ toast(tr('Tuo kelvollinen suunnitelma tai palauta oletus ennen jäljentämistä.','Import a valid plan or reset before tracing.')); return false; }
+    let next;
+    try { next = build(state.unit); } catch (error) { toast(error.message); return false; }
+    return mutate(() => {
+      state.unit = next.unit;
+      const room = next.unit.baseline.rooms?.find(r => r.id === next.id);
+      if (room) state.rooms[room.id] = {name:room.name, mat:'wood'};
+    });
+  },
   getBounds: () => ({x:BOUNDS.x,y:BOUNDS.y,w:BOUNDS.w,h:BOUNDS.h}),
   getView: () => view, toMM: e => toMM(e), toast: msg => toast(msg),
   closeDrawers: () => closeDrawers(), is3D: () => is3D(), cancelPlanImport,

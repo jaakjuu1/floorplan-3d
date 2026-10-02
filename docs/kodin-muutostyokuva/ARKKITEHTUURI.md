@@ -503,6 +503,17 @@ historiapino on enintään 150 tilaa ja 16 MiB kumpaakin pinoa kohden.
 
 Rajapinnat ja tarkka tallennusmuoto: [V1.1-SOPIMUS.md](V1.1-SOPIMUS.md).
 
+**V1.2:n toteutunut rajaus 2026-10-02:** kalibroidulta pohjakuvalta jäljennetään
+seinäketju (seuraava seinä alkaa edellisen päästä) tai suljettu huonepolygoni
+nykytilaan `baseline`; olemassa olevan seinän jäljennös ei ole `add_wall`-ehdotus.
+`src/model/trace.ts` muuntaa liitepisteet `attachmentToModel`-muunnoksella
+millimetreiksi, kirjaa jokaisen koordinaatin ja syötetyn seinäpaksuuden
+`inferred`/`archive_drawing`-mittana ilman tarkkuutta ja validoi irrotetun
+malliehdokkaan (`parseUnit` + `apply`) ennen editorin yhtä historiavaihetta.
+Ilman kalibrointia tai pohjakuvan ulkopuolisilla pisteillä jäljennös hylätään.
+Osoitinluonnos on pelkkä käyttöliittymätila. Aukot, mittojen käsisyöttö,
+kiinnitys olemassa oleviin pisteisiin ja panorointi jäljennöstilassa ovat seuraavia osuuksia.
+
 Käyttäjän tarkennus 2026-09-29: kartoituksen voi aloittaa myös olemassa olevasta
 pohjapiirustuksesta. Käyttäjän tuoman tiedoston tuki kuuluu V1:een; arkistojen
 hakupalvelut ja integraatiot jäävät V6:een.

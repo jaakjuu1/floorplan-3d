@@ -158,6 +158,14 @@ Kenttätestejä, PWA/offline-kokonaisuutta ja koko V1:tä ei kuitata valmiiksi.
       Liitteen vaihto ja sivun vaihto nollaavat kalibroinnin; kumoa/tee uudelleen toimii
 - [ ] **[FP]** Huoneiden, seinien ja aukkojen jäljentäminen sekä piirustuksen
       mittojen käsisyöttö samaan huoneistomalliin; päivittyvä 2D/3D-esikatselu
+- [x] **[FP]** Edellisen kohdan V1.2-osuus: kalibroidulta pohjakuvalta seinäketju
+      ja suljettu huonepolygoni suoraan `baseline`en (ei `add_wall`-muutosta).
+      Koordinaatit ja piirustuksesta luettu seinäpaksuus `inferred` /
+      `archive_drawing`, `confidence_mm: null`, viite `attachment:<SHA-256>/page:<n>`.
+      Osoitinluonnos ei tallennu; irrotettu malliehdokas validoidaan ja yksi
+      hyväksytty seinä/huone on yksi kumottava vaihe. 53 TypeScript- ja 10
+      Chromium-testiä (työpöytä ja 390×844-kosketus). Aukot, piirustusmittojen
+      käsisyöttö, snap ja panorointi jäljentäessä puuttuvat
 - [ ] **[MOL]** Piirustusmitat `inferred` / `archive_drawing`, lähdeviite
       tiedostoon ja sivuun; tuntematon tarkkuus säilyy puuttuvana. Kenttämittaus
       korvaa arvon alkuperäketjun säilyttäen, hyväksyntä ei muuta statusta

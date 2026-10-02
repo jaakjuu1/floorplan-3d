@@ -156,8 +156,9 @@ main.animating #hint3d{opacity:0}
 .range span{font-variant-numeric:tabular-nums;color:var(--ink)}
 .background-controls{padding:12px 16px;border-bottom:1px solid var(--line);background:#faf6ef}
 .background-controls h3{margin:0 0 8px;font-size:13px}
+.background-controls [data-role=controls] h3{margin-top:16px}
 .background-controls label{display:flex;flex-direction:column;gap:4px;margin-top:8px;font-size:12px;color:var(--muted)}
-.background-controls input{width:100%;min-height:38px;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff}
+.background-controls input,.background-controls select{width:100%;min-height:38px;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff}
 .background-controls input[type=range]{padding:0;accent-color:var(--accent)}
 .background-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .background-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
@@ -327,6 +328,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
       <g id="gDims" pointer-events="none"></g>
       <g id="gMeasure" pointer-events="none"></g>
       <g id="gSel"></g>
+      <g id="gTrace" pointer-events="none"></g>
     </svg>
     <div id="view3d">
       <div id="walkOverlay"><div><h3 data-en="Walk mode">Kävelytila</h3>

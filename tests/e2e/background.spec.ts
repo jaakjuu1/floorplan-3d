@@ -183,7 +183,7 @@ test('source drawing import, page preview, calibration and persistence work with
     await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await touch.detach();
     expect((await saved()).background.transform.x-before.transform.x).toBeCloseTo(35/(second.x-first.x)*200*before.transform.mmPerUnit,1);
-    await activate(page.locator('#backgroundMode button'));await activate(page.locator('#undo'));
+    await activate(page.locator('#backgroundMode [data-action="modeCancel"]'));await activate(page.locator('#undo'));
     await expect.poll(async()=>(await saved()).background).toEqual(before);await pane(true);
   }
   await page.locator('#backgroundDistance').fill('0');
@@ -199,7 +199,7 @@ test('source drawing import, page preview, calibration and persistence work with
   await pick(50,200); await pick(550,200);
   await expect(page.locator('#backgroundMode')).toContainText(/positiivinen|virheelliset/);
   expect((await saved()).background.calibration).toBeNull();
-  await activate(page.locator('#backgroundMode button'));
+  await activate(page.locator('#backgroundMode [data-action="modeCancel"]'));
   await pane(true); await page.locator('#backgroundDistance').fill('4000');
   await activate(page.locator('[data-action="calibrate"]')); await pane(false);
   await pick(50,200); await pick(550,200);

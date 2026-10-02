@@ -23,6 +23,18 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
       <p class="background-hint">${tr('Syötä etäisyys ennen kalibrointia.','Enter the distance before calibration.')}</p>
       <div class="background-row"><button type="button" class="btn" data-action="move">${tr('Siirrä pohjakuvasta','Move drawing')}</button><button type="button" class="btn" data-action="calibrate">${tr('Kalibroi kaksi pistettä','Calibrate two points')}</button></div>
       <p data-role="hint" aria-live="polite"></p>
+      <h3>${tr('Jäljennä nykytila','Trace existing layout')}</h3>
+      <p class="background-hint" data-role="traceHint"></p>
+      <div class="background-grid">
+        <label>${tr('Seinän paksuus piirustuksesta (mm)','Wall thickness from drawing (mm)')}<input id="traceThickness" type="number" min="1" step="any" inputmode="decimal"></label>
+        <label>${tr('Seinätyyppi','Wall type')}<select id="traceWallKind">${[['partition','Väliseinä','Partition'],['external','Ulkoseinä','External'],['party','Huoneistojen välinen','Party wall'],['load_bearing','Kantava','Load-bearing']].map(([v,fi,en])=>`<option value="${v}">${tr(fi,en)}</option>`).join('')}</select></label>
+      </div>
+      <div class="background-row"><button id="traceWall" type="button" class="btn" data-action="traceWall">${tr('Jäljennä seinä','Trace wall')}</button></div>
+      <div class="background-grid">
+        <label>${tr('Huoneen nimi','Room name')}<input id="traceRoomName" type="text" maxlength="80"></label>
+        <label>${tr('Huonetyyppi','Room type')}<select id="traceRoomKind">${[['living','Olohuone','Living'],['bedroom','Makuuhuone','Bedroom'],['kitchen','Keittiö','Kitchen'],['hall','Eteinen','Hall'],['wet','Märkätila','Wet room'],['wc','WC','WC'],['sauna','Sauna','Sauna'],['storage','Varasto','Storage'],['balcony','Parveke','Balcony']].map(([v,fi,en])=>`<option value="${v}">${tr(fi,en)}</option>`).join('')}</select></label>
+      </div>
+      <div class="background-row"><button id="traceRoom" type="button" class="btn" data-action="traceRoom">${tr('Jäljennä huone','Trace room')}</button></div>
     </div>
     <dialog id="backgroundPicker" data-role="picker" aria-label="${tr('Pohjakuvan esikatselu','Drawing preview')}">
       <form method="dialog" class="background-dialog">
@@ -35,10 +47,18 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
   const host = document.querySelector('#backgroundHost');
   host.prepend(root);
   const modeBar=document.createElement('div');modeBar.id='backgroundMode';modeBar.className='background-mode';modeBar.hidden=true;
-  modeBar.innerHTML=`<span data-role="modeText" aria-live="polite"></span><button class="btn" type="button" data-action="modeCancel">${tr('Lopeta','Finish')}</button>`;
+  modeBar.innerHTML=`<span data-role="modeText" aria-live="polite"></span><button id="traceDone" class="btn primary" type="button" data-action="modeDone" hidden>${tr('Valmis','Done')}</button><button class="btn" type="button" data-action="modeCancel">${tr('Lopeta','Finish')}</button>`;
   document.querySelector('#stage').append(modeBar);
-  const stopMode=()=>{mode='';draft=[];drag=null;activePointer=null;modeBar.hidden=true;};
-  modeBar.addEventListener('click',e=>{if(!e.target.closest('button'))return;stopMode();sync();});
+  const stopMode=()=>{mode='';draft=[];drag=null;activePointer=null;modeBar.hidden=true;$('#traceDone',modeBar).hidden=true;};
+  const tracing=()=>mode==='wall'||mode==='room';
+  const modeSay=message=>say($('[data-role="modeText"]',modeBar),message);
+  // Draft points are attachment coordinates; only an accepted trace reaches the model and history.
+  const commitTrace=build=>{const bg=hooks.getBackground();return hooks.trace(unit=>build(unit,bg));};
+  const finishRoom=()=>{
+    const name=$('#traceRoomName',root).value,kind=$('#traceRoomKind',root).value,points=draft;
+    if(commitTrace((unit,bg)=>window.UnitModel.traceRoom(unit,bg,points,{name,kind}))){stopMode();say($('[data-role="hint"]',root),tr('Huone jäljennetty nykytilaan.','Room traced into the existing layout.'));sync();}
+  };
+  modeBar.addEventListener('click',e=>{const button=e.target.closest('button');if(!button)return;if(button.dataset.action==='modeDone'){finishRoom();return;}stopMode();sync();});
   const controls = $('[data-role="controls"]', root), picker = $('[data-role="picker"]', root);
   const previewEl = $('[data-role="preview"]', picker), status = $('[data-role="status"]', picker);
   const pageSelect = $('[data-role="page"]', picker), confirm = $('[data-action="confirm"]', picker);
@@ -51,6 +71,8 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
   const image = bg => {
     const g = svg.querySelector('#gBackground');
     g.replaceChildren();
+    // The draft sits above the plan so corners stay visible over existing rooms and walls.
+    svg.querySelector('#gTrace').replaceChildren(...(bg && tracing() && draft.length ? [draftMark(bg)] : []));
     if (!bg || !bg.visible) return;
     const entry = cache.get(key(bg));
     if (!entry) return;
@@ -71,6 +93,16 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
       g.append(mark);
     }
   };
+  const draftMark = bg => {
+    const ns='http://www.w3.org/2000/svg', mark=document.createElementNS(ns,'g'), k=1/hooks.getView().s;
+    const points=draft.map(p=>window.PlanBackground.attachmentToScreen(p,bg));
+    mark.dataset.role='traceDraft'; mark.setAttribute('pointer-events','none');
+    const line=document.createElementNS(ns,'polyline');
+    line.setAttribute('points',points.map(p=>`${p.x},${p.y}`).join(' '));line.setAttribute('fill','none');line.setAttribute('stroke','#1f6f8b');
+    line.setAttribute('stroke-width','2');line.setAttribute('vector-effect','non-scaling-stroke');mark.append(line);
+    for(const p of points){const c=document.createElementNS(ns,'circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',String(5*k));c.setAttribute('fill','#1f6f8b');mark.append(c);}
+    return mark;
+  };
   const sync = () => {
     const bg = hooks.getBackground(), enabled = !!bg;
     controls.hidden = !enabled;
@@ -80,6 +112,8 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
     $('[data-action="pages"]',root).hidden=bg.source.mime!=='application/pdf'||bg.page.count<2;
     for (const field of ['x','y','rotation','opacity']) { const input = $(`[data-field="${field}"]`, root); input.value = String(field === 'opacity' ? bg.opacity : bg.transform[field]); if(field!=='opacity')input.disabled=bg.locked; }
     $('[data-action="move"]',root).disabled=bg.locked; $('[data-action="calibrate"]',root).disabled=bg.locked;
+    $('#traceWall',root).disabled=!bg.calibration; $('#traceRoom',root).disabled=!bg.calibration;
+    say($('[data-role="traceHint"]',root),bg.calibration?tr('Jäljennetyt mitat tallentuvat piirustuksesta luettuina (inferred), eivät kenttämittauksina.','Traced values are saved as read from the drawing (inferred), not as field measurements.'):tr('Kalibroi pohjakuva ennen jäljentämistä.','Calibrate the drawing before tracing.'));
     $('[data-role="opacity"]', root).value = `${Math.round(bg.opacity * 100)}%`;
     image(bg);
     const k=key(bg);
@@ -152,6 +186,17 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
     else if (action === 'remove' && bg) { invalidate();mode='';if(!hooks.replace(null))hooks.toast(tr('Tallennus epäonnistui. Pohjakuvaa ei poistettu.','Save failed. The drawing was not removed.'));sync(); }
     else if (action === 'move' && bg) { if (bg.locked) return; mode=mode==='move'?'':'move'; draft=[]; if(mode)hooks.closeDrawers();modeBar.hidden=!mode;say($('[data-role="modeText"]',modeBar),tr('Vedä pohjakuvaa. Zoomaa yläreunan painikkeilla.','Drag the drawing. Use the zoom buttons above to zoom.')); }
     else if (action === 'calibrate' && bg) { if (bg.locked) return; mode=mode==='calibrate'?'':'calibrate';draft=[];if(mode)hooks.closeDrawers();modeBar.hidden=!mode;say($('[data-role="modeText"]',modeBar),tr('Valitse piirustuksesta kaksi pistettä. Etäisyys syötetään pohjakuva-asetuksissa.','Pick two points on the drawing. Enter the distance in drawing settings.')); }
+    else if (action === 'traceWall' && bg?.calibration) {
+      const thickness=Number($('#traceThickness',root).value);
+      if(!(thickness>0)){hooks.toast(tr('Syötä piirustuksesta luettu seinän paksuus millimetreinä','Enter the wall thickness read from the drawing in millimetres'));return;}
+      mode=mode==='wall'?'':'wall';draft=[];$('#traceDone',modeBar).hidden=true;if(mode)hooks.closeDrawers();modeBar.hidden=!mode;
+      modeSay(tr('Napauta seinän alku- ja loppupiste. Seuraava seinä jatkuu edellisen päästä.','Tap the wall start and end. The next wall continues from the previous end.'));sync();
+    }
+    else if (action === 'traceRoom' && bg?.calibration) {
+      if(!$('#traceRoomName',root).value.trim()){hooks.toast(tr('Anna huoneelle nimi','Enter a room name'));return;}
+      mode=mode==='room'?'':'room';draft=[];$('#traceDone',modeBar).hidden=!mode;if(mode)hooks.closeDrawers();modeBar.hidden=!mode;
+      modeSay(tr('Napauta huoneen nurkat järjestyksessä ja paina Valmis.','Tap the room corners in order, then press Done.'));sync();
+    }
     else if (action === 'modeCancel') { stopMode();sync(); }
   });
   root.addEventListener('change', e => {
@@ -166,7 +211,7 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
   picker.addEventListener('cancel',()=>invalidate());
   confirm.addEventListener('click',()=>{ if(!preview)return; const ok=hooks.replace(preview); if(ok){picker.close();preview=null;sync();} else say(status,tr('Tallennus epäonnistui. Aiempi suunnitelma säilyi.','Save failed. The previous plan is unchanged.')); });
   svg.addEventListener('pointerdown', e => {
-    const bg=hooks.getBackground(); if (!bg || bg.locked || hooks.is3D() || !mode || e.button>0)return;
+    const bg=hooks.getBackground(); if (!bg || (bg.locked && !tracing()) || hooks.is3D() || !mode || e.button>0)return;
     e.stopImmediatePropagation();
     if(activePointer!==null)return;
     activePointer=e.pointerId;svg.setPointerCapture(e.pointerId);
@@ -179,6 +224,17 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
     if(activePointer===null)return;
     e.stopImmediatePropagation();if(e.pointerId!==activePointer)return;
     activePointer=null;
+    if(tracing()){
+      if(cancel){draft.pop();modeSay(tr('Ele peruttiin. Napauta piste uudelleen.','Gesture cancelled. Tap the point again.'));image(hooks.getBackground());return;}
+      if(mode==='wall'&&draft.length===2){
+        const [a,b]=draft,thickness_mm=Number($('#traceThickness',root).value),kind=$('#traceWallKind',root).value;
+        draft=commitTrace((unit,bg)=>window.UnitModel.traceWall(unit,bg,a,b,{thickness_mm,kind}))?[b]:[];
+        modeSay(draft.length?tr('Seinä jäljennetty. Napauta seuraavan seinän loppupiste tai lopeta.','Wall traced. Tap the next wall end or finish.'):tr('Napauta seinän alkupiste.','Tap the wall start.'));
+      } else if(mode==='wall') modeSay(tr('Alkupiste valittu. Napauta seinän loppupiste.','Start set. Tap the wall end.'));
+      else modeSay(tr(`${draft.length} nurkkaa. Jatka tai paina Valmis.`,`${draft.length} corners. Continue or press Done.`));
+      image(hooks.getBackground());
+      return;
+    }
     if(mode==='calibrate'){
       if(cancel){draft=[];say($('[data-role="modeText"]',modeBar),tr('Ele peruttiin. Valitse kaksi pistettä uudelleen.','Gesture cancelled. Pick two points again.'));return;}
       if(draft.length===2){const bg=hooks.getBackground(),mm=Number($('[data-field="distance"]',root).value);try{const calibrated=window.PlanBackground.calibrateBackground(bg,draft[0],draft[1],mm);if(update(v=>Object.assign(v,calibrated))){stopMode();say($('[data-role="hint"]',root),tr('Kalibrointi tallennettu.','Calibration saved.'));}draft=[];sync();}catch(error){draft=[];say($('[data-role="modeText"]',modeBar),error.message);modeBar.hidden=false;}}
