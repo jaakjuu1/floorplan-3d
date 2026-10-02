@@ -80,8 +80,15 @@ function init(){
   // kuunnellaan vanhemmassa elementissä sieppausvaiheessa ja pysäytetään ennen OrbitControlsia, jotta kamera ei kierry samanaikaisesti
   let fdrag = null;
   host.addEventListener('pointerdown', e => {
-    if (e.target !== cv || !e.isPrimary || anim || opt.mode !== 'orbit' || ui.sel?.kind !== 'furn') return;
-    const h = pick(e), f = h?.fid === ui.sel.id && getF(h.fid), g = f && groundAt(e.clientX, e.clientY);
+    if (e.target !== cv || !e.isPrimary || anim || opt.mode !== 'orbit' || !['furn', 'fixture'].includes(ui.sel?.kind)) return;
+    const h = pick(e);
+    if (ui.sel.kind === 'fixture'){
+      const fx = h?.element?.kind === 'fixture' && h.element.id === ui.sel.id && FIXTURES.find(f => f.id === ui.sel.id), g = fx && groundAt(e.clientX, e.clientY);
+      if (!g) return;
+      fdrag = {fixture:fx.id, pid:e.pointerId, sx:e.clientX, sy:e.clientY, ox:g.x - fx.x, oy:g.y - fx.y, depth:fx.depth, rot:fx.rotation_deg, moved:false, pose:null};
+      orbit.enabled = false; fly = null; cv.setPointerCapture(e.pointerId); return;
+    }
+    const f = h?.fid === ui.sel.id && getF(h.fid), g = f && groundAt(e.clientX, e.clientY);
     if (!g) return;
     fdrag = {id:f.id, pid:e.pointerId, sx:e.clientX, sy:e.clientY, ox:g.x - f.cx, oy:g.y - f.cy, before:snap(), moved:false};
     orbit.enabled = false; fly = null; cv.setPointerCapture(e.pointerId);
@@ -89,6 +96,13 @@ function init(){
   cv.addEventListener('pointermove', e => {
     if (!fdrag || e.pointerId !== fdrag.pid) return;
     if (!fdrag.moved && Math.hypot(e.clientX - fdrag.sx, e.clientY - fdrag.sy) < TAP) return;
+    if (fdrag.fixture){
+      const g = groundAt(e.clientX, e.clientY), obj = elements.get(`fixture:${fdrag.fixture}`); if (!g || !obj) return;
+      fdrag.moved = true; cv.style.cursor = 'grabbing';
+      fdrag.pose = window.fixturePose({x:g.x - fdrag.ox, y:g.y - fdrag.oy}, fdrag.depth, fdrag.rot);
+      const body = obj.children[0]; body.position.set(wx(fdrag.pose.x), 0, wz(fdrag.pose.y)); body.rotation.y = -fdrag.pose.rot * Math.PI/180;
+      return;
+    }
     const f = getF(fdrag.id), g = groundAt(e.clientX, e.clientY); if (!f || !g) return;
     fdrag.moved = true; cv.style.cursor = 'grabbing';
     [f.cx, f.cy] = snapMove(f, g.x - fdrag.ox, g.y - fdrag.oy);
@@ -97,6 +111,7 @@ function init(){
   const endF = e => {
     if (!fdrag || e.pointerId !== fdrag.pid) return;
     const d = fdrag; fdrag = null; orbit.enabled = true; cv.style.cursor = '';
+    if (d.fixture){ if (d.moved && d.pose) window.moveFixtureTo(d.fixture, d.pose); return; }
     if (d.moved){ commit(d.before); renderAll(); }
   };
   cv.addEventListener('pointerup', endF); cv.addEventListener('pointercancel', endF);
@@ -810,6 +825,8 @@ class RoomObject extends ElementObject {
 class FixtureObject extends ElementObject {
   constructor(id){ super('fixture', id, {fixtureId:id}); }
   replaceWith(fixture){ return edit(u => EDITS().replaceFixture(u, this.elementId, fixture)); }
+  /** Model millimetres (y up) and counter-clockwise degrees. */
+  moveTo(pose){ return edit(u => EDITS().moveFixture(u, this.elementId, pose)); }
 }
 const elements = new Map();
 const register = o => { elements.set(`${o.elementKind}:${o.elementId}`, o); return o; };
@@ -1092,7 +1109,7 @@ function updateSel(){
 /* ======================= Kävely ======================= */
 // Kosketuskävely: vasemman alakulman virtuaalisauva liikuttaa, kuvaa vetämällä käännytään (iPad ei tue hiiren osoittimen lukitusta)
 const HINT_ORBIT = () => COARSE ? tr('Yksi sormi kiertää · kaksi sormea zoomaa / panoroi · valitse kaluste ja vedä asettaaksesi · napauta ovea avataksesi', '1 finger orbits · 2 fingers zoom / pan · select furniture to drag it · tap doors to open')
-  : tr('Vasen veto kiertää · oikea veto panoroi · vieritys zoomaa · napsauta seinää, aukkoa tai kiintokalustetta muokataksesi · vedä valittua kalustetta', 'Left-drag orbits · right-drag pans · scroll zooms · click a wall, opening or fixture to edit it · drag selected furniture');
+  : tr('Vasen veto kiertää · oikea veto panoroi · vieritys zoomaa · napsauta seinää, aukkoa tai kiintokalustetta muokataksesi · vedä valittua kalustetta tai kiintokalustetta', 'Left-drag orbits · right-drag pans · scroll zooms · click a wall, opening or fixture to edit it · drag a selected item or fixture');
 const HINT_TOUCHWALK = () => tr('Sauva liikuttaa · vedä kääntääksesi katsetta · napauta ovea avataksesi', 'Joystick moves · drag to look · tap doors to open');
 const HINT_WALK = () => tr('WASD liikkuu · hiiri katsoo · Shift juoksee · E avaa oven · Esc keskeyttää', 'WASD moves · mouse looks · Shift runs · E opens doors · Esc pauses');
 function syncHint3d(){ $('#hint3d').textContent = opt.mode === 'orbit' ? HINT_ORBIT() : touchWalk ? HINT_TOUCHWALK() : HINT_WALK(); }

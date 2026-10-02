@@ -284,7 +284,9 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
       muutoslista ja yksittäinen peruminen; keltainen purku ja punainen uusi/muutettu.
       2D-työkalut "Uusi seinä" (W: ketjutus, kiinnitys seinien päihin ja
       keskilinjoihin, Shift vaaka/pysty) ja "Kiintokaluste" (K: seinän lähellä
-      seinää vasten ja sen suuntaisesti, esim. tukikahva). Puhelinkäyttöä ei ole testattu
+      seinää vasten ja sen suuntaisesti, esim. tukikahva). Kiintokalusteen siirto
+      vetämällä 2D:ssä ja 3D:ssä, nuolinäppäimillä, R-kierrolla ja paneelista;
+      siirrot päivittävät kalusteen yhtä muutosta (`moveFixture`). Puhelinkäyttöä ei ole testattu
 - [ ] **[FP]** Nykytila / muutos -vaihto 2D:ssä ja 3D:ssä
 - [ ] **[FP]** Muutosvärit 2D-näkymässä (K7:n mukaisesti)
 

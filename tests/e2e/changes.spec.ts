@@ -186,3 +186,76 @@ test('a new wall and a grab bar are drawn in 2D as planned changes and appear in
   expect((await saved()).unit.baseline).toEqual(baseline);
   expect(errors).toEqual([]);
 });
+
+test('fixtures move by dragging in 2D and 3D, arrow keys, R and the panel as one planned change', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Change editing is desktop-first');
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const saved = async () => JSON.parse((await page.evaluate(() => localStorage.getItem('kodin-design-v2')))!);
+  const changes = async () => (await saved()).unit.changes;
+  const pose = async () => { const f = (await changes())[0].fixture; return [f.x.value_mm, f.y.value_mm, f.rotation_deg]; };
+  const client = (x: number, y: number) => page.evaluate(([x, y]) => {
+    const svg = document.querySelector('#plan') as SVGSVGElement, pt = svg.createSVGPoint(); pt.x = x; pt.y = y;
+    const r = pt.matrixTransform(svg.getScreenCTM()!); return { x: r.x, y: r.y };
+  }, [x, y]);
+  const drag2d = async (from: [number, number], to: [number, number]) => {
+    const a = await client(...from), b = await client(...to);
+    await page.mouse.move(a.x, a.y); await page.mouse.down();
+    await page.mouse.move(b.x, b.y, { steps: 8 }); await page.mouse.up();
+  };
+  const near = (value: number, expected: number) => expect(Math.abs(value - expected)).toBeLessThanOrEqual(20);
+
+  await page.goto('/');
+  await page.locator('#fileIn').setInputFiles({ name: 'accessibility-unit.json', mimeType: 'application/json',
+    buffer: await readFile(join(process.cwd(), 'examples/accessibility-unit.json')) });
+  await expect(page.locator('#toast')).toContainText('Suunnitelma tuotu');
+  await page.locator('#fit').click(); await page.locator('#zoomOut').click();
+  const baseline = (await saved()).unit.baseline;
+
+  // Free move away from walls: grid, rotation kept. The WC becomes a planned replace_fixture.
+  await drag2d([500, -2600], [700, -3300]);
+  await expect.poll(async () => (await changes()).length).toBe(1);
+  expect((await changes())[0]).toMatchObject({ op: 'replace_fixture', target: 'f1', fixture: { kind: 'wc', width: baseline.fixtures[0].width } });
+  let [x, y, r] = await pose(); near(x, 700); near(y, 3300); expect(r).toBe(0);
+  await expect(page.locator('#panel')).toContainText('Kiintokaluste');
+
+  // Dragged near the partition it snaps flush, back to the wall; still the same single change.
+  await drag2d([x, -y], [700, -2300]);
+  await expect.poll(async () => (await pose())[1]).toBe(2400);
+  [x, y, r] = await pose(); near(x, 700); expect(x % 10).toBe(0); expect(r).toBe(180);
+  expect(await changes()).toHaveLength(1);
+
+  // Arrow keys (Shift = 100 mm) and R turn and nudge the selection.
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect.poll(async () => (await pose())[0]).toBe(x + 100);
+  await page.keyboard.press('r');
+  await expect.poll(async () => (await pose())[2]).toBe(90);
+  // Exact numbers from the panel.
+  await page.locator('#xX').fill('500'); await page.locator('#xY').fill('3300'); await page.locator('#xR').fill('0');
+  await page.locator('[data-edit="moveFixture"]').click();
+  await expect.poll(pose).toEqual([500, 3300, 0]);
+  expect(await changes()).toHaveLength(1);
+  await page.locator('#undo').click();
+  await expect.poll(async () => (await pose())[2]).toBe(90);
+  await page.locator('#redo').click();
+  await expect.poll(pose).toEqual([500, 3300, 0]);
+
+  // 3D: select the fixture, then drag it on the floor.
+  await page.locator('[data-view="3d"]').click();
+  await expect(page.locator('#view3d canvas')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('body')).not.toHaveClass(/busy/);
+  await page.locator('#vTop').click(); await page.waitForTimeout(1200);
+  const box = (await page.locator('#view3d canvas').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 400);
+  await page.waitForTimeout(800);
+  const at = await page.evaluate(() => (window as any).View3D.model.fixture('f1').screenPosition());
+  await page.mouse.click(at.x, at.y);
+  await expect(page.locator('#panel')).toContainText('Kiintokaluste');
+  await page.mouse.move(at.x, at.y); await page.mouse.down();
+  await page.mouse.move(at.x + 40, at.y, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await pose())[0]).toBeGreaterThan(500);
+  expect(await changes()).toHaveLength(1);
+  expect((await saved()).unit.baseline).toEqual(baseline);
+  expect(errors).toEqual([]);
+});

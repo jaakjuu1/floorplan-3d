@@ -702,7 +702,13 @@ function fixturePanel(id){
       <label class="full">${tr('Vaihda tyypiksi','Replace with')}<select id="xKind">${kinds}</select></label>
       <label>${tr('Leveys','Width')} (mm)<input type="number" id="xW" min="1" step="10" value="${Math.round(f.width.value_mm)}"></label>
       <label>${tr('Syvyys','Depth')} (mm)<input type="number" id="xD" min="1" step="10" value="${Math.round(f.depth.value_mm)}"></label></div>
-    <div class="actions"><button class="btn primary" data-edit="replaceFixture">${tr('Vaihda kaluste','Replace fixture')}</button>
+    <div class="actions"><button class="btn primary" data-edit="replaceFixture">${tr('Vaihda kaluste','Replace fixture')}</button></div>
+    <div class="form" style="margin-top:14px">
+      <label>X (mm)<input type="number" id="xX" step="10" value="${Math.round(f.x.value_mm)}"></label>
+      <label>Y (mm)<input type="number" id="xY" step="10" value="${Math.round(f.y.value_mm)}"></label>
+      <label class="full">${tr('Kierto (°, vastapäivään)','Rotation (°, counter-clockwise)')}<input type="number" id="xR" step="15" value="${f.rotation_deg ?? 0}"></label></div>
+    <p class="muted">${tr('Vedä kalustetta tai käytä nuolinäppäimiä (Shift 100 mm) ja R-näppäintä. Seinäkiinnitys asettaa sen seinää vasten.','Drag it or use the arrow keys (Shift 100 mm) and R. Wall snap puts it against a wall.')}</p>
+    <div class="actions"><button class="btn primary" data-edit="moveFixture">${tr('Siirrä','Move')}</button>
       ${added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista lisätty kaluste','Remove added fixture')}</button>` : ''}
       <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
 }
@@ -718,6 +724,7 @@ function bindElementPanel(sel){
     if (a === 'removeThreshold') return editUnit(u => E.removeThreshold(u, b.dataset.target));
     if (a === 'revertOpening') return editUnit(revertAll(changeIndexes(c => c.op === 'modify_opening' && c.target === id)));
     if (a === 'modifyOpening') return editUnit(u => E.modifyOpening(u, id, {width:num('#oWidth'), clear_width:num('#oClear')}));
+    if (a === 'moveFixture') return editUnit(u => E.moveFixture(u, id, {x:num('#xX'), y:num('#xY'), rotation_deg:num('#xR')}));
     if (a === 'replaceFixture'){
       const f = TARGET.fixtures.find(x => x.id === id);
       return editUnit(u => E.replaceFixture(u, id, {kind:$('#xKind').value, x:f.x.value_mm, y:f.y.value_mm, width:num('#xW'), depth:num('#xD'),
@@ -849,7 +856,10 @@ function bindFurnPanel(f){
 
 /* ======================= Toiminnot ======================= */
 function select(sel){ ui.sel = sel; renderSel(); renderPanel(); }
-function rotateSel(d){ if (ui.sel?.kind==='furn') mutate(() => { const f = getF(ui.sel.id); f.rot = norm(f.rot + d); }); }
+function rotateSel(d){
+  if (ui.sel?.kind==='furn') mutate(() => { const f = getF(ui.sel.id); f.rot = norm(f.rot + d); });
+  else if (ui.sel?.kind==='fixture'){ const f = FIXTURES.find(f => f.id === ui.sel.id); if (f) moveFixtureTo(f.id, {x:f.x, y:f.y, rot:f.rotation_deg + d}); }
+}
 function deleteSel(){ if (ui.sel?.kind==='furn'){ const id = ui.sel.id; ui.sel = null; mutate(() => state.furniture = state.furniture.filter(f => f.id !== id)); } }
 function duplicateSel(){
   if (ui.sel?.kind !== 'furn') return;
@@ -977,7 +987,7 @@ function wallSnap(p, shift){
 }
 function foot(p, w){
   const [ax,ay] = w.a, [bx,by] = w.b, L = Math.hypot(bx-ax, by-ay) || 1, ux = (bx-ax)/L, uy = (by-ay)/L;
-  const t = Math.max(0, Math.min(L, (p.x-ax)*ux + (p.y-ay)*uy)), x = ax + ux*t, y = ay + uy*t;
+  const t = Math.max(0, Math.min(L, Math.round(((p.x-ax)*ux + (p.y-ay)*uy)/10)*10)), x = ax + ux*t, y = ay + uy*t;   // 10 mm steps along the wall
   return {x, y, d:Math.hypot(p.x-x, p.y-y), ux, uy};
 }
 function placeWallPoint(q){
@@ -988,25 +998,29 @@ function placeWallPoint(q){
   if (editUnit(u => EDIT().addWall(u, {x:a.x, y:-a.y}, {x:q.x, y:-q.y}, {thickness_mm}))){ ui.wA = q; ui.wCur = q; }
   renderMeasure();
 }
-// Near a wall the fixture's back (local -y) sits on the wall face and its width runs along the wall.
-function placeFixture(p){
-  const f = ui.newFixture;
+// Screen-mm pose. Near a wall (and with wall snap on) the fixture's back (local -y) sits on the wall face
+// and its width runs along the wall; otherwise it stays on the 10 mm grid with its current rotation.
+function fixturePose(p, depth, rot = 0){
   let best = null;
-  for (const w of WALLS){ const h = foot(p, w); if (h.d < 400 && (!best || h.d < best.d)) best = {...h, w}; }
-  let x = Math.round(p.x), y = Math.round(p.y), rot = 0;
-  if (best){
-    let nx = -best.uy, ny = best.ux;
-    if ((p.x-best.x)*nx + (p.y-best.y)*ny < 0){ nx = -nx; ny = -ny; }
-    const off = best.w.thickness/2 + f.depth/2;
-    x = Math.round(best.x + nx*off); y = Math.round(best.y + ny*off);
-    rot = Math.atan2(-nx, ny) * 180 / Math.PI;
+  if (ui.layers.wallSnap) for (const w of WALLS){
+    const h = foot(p, w); if (h.d < w.thickness/2 + depth/2 + 250 && (!best || h.d < best.d)) best = {...h, w};
   }
-  const modelRot = Math.round(((-rot % 360) + 360) % 360 * 10) / 10;
+  if (!best) return {x:Math.round(p.x/10)*10, y:Math.round(p.y/10)*10, rot};
+  let nx = -best.uy, ny = best.ux;
+  if ((p.x-best.x)*nx + (p.y-best.y)*ny < 0){ nx = -nx; ny = -ny; }
+  const off = best.w.thickness/2 + depth/2;
+  return {x:Math.round(best.x + nx*off), y:Math.round(best.y + ny*off), rot:Math.atan2(-nx, ny) * 180 / Math.PI};
+}
+const modelAngle = screenDeg => Math.round(((-screenDeg % 360) + 360) % 360 * 10) / 10;
+function placeFixture(p){
+  const f = ui.newFixture, pose = fixturePose(p, f.depth);
   let id = null;
-  if (editUnit(u => { const r = EDIT().addFixture(u, {kind:f.kind, x, y:-y, width:f.width, depth:f.depth, rotation_deg:modelRot}); id = r.id; return r; })){
+  if (editUnit(u => { const r = EDIT().addFixture(u, {kind:f.kind, x:pose.x, y:-pose.y, width:f.width, depth:f.depth, rotation_deg:modelAngle(pose.rot)}); id = r.id; return r; })){
     setTool('select'); select({kind:'fixture', id});
   }
 }
+// Screen pose → planned model pose; repeated moves update the fixture's single change.
+function moveFixtureTo(id, pose){ return editUnit(u => EDIT().moveFixture(u, id, {x:pose.x, y:-pose.y, rotation_deg:modelAngle(pose.rot)})); }
 function toolSection(){
   if (ui.tool === 'wall') return `<section id="toolOptions"><h3>${tr('Uusi seinä','New wall')} <small>${tr('muutos, ei nykytila','a change, not the survey')}</small></h3>
     <div class="form"><label class="full">${tr('Paksuus (mm)','Thickness (mm)')}<input type="number" id="nwThickness" min="20" step="10" value="${ui.newWall.thickness}"></label></div>
@@ -1054,6 +1068,10 @@ function endDrag(cancel){
     if (!cancel && !d.moved && ui.tool === 'select') select(d.el || (d.room ? {kind:'room', id:d.room} : null));
     return;
   }
+  if (d.kind === 'fixture'){
+    if (!cancel && d.moved && d.pose) moveFixtureTo(d.id, d.pose); else renderFurn();
+    return;
+  }
   if (d.moved){ commit(d.before); renderAll(); }
 }
 
@@ -1085,6 +1103,10 @@ svg.addEventListener('pointerdown', e => {
     drag = {kind:h.dataset.handle, id:ui.sel.id, sx:e.clientX, sy:e.clientY, before:snap(), moved:false};
   } else if (ui.tool === 'demolish' && t.closest('[data-wall]')){
     toggleWall(t.closest('[data-wall]').dataset.wall); return;
+  } else if (ui.tool === 'select' && t.closest('[data-fixture]') && !t.closest('[data-fid]')){
+    const id = t.closest('[data-fixture]').dataset.fixture, f = FIXTURES.find(f => f.id === id);
+    if (ui.sel?.id !== id) select({kind:'fixture', id});
+    drag = {kind:'fixture', id, sx:e.clientX, sy:e.clientY, ox:p.x-f.x, oy:p.y-f.y, depth:f.depth, rot:f.rotation_deg, moved:false, pose:null};
   } else if (ui.tool === 'select' && t.closest('[data-fid]')){
     const f = getF(t.closest('[data-fid]').dataset.fid);
     if (ui.sel?.id !== f.id) select({kind:'furn', id:f.id});
@@ -1118,6 +1140,13 @@ svg.addEventListener('pointermove', e => {
   if (drag.kind === 'measure'){
     if (far) drag.moved = true;
     ui.mCur = snapPoint(p, e.shiftKey); renderMeasure(); return;
+  }
+  if (drag.kind === 'fixture'){
+    if (!drag.moved && !far) return;
+    drag.moved = true;
+    drag.pose = fixturePose({x:p.x-drag.ox, y:p.y-drag.oy}, drag.depth, drag.rot);
+    svg.querySelector(`#gFurn [data-fixture="${CSS.escape(drag.id)}"]`)?.setAttribute('transform', `translate(${drag.pose.x} ${drag.pose.y}) rotate(${drag.pose.rot})`);
+    return;
   }
   if (drag.kind === 'pan'){
     if (!drag.moved && !far) return;
@@ -1184,6 +1213,11 @@ document.addEventListener('keydown', e => {
   else if (k === 'r') rotateSel(e.shiftKey ? -90 : 90);
   else if (k === 'delete' || k === 'backspace'){ e.preventDefault(); deleteSel(); }
   else if (k === 'escape'){ if (ui.mA){ ui.mA = null; renderMeasure(); } else if (ui.wA){ ui.wA = ui.wCur = null; renderMeasure(); } else { if (ui.tool !== 'select') setTool('select'); select(null); } }
+  else if (k.startsWith('arrow') && ui.sel?.kind === 'fixture'){
+    e.preventDefault();
+    const f = FIXTURES.find(f => f.id === ui.sel.id), st = e.shiftKey ? 100 : 10;
+    if (f) moveFixtureTo(f.id, {x:f.x + (k==='arrowright' ? st : k==='arrowleft' ? -st : 0), y:f.y + (k==='arrowdown' ? st : k==='arrowup' ? -st : 0), rot:f.rotation_deg});
+  }
   else if (k.startsWith('arrow') && ui.sel?.kind === 'furn'){
     e.preventDefault(); const st = e.shiftKey ? 100 : 10;
     mutate(() => { const f = getF(ui.sel.id); if (k==='arrowleft') f.cx -= st; if (k==='arrowright') f.cx += st; if (k==='arrowup') f.cy -= st; if (k==='arrowdown') f.cy += st; });

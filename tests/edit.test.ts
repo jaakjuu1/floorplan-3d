@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { readUnit } from '../src/io/unit';
 import { apply } from '../src/model/apply';
-import { addFixture, addWall, changeMarks, demolishWall, modifyOpening, removeThreshold, replaceFixture,
+import { addFixture, addWall, changeMarks, demolishWall, modifyOpening, moveFixture, removeThreshold, replaceFixture,
   restoreWall, revertChange, setFloor } from '../src/model/edit';
 
 const unit = () => readUnit(readFileSync(new URL('../examples/accessibility-unit.json', import.meta.url), 'utf8'));
@@ -64,4 +64,27 @@ test('fixtures, reverting and invalid plans', () => {
   const gone = demolishWall(modifyOpening(unit(), 'o2', { clear_width: 700 }).unit, 'w2');
   assert.throws(() => modifyOpening(gone.unit, 'o2', { clear_width: 600 }), /ei ole tavoitetilassa/);
   assert.throws(() => revertChange(unit(), 0), /ei löydy/);
+});
+
+test('moving fixtures keeps one planned change per fixture', () => {
+  const original = unit();
+  const once = moveFixture(original, 'f1', { x: 700, y: 2500 });
+  assert.equal(once.unit.changes!.length, 1);
+  const replaced = once.unit.changes![0] as any;
+  assert.equal(replaced.op, 'replace_fixture');
+  assert.deepEqual(replaced.fixture.x, planned(700, 'f1/position'));
+  // Size and kind stay as surveyed; only the pose becomes a plan.
+  assert.deepEqual(replaced.fixture.width, original.baseline.fixtures![0].width);
+  const twice = moveFixture(once.unit, 'f1', { x: 900, y: 2400, rotation_deg: -90 });
+  assert.equal(twice.unit.changes!.length, 1);
+  const f1 = apply(twice.unit.baseline, twice.unit.changes!).fixtures!.find(f => f.id === 'f1')!;
+  assert.deepEqual([f1.x.value_mm, f1.y.value_mm, f1.rotation_deg], [900, 2400, 270]);
+  assert.deepEqual(twice.unit.baseline, original.baseline);
+
+  const bar = addFixture(original, { kind: 'grab_bar', x: 300, y: 300, width: 600, depth: 80 });
+  const moved = moveFixture(bar.unit, bar.id, { x: 1000, y: 300 });
+  assert.equal(moved.unit.changes!.length, 1);
+  assert.equal((moved.unit.changes![0] as any).op, 'add_fixture');
+  assert.deepEqual((moved.unit.changes![0] as any).fixture.x, planned(1000, 'f-new-1/position'));
+  assert.throws(() => moveFixture(original, 'nope', { x: 0, y: 0 }), /ei ole tavoitetilassa/);
 });

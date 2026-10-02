@@ -118,6 +118,25 @@ export function replaceFixture(unit: UnitInputs, id: string, fixture: PlannedFix
   return withChange(unit, { op: 'replace_fixture', target: id, fixture: fixtureData(fixture, id) }, id);
 }
 
+/** Move or turn a fixture. Repeated moves update the fixture's own planned change instead of piling up:
+ *  an added fixture keeps its add_fixture, a surveyed one gets (or reuses) one replace_fixture. */
+export function moveFixture(unit: UnitInputs, id: string, pose: { x: number; y: number; rotation_deg?: number }): Edited {
+  const current = find(target(unit).fixtures, id, 'Kiintokalustetta');
+  const rotation = (((pose.rotation_deg ?? current.rotation_deg ?? 0) % 360) + 360) % 360;
+  const position = { x: designed(pose.x, `${id}/position`), y: designed(pose.y, `${id}/position`), rotation_deg: rotation };
+  const next = structuredClone(unit), changes = next.changes ?? [];
+  let index = -1;
+  changes.forEach((c, i) => { if ((c.op === 'add_fixture' && c.fixture.id === id) || (c.op === 'replace_fixture' && c.target === id)) index = i; });
+  if (index >= 0) {
+    Object.assign((changes[index] as Extract<Change, { fixture: unknown }>).fixture, position);
+    next.changes = changes;
+    return accept(next, id);
+  }
+  const { id: _id, ...data } = current;
+  next.changes = [...changes, { op: 'replace_fixture', target: id, fixture: { ...data, ...position } }];
+  return accept(next, id);
+}
+
 /** Change-drawing classes: new elements in red, changed ones highlighted (§5.6). */
 export function changeMarks(unit: UnitInputs): { added: string[]; modified: string[] } {
   const added = new Set<string>(), modified = new Set<string>();
