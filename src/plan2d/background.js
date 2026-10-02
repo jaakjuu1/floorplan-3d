@@ -34,6 +34,11 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
         <label>${tr('Huoneen nimi','Room name')}<input id="traceRoomName" type="text" maxlength="80"></label>
         <label>${tr('Huonetyyppi','Room type')}<select id="traceRoomKind">${[['living','Olohuone','Living'],['bedroom','Makuuhuone','Bedroom'],['kitchen','Keittiö','Kitchen'],['hall','Eteinen','Hall'],['wet','Märkätila','Wet room'],['wc','WC','WC'],['sauna','Sauna','Sauna'],['storage','Varasto','Storage'],['balcony','Parveke','Balcony']].map(([v,fi,en])=>`<option value="${v}">${tr(fi,en)}</option>`).join('')}</select></label>
       </div>
+      <div class="background-grid">
+        <label>${tr('Aukon tyyppi','Opening type')}<select id="traceOpeningKind">${[['door','Ovi','Door'],['sliding_door','Liukuovi','Sliding door'],['window','Ikkuna','Window'],['opening','Aukko','Opening']].map(([v,fi,en])=>`<option value="${v}">${tr(fi,en)}</option>`).join('')}</select></label>
+        <label>${tr('Vapaa leveys piirustuksesta (mm, valinnainen)','Clear width from drawing (mm, optional)')}<input id="traceClearWidth" type="number" min="1" step="any" inputmode="decimal"></label>
+      </div>
+      <div class="background-row"><button id="traceOpening" type="button" class="btn" data-action="traceOpening">${tr('Jäljennä aukko','Trace opening')}</button></div>
       <div class="background-row"><button id="traceRoom" type="button" class="btn" data-action="traceRoom">${tr('Jäljennä huone','Trace room')}</button></div>
     </div>
     <dialog id="backgroundPicker" data-role="picker" aria-label="${tr('Pohjakuvan esikatselu','Drawing preview')}">
@@ -50,7 +55,7 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
   modeBar.innerHTML=`<span data-role="modeText" aria-live="polite"></span><button id="traceDone" class="btn primary" type="button" data-action="modeDone" hidden>${tr('Valmis','Done')}</button><button class="btn" type="button" data-action="modeCancel">${tr('Lopeta','Finish')}</button>`;
   document.querySelector('#stage').append(modeBar);
   const stopMode=()=>{mode='';draft=[];drag=null;activePointer=null;modeBar.hidden=true;$('#traceDone',modeBar).hidden=true;};
-  const tracing=()=>mode==='wall'||mode==='room';
+  const tracing=()=>mode==='wall'||mode==='room'||mode==='opening';
   const modeSay=message=>say($('[data-role="modeText"]',modeBar),message);
   // Draft points are attachment coordinates; only an accepted trace reaches the model and history.
   const commitTrace=build=>{const bg=hooks.getBackground();return hooks.trace(unit=>build(unit,bg));};
@@ -112,7 +117,7 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
     $('[data-action="pages"]',root).hidden=bg.source.mime!=='application/pdf'||bg.page.count<2;
     for (const field of ['x','y','rotation','opacity']) { const input = $(`[data-field="${field}"]`, root); input.value = String(field === 'opacity' ? bg.opacity : bg.transform[field]); if(field!=='opacity')input.disabled=bg.locked; }
     $('[data-action="move"]',root).disabled=bg.locked; $('[data-action="calibrate"]',root).disabled=bg.locked;
-    $('#traceWall',root).disabled=!bg.calibration; $('#traceRoom',root).disabled=!bg.calibration;
+    $('#traceWall',root).disabled=!bg.calibration; $('#traceRoom',root).disabled=!bg.calibration; $('#traceOpening',root).disabled=!bg.calibration;
     say($('[data-role="traceHint"]',root),bg.calibration?tr('Jäljennetyt mitat tallentuvat piirustuksesta luettuina (inferred), eivät kenttämittauksina.','Traced values are saved as read from the drawing (inferred), not as field measurements.'):tr('Kalibroi pohjakuva ennen jäljentämistä.','Calibrate the drawing before tracing.'));
     $('[data-role="opacity"]', root).value = `${Math.round(bg.opacity * 100)}%`;
     image(bg);
@@ -192,6 +197,10 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
       mode=mode==='wall'?'':'wall';draft=[];$('#traceDone',modeBar).hidden=true;if(mode)hooks.closeDrawers();modeBar.hidden=!mode;
       modeSay(tr('Napauta seinän alku- ja loppupiste. Seuraava seinä jatkuu edellisen päästä.','Tap the wall start and end. The next wall continues from the previous end.'));sync();
     }
+    else if (action === 'traceOpening' && bg?.calibration) {
+      mode=mode==='opening'?'':'opening';draft=[];$('#traceDone',modeBar).hidden=true;if(mode)hooks.closeDrawers();modeBar.hidden=!mode;
+      modeSay(tr('Napauta aukon molemmat reunat seinän kohdalta.','Tap both edges of the opening on its wall.'));sync();
+    }
     else if (action === 'traceRoom' && bg?.calibration) {
       if(!$('#traceRoomName',root).value.trim()){hooks.toast(tr('Anna huoneelle nimi','Enter a room name'));return;}
       mode=mode==='room'?'':'room';draft=[];$('#traceDone',modeBar).hidden=!mode;if(mode)hooks.closeDrawers();modeBar.hidden=!mode;
@@ -230,7 +239,13 @@ window.createBackgroundUI = function createBackgroundUI(hooks) {
         const [a,b]=draft,thickness_mm=Number($('#traceThickness',root).value),kind=$('#traceWallKind',root).value;
         draft=commitTrace((unit,bg)=>window.UnitModel.traceWall(unit,bg,a,b,{thickness_mm,kind}))?[b]:[];
         modeSay(draft.length?tr('Seinä jäljennetty. Napauta seuraavan seinän loppupiste tai lopeta.','Wall traced. Tap the next wall end or finish.'):tr('Napauta seinän alkupiste.','Tap the wall start.'));
-      } else if(mode==='wall') modeSay(tr('Alkupiste valittu. Napauta seinän loppupiste.','Start set. Tap the wall end.'));
+      } else if(mode==='opening'&&draft.length===2){
+        const [a,b]=draft,kind=$('#traceOpeningKind',root).value,clear=$('#traceClearWidth',root).value.trim(),clear_width_mm=clear?Number(clear):null;
+        draft=[];
+        if(commitTrace((unit,bg)=>window.UnitModel.traceOpening(unit,bg,a,b,{kind,clear_width_mm}))){stopMode();say($('[data-role="hint"]',root),tr('Aukko jäljennetty nykytilaan.','Opening traced into the existing layout.'));sync();return;}
+        modeSay(tr('Napauta aukon ensimmäinen reuna uudelleen.','Tap the first edge again.'));
+      } else if(mode==='opening') modeSay(tr('Ensimmäinen reuna valittu. Napauta toinen reuna.','First edge set. Tap the other edge.'));
+      else if(mode==='wall') modeSay(tr('Alkupiste valittu. Napauta seinän loppupiste.','Start set. Tap the wall end.'));
       else modeSay(tr(`${draft.length} nurkkaa. Jatka tai paina Valmis.`,`${draft.length} corners. Continue or press Done.`));
       image(hooks.getBackground());
       return;

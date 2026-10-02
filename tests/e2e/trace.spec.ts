@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const fixture = (name: string) => join(process.cwd(), 'fixtures/background', name);
 const screenshots = join(process.cwd(), 'docs/kodin-muutostyokuva/screenshots');
 
-test('a wall chain and a room are traced from a calibrated drawing into the baseline', async ({ page }, info) => {
+test('a wall chain, a door and a room are traced from a calibrated drawing into the baseline', async ({ page }, info) => {
   const phone = info.project.name === 'phone', errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   const activate = (locator: Locator) => phone ? locator.tap() : locator.click();
@@ -70,6 +70,21 @@ test('a wall chain and a room are traced from a calibrated drawing into the base
   }
   await expect(page.locator('#gWalls [data-wall="w-trace-1"]')).toHaveCount(1);
 
+  // A door on the first traced wall: two taps mark its edges, 100 source px = 800 mm.
+  await pane(true);
+  await page.locator('#traceOpeningKind').selectOption('door');
+  await page.locator('#traceClearWidth').fill('700');
+  await activate(page.locator('#traceOpening')); await pane(false);
+  await pick(200, 100); await pick(300, 100);
+  await expect.poll(async () => (await saved()).unit.baseline.openings.length).toBe(initial.baseline.openings.length + 1);
+  await expect(page.locator('#backgroundMode')).not.toBeVisible();
+  const door = (await saved()).unit.baseline.openings.at(-1);
+  expect(door).toMatchObject({ id: 'o-trace-1', kind: 'door', host_wall: 'w-trace-1', clear_width: { value_mm: 700, ...drawn } });
+  expect(door.along_wall).toMatchObject(drawn); expect(door.width).toMatchObject(drawn);
+  expect(Math.abs(door.along_wall.value_mm - 800)).toBeLessThan(40);
+  expect(Math.abs(door.width.value_mm - 800)).toBeLessThan(40);
+  await expect(page.locator('#gOpen [data-opening="o-trace-1"]').first()).toBeAttached();
+
   await pane(true);
   await page.locator('#traceRoomName').fill('Työhuone');
   await page.locator('#traceRoomKind').selectOption('bedroom');
@@ -90,7 +105,7 @@ test('a wall chain and a room are traced from a calibrated drawing into the base
 
   // Surveyed elements, their provenance and the change layer stay as they were.
   const baseline = afterRoom.unit.baseline;
-  expect({ ...baseline, walls: baseline.walls.slice(0, -2), rooms: baseline.rooms.slice(0, -1) }).toEqual(initial.baseline);
+  expect({ ...baseline, walls: baseline.walls.slice(0, -2), rooms: baseline.rooms.slice(0, -1), openings: baseline.openings.slice(0, -1) }).toEqual(initial.baseline);
   expect(afterRoom.unit.changes).toEqual(initial.changes);
 
   // One accepted room is one history step.

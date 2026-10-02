@@ -164,8 +164,11 @@ Kenttätestejä, PWA/offline-kokonaisuutta ja koko V1:tä ei kuitata valmiiksi.
       `archive_drawing`, `confidence_mm: null`, viite `attachment:<SHA-256>/page:<n>`.
       Osoitinluonnos ei tallennu; irrotettu malliehdokas validoidaan ja yksi
       hyväksytty seinä/huone on yksi kumottava vaihe. 53 TypeScript- ja 10
-      Chromium-testiä (työpöytä ja 390×844-kosketus). Aukot, piirustusmittojen
-      käsisyöttö, snap ja panorointi jäljentäessä puuttuvat
+      Chromium-testiä (työpöytä ja 390×844-kosketus). Aukot 2026-10-03: kaksi
+      napautusta merkitsevät reunat, isäntäseinä päätellään lähimmästä nykytilan
+      seinästä, `along_wall`/`width` ja valinnainen vapaa leveys piirustuksesta,
+      päällekkäiset aukot hylätään. Piirustusmittojen käsisyöttö, snap ja
+      panorointi jäljentäessä puuttuvat
 - [ ] **[MOL]** Piirustusmitat `inferred` / `archive_drawing`, lähdeviite
       tiedostoon ja sivuun; tuntematon tarkkuus säilyy puuttuvana. Kenttämittaus
       korvaa arvon alkuperäketjun säilyttäen, hyväksyntä ei muuta statusta

@@ -540,8 +540,12 @@ millimetreiksi, kirjaa jokaisen koordinaatin ja syötetyn seinäpaksuuden
 `inferred`/`archive_drawing`-mittana ilman tarkkuutta ja validoi irrotetun
 malliehdokkaan (`parseUnit` + `apply`) ennen editorin yhtä historiavaihetta.
 Ilman kalibrointia tai pohjakuvan ulkopuolisilla pisteillä jäljennös hylätään.
-Osoitinluonnos on pelkkä käyttöliittymätila. Aukot, mittojen käsisyöttö,
-kiinnitys olemassa oleviin pisteisiin ja panorointi jäljennöstilassa ovat seuraavia osuuksia.
+Osoitinluonnos on pelkkä käyttöliittymätila. Aukko jäljennetään kahdella
+napautuksella sen reunoista (`traceOpening`): isäntänä on lähin nykytilan seinä,
+jonka keskilinjasta molemmat pisteet ovat enintään puolikkaan paksuuden + 200 mm
+päässä; sijainti seinällä ja leveys sekä valinnainen vapaa leveys ovat
+`inferred`/`archive_drawing`. Mittojen käsisyöttö, kiinnitys olemassa oleviin
+pisteisiin ja panorointi jäljennöstilassa ovat seuraavia osuuksia.
 
 Käyttäjän tarkennus 2026-09-29: kartoituksen voi aloittaa myös olemassa olevasta
 pohjapiirustuksesta. Käyttäjän tuoman tiedoston tuki kuuluu V1:een; arkistojen

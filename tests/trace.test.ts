@@ -5,7 +5,7 @@ import { attachmentToModel, calibrateBackground, createBackground, type Attachme
 import { DEFAULT_STORE, parseDesign, type Design } from '../src/io/design';
 import { readUnit } from '../src/io/unit';
 import { apply } from '../src/model/apply';
-import { traceRoom, traceWall } from '../src/model/trace';
+import { traceOpening, traceRoom, traceWall } from '../src/model/trace';
 
 const bytes = Buffer.from('%PDF-1.7\nsynthetic');
 const source: AttachmentSource = { id: 'b'.repeat(64), name: 'synthetic.pdf', mime: 'application/pdf', size: bytes.length, data: bytes.toString('base64') };
@@ -61,4 +61,23 @@ test('tracing needs a calibration, points on the page and a valid shape', () => 
   assert.throws(() => room([{ x: 0, y: 0 }, { x: 100, y: 0 }]), /kolme/);
   assert.throws(() => room([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 0, y: 100 }], ' '), /nimi/);
   assert.throws(() => room([{ x: 0, y: 0 }, { x: 100, y: 100 }, { x: 100, y: 0 }, { x: 0, y: 100 }]), /hylättiin/);
+});
+
+test('a traced opening finds its host wall and keeps drawing provenance', () => {
+  const bg = calibrated(), drawnFrom = (v: number) => drawn(v);
+  const walled = traceWall(unit(), bg, { x: 50, y: 200 }, { x: 550, y: 200 }, { thickness_mm: 120, kind: 'partition' });
+  // Taps slightly off the centre line still land on the traced wall: 100 px = 800 mm from its start, 100 px wide.
+  const { unit: next, id } = traceOpening(walled.unit, bg, { x: 150, y: 203 }, { x: 250, y: 197 }, { kind: 'door', clear_width_mm: 700 });
+  const opening = next.baseline.openings!.find(o => o.id === id)!;
+  assert.equal(opening.host_wall, walled.id);
+  assert.equal(opening.kind, 'door');
+  assert.ok(Math.abs(opening.along_wall.value_mm - 800) <= 1 && Math.abs(opening.width.value_mm - 800) <= 2);
+  assert.deepEqual(opening.clear_width, drawnFrom(700));
+  assert.equal(opening.width.method, 'archive_drawing');
+  assert.equal(opening.along_wall.status, 'inferred');
+  assert.throws(() => traceOpening(next, bg, { x: 200, y: 200 }, { x: 300, y: 200 }, { kind: 'window' }), /päällekkäin/);
+  assert.throws(() => traceOpening(next, bg, { x: 400, y: 200 }, { x: 405, y: 200 }, { kind: 'window' }), /100 mm/);
+  assert.throws(() => traceOpening(next, bg, { x: 400, y: 380 }, { x: 500, y: 380 }, { kind: 'window' }), /seinän kohdalta/);
+  assert.throws(() => traceOpening(next, bg, { x: 400, y: 200 }, { x: 500, y: 200 }, { kind: 'door', clear_width_mm: 900 }), /Vapaa leveys/);
+  assert.throws(() => traceOpening(next, { ...bg, calibration: null }, { x: 400, y: 200 }, { x: 500, y: 200 }, { kind: 'door' }), /Kalibroi/);
 });
