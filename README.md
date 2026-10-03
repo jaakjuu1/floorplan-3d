@@ -1,6 +1,43 @@
-# Kodin sisustussuunnittelu
+# Kodin muutostyökuva
 
-Selaimessa toimiva asunnon sisustussuunnittelutyökalu: sijoita kalusteita 2D-pohjapiirrokseen, muokkaa seiniä, mittaa etäisyyksiä ja vaihda yhdellä painalluksella Three.js-pohjaiseen 3D-näkymään, jossa voit katsella kohdetta ylhäältä tai kävellä sisällä ensimmäisen persoonan näkymässä. Kehitys ja tuotantokäännös käyttävät Viteä.
+Selaimessa toimiva asunnon muutostyö- ja esteettömyyssuunnittelun työkalu.
+Asunnon nykytila mallinnetaan kerran (tuotu malli tai pohjakuvasta jäljennetty),
+muutokset piirretään sen päälle erilliseksi muutoskerrokseksi, ja 2D-pohja,
+3D-näkymä sekä ohjeelliset säännöt johdetaan samasta mallista. Jokaisella mitalla
+on alkuperä (mitattu, piirustuksesta luettu tai oletus). Kehitys ja
+tuotantokäännös käyttävät Viteä; ensisijainen käyttöympäristö on työpöytäselain.
+
+Arkkitehtuuri ja vaiheet: [ARKKITEHTUURI.md](docs/kodin-muutostyokuva/ARKKITEHTUURI.md),
+[CHECKLIST.md](docs/kodin-muutostyokuva/CHECKLIST.md). Nykytila ja kokeiluohje:
+[TILA.md](docs/kodin-muutostyokuva/TILA.md).
+
+## Muutostyön suunnittelu
+
+**Nykytila pohjakuvasta (V1.1–V1.2)**
+- Tuo PDF/PNG/JPEG-pohjakuva, kohdista ja kalibroi kahdella pisteellä
+- Jäljennä seinäketjut, ovet ja ikkunat (kaksi napautusta aukon reunoille) sekä
+  huoneet. Jäljennös menee nykytilaan, mitat `inferred`/`archive_drawing`
+  liitteen SHA-256- ja sivuviitteellä
+
+**Muutoskerros (2D ja 3D)**
+- Valitse seinä, aukko tai kiintokaluste 2D- tai 3D-näkymästä; paneeli näyttää
+  mitat alkuperineen ja muutostoiminnot
+- Pura ja palauta seinä, muuta oven karmiaukkoa ja vapaata leveyttä, poista
+  kynnys, vaihda lattia tai kiintokaluste
+- Uusi seinä (`W`) ja kiintokaluste kuten tukikahva (`K`); kiintokalusteen siirto
+  vetämällä, nuolinäppäimillä ja `R`-kierrolla
+- Muutoslista yleisnäkymässä, yksittäisen muutoksen peruminen; purettava
+  keltaisena, uusi ja muutettu punaisena
+- 3D:n elementit ovat Three.js-objekteja metodeineen, esim.
+  `View3D.model.wall('w2').demolish()` (`src/model/edit.ts`)
+
+**Säännöt ja esteettömyys**
+- Ohjeelliset säännöt virallisine lähteineen (asunto-osakeyhtiölaki,
+  rakentamislaki, kosteus- ja esteettömyysasetukset, vammaispalvelulaki).
+  Ne näkyvät, kun muutos tai valinta koskee niitä, eivätkä estä muokkausta
+- Muokattavat mitoitusperusteet (standardin oletukset), suurin vapaa ympyrä,
+  wc:n sivutila, kulkureitti (`U`) kapeimman kohdan raportilla ja 3D-kävely
+  pyörätuolitilassa. Lähteet: [SAANNOT.md](docs/kodin-muutostyokuva/SAANNOT.md)
 
 ## Ominaisuudet
 
@@ -55,6 +92,8 @@ tuo se uuteen osoitteeseen.
 | --- | --- |
 | `T` | Vaihda 2D / 3D |
 | `V` / `M` / `X` | Valitse / mittaa / pura seinä |
+| `W` / `K` / `U` | Uusi seinä / kiintokaluste / kulkureitti |
+| Nuolet, `R` | Siirrä (Shift 100 mm) ja kierrä valittua kalustetta tai kiintokalustetta |
 | `R` / `Shift+R` | Kierrä valittua kalustetta 90° myötä- / vastapäivään |
 | `Delete` / `Backspace` | Poista valittu kaluste |
 | `Ctrl/⌘ + D` | Kopioi valittu kaluste |
@@ -93,7 +132,9 @@ Tuonti ja kalibrointi eivät muuta huoneistomallia tai sen mittojen statuksia.
 Rajat: tiedosto 2 MiB, esikatselu 4 miljoonaa pikseliä, kuvan purkukoko
 20 miljoonaa pikseliä ja PDF 100 sivua. Tallennuskiintiön täyttyessä muutos
 perutaan ja aiempi suunnitelma säilyy. Historia rajataan myös 16 MiB:iin
-kumpaakin pinoa kohden. Tämä V1.1 ei sisällä jäljentämistä tai PWA/offline-asennusta.
+kumpaakin pinoa kohden. PWA/offline-asennus ei vielä kuulu toimitukseen.
+Kalibroinnin jälkeen saman paneelin "Jäljennä nykytila" -osio jäljentää seinät,
+aukot ja huoneet nykytilaan.
 Puhelimessa avaa Ominaisuudet; kalibrointitila sulkee paneelin ja näyttää
 piirtoalueella Lopeta-painikkeen. Käytä yläreunan zoom-painikkeita tarvittaessa.
 
