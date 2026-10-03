@@ -41,7 +41,7 @@ const nm = s => LANG === 'en' && Object.hasOwn(NAMES_EN, s) ? NAMES_EN[s] : s;
 // Staattiset tekstit: elementeille kirjoitetaan data-en / data-en-title, suomenkielinen alkuperäisteksti tallennetaan datasettiin ensimmäisellä vaihdolla
 function applyStaticLang(){
   document.documentElement.lang = tr('fi', 'en');
-  document.title = tr('Kodin sisustussuunnittelu', 'Floor Plan Designer');
+  document.title = tr('Kodin muutostyökuva', 'Home Alteration Plan');
   document.querySelectorAll('[data-en]').forEach(el => { el.dataset.fi ??= el.textContent; el.textContent = tr(el.dataset.fi, el.dataset.en); });
   document.querySelectorAll('[data-en-title]').forEach(el => { el.dataset.fiTitle ??= el.title; el.title = tr(el.dataset.fiTitle, el.dataset.enTitle); });
   document.getElementById('langBtn').textContent = tr('EN', 'FI');
@@ -968,6 +968,7 @@ function applyView(){
 }
 function fitView(){
   const W = svg.clientWidth, H = svg.clientHeight;
+  if (!W || !H) return;   // not laid out yet; the ResizeObserver fits once the plan has a size
   view.s = Math.min(W/BOUNDS.w, H/BOUNDS.h);
   view.x0 = BOUNDS.x - (W/view.s - BOUNDS.w)/2; view.y0 = BOUNDS.y - (H/view.s - BOUNDS.h)/2;
   applyView();
