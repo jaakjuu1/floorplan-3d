@@ -137,6 +137,19 @@ export function moveFixture(unit: UnitInputs, id: string, pose: { x: number; y: 
   return accept(next, id);
 }
 
+/** Survey correction: remove an element traced from the drawing (w-/o-/r-trace-*) from the baseline,
+ *  with the openings, thresholds and raw measurements that depend on it. Field-surveyed elements stay. */
+export function removeTraced(unit: UnitInputs, id: string): Edited {
+  const kind = /^w-trace-/.test(id) ? 'walls' : /^o-trace-/.test(id) ? 'openings' : /^r-trace-/.test(id) ? 'rooms' : null;
+  if (!kind || !unit.baseline[kind]?.some(item => item.id === id)) throw new Error('Vain pohjakuvasta jäljennetyn elementin voi poistaa nykytilasta');
+  const next = structuredClone(unit), b = next.baseline, removed = new Set([id]);
+  if (kind === 'walls') (b.openings ?? []).filter(o => o.host_wall === id).forEach(o => removed.add(o.id));
+  (b.thresholds ?? []).filter(t => (t.at_opening && removed.has(t.at_opening)) || t.between_rooms?.some(r => removed.has(r))).forEach(t => removed.add(t.id));
+  for (const key of ['walls', 'openings', 'rooms', 'thresholds'] as const) if (b[key]) (b[key] as { id: string }[]) = b[key]!.filter(x => !removed.has(x.id));
+  if (b.measurements) b.measurements = b.measurements.filter(m => !removed.has(m.from) && !removed.has(m.to));
+  return accept(next, id, 'Jäljennöksen poisto');
+}
+
 /** Turn a rule profile on or off; profiles are unit metadata, not part of the change layer. */
 export function setProfile(unit: UnitInputs, profile: string, on: boolean): Edited {
   const next = structuredClone(unit), profiles = new Set(next.profiles ?? []);

@@ -73,6 +73,11 @@ Selaintestit: `background`, `trace` (työpöytä ja 390×844), `legacy-smoke`,
   nykytilaa myöhemminkin.
 - Kantavan, ulko- ja huoneistojen välisen seinän purkueste on työkalun suojaus,
   ei sääntö.
+- Ovea tai aukkoa ei voi lisätä muutoksena, eikä kartoitettua aukkoa tai
+  kiintokalustetta voi poistaa: unit-v1:ssä ei ole `add_opening`-, `remove_opening`-
+  tai `remove_fixture`-operaatiota. Aukon voi jäljentää nykytilaan pohjakuvasta.
+- Tuonti lähiverkko-osoitteesta (http) käyttää SHA-256:n JavaScript-varatoteutusta,
+  koska selain antaa WebCryptoa vain suojatussa yhteydessä.
 - Seinät ovat nurkissa päällekkäisiä suorakaiteita (ei viistettyjä liitoksia).
 - Kenttäkartoitus (V1), RK:n Python-arvioija, tulosteet (V3), jakaminen (V4) ja
   PWA/offline ovat tekemättä.

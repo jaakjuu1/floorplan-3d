@@ -2,6 +2,7 @@ import * as pdfjs from 'pdfjs-dist';
 import type { RenderTask } from 'pdfjs-dist';
 import type { AttachmentPage, AttachmentSource } from './background';
 import { MAX_ATTACHMENT_BYTES, MAX_IMAGE_PIXELS, MAX_PDF_PAGES, MAX_RENDER_PIXELS } from './background';
+import { sha256Hex } from './sha256';
 
 // Vite packages this worker locally; tests resolve the same file from node_modules.
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
@@ -32,6 +33,8 @@ function bytesFromBase64(value: string): Uint8Array {
 }
 
 async function digest(bytes: Uint8Array): Promise<string> {
+  // crypto.subtle exists only in secure contexts (https or localhost); a LAN-IP dev server is not one.
+  if (!globalThis.crypto?.subtle) return sha256Hex(bytes);
   const owned = Uint8Array.from(bytes);
   const hash = await crypto.subtle.digest('SHA-256', owned.buffer as ArrayBuffer);
   return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');

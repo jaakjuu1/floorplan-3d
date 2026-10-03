@@ -356,6 +356,13 @@ function buildFurniture(f){
       g.add(box(.16, .025, .22, '#2f5d62', w*.24, .5, .04), box(.14, .02, .2, '#e6dccd', w*.24, .525, .04));
       break;
     }
+    case 'grabbar': {
+      // Wall-mounted rail: back (local -z) on the wall face, rail ~50 mm out at 800 mm.
+      const m = metal(), y = .8, zf = bz + Math.max(.035, Math.min(d - .02, .06)), x0 = -w/2 + .04, x1 = w/2 - .04;
+      g.add(rod([x0, y, zf], [x1, y, zf], .016, m));
+      [x0, x1].forEach(x => g.add(rod([x, y, bz], [x, y, zf], .014, m), rod([x, y, bz], [x, y, bz + .012], .035, m, .035, 20)));
+      break;
+    }
     case 'wardrobe': case 'cabinet': case 'shoecab': {
       const cm = mat(c, {roughness:.55}), fz = d/2 - .02;
       if (f.type === 'wardrobe'){
@@ -927,7 +934,7 @@ function buildArch(){
 function buildFurn(){
   clearGroup(furnG); forget('fixture');
   state.furniture.forEach(f => furnG.add(buildFurniture(f)));
-  const fixtureTypes={wc:'toilet',sink:'vanity',shower:'shower',bathtub:'bathtub',stove:'stove',cabinet:'cabinet',grab_bar:'cabinet'};
+  const fixtureTypes={wc:'toilet',sink:'vanity',shower:'shower',bathtub:'bathtub',stove:'stove',cabinet:'cabinet',grab_bar:'grabbar'};
   FIXTURES.forEach(f => {
     const color=MARKS.added.has(f.id)?'#e58f84':MARKS.modified.has(f.id)?'#efc27d':'#d8d1c5';
     const g=buildFurniture({id:`fixture:${f.id}`,type:fixtureTypes[f.kind]||'cabinet',name:f.kind,cx:f.x,cy:f.y,w:f.width,d:f.depth,rot:f.rotation_deg,color});

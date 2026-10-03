@@ -259,3 +259,72 @@ test('fixtures move by dragging in 2D and 3D, arrow keys, R and the panel as one
   expect((await saved()).unit.baseline).toEqual(baseline);
   expect(errors).toEqual([]);
 });
+
+test('new walls are drawn straight and snap to walls; Delete removes or demolishes the selection', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Change editing is desktop-first');
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const saved = async () => JSON.parse((await page.evaluate(() => localStorage.getItem('kodin-design-v2')))!);
+  const changes = async () => (await saved()).unit.changes;
+  const client = (x: number, y: number) => page.evaluate(([x, y]) => {
+    const svg = document.querySelector('#plan') as SVGSVGElement, pt = svg.createSVGPoint(); pt.x = x; pt.y = y;
+    const r = pt.matrixTransform(svg.getScreenCTM()!); return { x: r.x, y: r.y };
+  }, [x, y]);
+  const click = async (x: number, y: number, modifiers: ('Shift')[] = []) => {
+    const p = await client(x, y);
+    await page.mouse.move(p.x, p.y);
+    for (const m of modifiers) await page.keyboard.down(m);
+    await page.mouse.click(p.x, p.y);
+    for (const m of modifiers) await page.keyboard.up(m);
+  };
+  const end = (w: any) => [w.a.x.value_mm, w.a.y.value_mm, w.b.x.value_mm, w.b.y.value_mm];
+
+  await page.goto('/');
+  await page.locator('#fileIn').setInputFiles({ name: 'accessibility-unit.json', mimeType: 'application/json',
+    buffer: await readFile(join(process.cwd(), 'examples/accessibility-unit.json')) });
+  await expect(page.locator('#toast')).toContainText('Suunnitelma tuotu');
+  await page.locator('#fit').click(); await page.locator('#zoomOut').click();
+
+  // A slightly crooked second click still gives a horizontal wall.
+  await page.keyboard.press('w');
+  await click(600, -1000);
+  await page.mouse.move(10, 10);
+  const hover = await client(1800, -1060); await page.mouse.move(hover.x, hover.y);
+  await expect(page.locator('[data-role="wallSnap"]')).toHaveAttribute('data-kind', 'ray');
+  await click(1800, -1060);
+  await expect.poll(async () => (await changes()).length).toBe(1);
+  let w = end((await changes())[0].wall);
+  expect(w[1]).toBe(1000); expect(w[3]).toBe(1000);
+  // Heading straight up, the end lands exactly on the partition's centre line (green square).
+  const up = await client(1800, -1980); await page.mouse.move(up.x, up.y);
+  await expect(page.locator('[data-role="wallSnap"]')).toHaveAttribute('data-kind', 'cross');
+  await click(1800, -1980);
+  await expect.poll(async () => (await changes()).length).toBe(2);
+  w = end((await changes())[1].wall);
+  expect(w).toEqual([1800, 1000, 1800, 2000]);
+  // Shift frees the angle.
+  await click(2600, -1300, ['Shift']);
+  await expect.poll(async () => (await changes()).length).toBe(3);
+  w = end((await changes())[2].wall);
+  expect(w[2]).toBe(2600); expect(w[3]).toBe(1300);
+  await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
+
+  // Delete: a planned wall disappears from the change layer, a surveyed partition is marked for demolition.
+  await page.evaluate(() => (window as any).select({ kind: 'wall', id: 'w-new-3' }));
+  await page.keyboard.press('Delete');
+  await expect.poll(async () => (await changes()).length).toBe(2);
+  await page.evaluate(() => (window as any).select({ kind: 'wall', id: 'w2' }));
+  await page.keyboard.press('Delete');
+  await expect.poll(async () => (await changes()).at(-1)).toEqual({ op: 'demolish_wall', target: 'w2' });
+  // A surveyed fixture explains why it cannot be deleted yet; a planned grab bar is deleted. Its 2D symbol is a rail.
+  await page.evaluate(() => (window as any).select({ kind: 'fixture', id: 'f1' }));
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#toast')).toContainText('unit-v1');
+  await page.keyboard.press('k');
+  await click(3200, -150);
+  await expect.poll(async () => (await changes()).some((c: any) => c.op === 'add_fixture')).toBe(true);
+  await expect(page.locator('#gFurn [data-fixture="f-new-1"] rect')).toHaveCount(3);
+  await page.keyboard.press('Delete');
+  await expect.poll(async () => (await changes()).some((c: any) => c.op === 'add_fixture')).toBe(false);
+  expect(errors).toEqual([]);
+});

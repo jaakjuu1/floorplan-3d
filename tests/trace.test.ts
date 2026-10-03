@@ -6,6 +6,7 @@ import { DEFAULT_STORE, parseDesign, type Design } from '../src/io/design';
 import { readUnit } from '../src/io/unit';
 import { apply } from '../src/model/apply';
 import { traceOpening, traceRoom, traceWall } from '../src/model/trace';
+import { removeTraced } from '../src/model/edit';
 
 const bytes = Buffer.from('%PDF-1.7\nsynthetic');
 const source: AttachmentSource = { id: 'b'.repeat(64), name: 'synthetic.pdf', mime: 'application/pdf', size: bytes.length, data: bytes.toString('base64') };
@@ -80,4 +81,14 @@ test('a traced opening finds its host wall and keeps drawing provenance', () => 
   assert.throws(() => traceOpening(next, bg, { x: 400, y: 380 }, { x: 500, y: 380 }, { kind: 'window' }), /seinän kohdalta/);
   assert.throws(() => traceOpening(next, bg, { x: 400, y: 200 }, { x: 500, y: 200 }, { kind: 'door', clear_width_mm: 900 }), /Vapaa leveys/);
   assert.throws(() => traceOpening(next, { ...bg, calibration: null }, { x: 400, y: 200 }, { x: 500, y: 200 }, { kind: 'door' }), /Kalibroi/);
+});
+
+test('a traced element can be removed from the survey with what depends on it; surveyed ones cannot', () => {
+  const bg = calibrated();
+  const walled = traceWall(unit(), bg, { x: 50, y: 200 }, { x: 550, y: 200 }, { thickness_mm: 120, kind: 'partition' });
+  const door = traceOpening(walled.unit, bg, { x: 150, y: 200 }, { x: 250, y: 200 }, { kind: 'door' });
+  const gone = removeTraced(door.unit, walled.id).unit;
+  assert.deepEqual(gone, unit()); // the wall and its traced door go together
+  assert.deepEqual(removeTraced(door.unit, door.id).unit, walled.unit);
+  assert.throws(() => removeTraced(unit(), 'w2'), /Vain pohjakuvasta/);
 });

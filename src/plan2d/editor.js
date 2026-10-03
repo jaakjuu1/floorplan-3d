@@ -321,6 +321,7 @@ function furnSVG(t,w,d,c){
       return s;
     }
     case 'cabinet': case 'shoecab': return rc(x,y,w,d,c) + ln(x,y+d,x+w,y);
+    case 'grabbar': return rc(x+30,y+d*.45,w-60,Math.max(25,d*.3),c,'rx="15"') + rc(x+30,y,40,d,'#9aa0a4') + rc(x+w-70,y,40,d,'#9aa0a4');
     case 'dresser': return rc(x,y,w,d,c,'rx="20"') + rc(x+w*.2,y,w*.6,55,'#dfe9ee') + ec(0,d/2+180,160,140,shade(c,.9));
     case 'desk': return rc(x,y,w,d,c,'rx="20"') + rc(-w*.18,y+50,w*.36,45,'#555') + rc(-w*.14,y+d*.45,w*.28,d*.28,'#f4f4f4','rx="10"');
     case 'chair': return rc(x+25,y+d*.16,w-50,d*.84-10,c,'rx="60"') + rc(x,y,w,d*.2,shade(c,.78),'rx="40"');
@@ -409,7 +410,7 @@ function renderFurn(){
       ? `<text transform="rotate(${-f.rot})" font-size="${fs}" text-anchor="middle" dominant-baseline="central" fill="#4a443c" opacity=".8" pointer-events="none">${esc(lab)}</text>` : '';
     return `<g class="furn" data-fid="${esc(f.id)}" transform="translate(${f.cx} ${f.cy}) rotate(${f.rot})">${furnSVG(f.type,f.w,f.d,f.color)}${label}</g>`;
   }).join('');
-  const types = {wc:'toilet',sink:'vanity',stove:'stove',cabinet:'cabinet',shower:'shower',bathtub:'bathtub',grab_bar:'cabinet'};
+  const types = {wc:'toilet',sink:'vanity',stove:'stove',cabinet:'cabinet',shower:'shower',bathtub:'bathtub',grab_bar:'grabbar'};
   const fixtureColor = id => MARKS.added.has(id) ? '#efb1a8' : MARKS.modified.has(id) ? '#f3d6a8' : '#d8d1c5';
   const fixtures = FIXTURES.map(f => `<g data-fixture="${esc(f.id)}" transform="translate(${f.x} ${f.y}) rotate(${f.rotation_deg})">${furnSVG(types[f.kind] || 'cabinet',f.width,f.depth,fixtureColor(f.id))}</g>`).join('');
   g.innerHTML = furniture + fixtures;
@@ -508,6 +509,11 @@ function renderMeasure(){
   if (ui.mA && ui.mCur) s += one(ui.mA, ui.mCur, true);
   if (ui.mA) s += `<circle cx="${ui.mA.x}" cy="${ui.mA.y}" r="${3*k}" fill="#2f5d62"/>`;
   s += routeSvg(k);
+  if (ui.tool === 'wall' && ui.wCur){
+    const q = ui.wCur, snapped = q.kind === 'end' || q.kind === 'cross' || q.kind === 'line';
+    s += snapped ? `<rect data-role="wallSnap" data-kind="${q.kind}" x="${q.x-5*k}" y="${q.y-5*k}" width="${10*k}" height="${10*k}" fill="none" stroke="#2f7d4f" stroke-width="2" vector-effect="non-scaling-stroke"/>`
+      : `<circle data-role="wallSnap" data-kind="${q.kind}" cx="${q.x}" cy="${q.y}" r="${3*k}" fill="#c9443a"/>`;
+  }
   if (ui.tool === 'wall' && ui.wA){
     const a = ui.wA, b = ui.wCur || a, L = Math.hypot(b.x-a.x, b.y-a.y), t = ui.newWall.thickness/2;
     if (L >= 1){
@@ -697,6 +703,7 @@ function wallPanel(id){
   const locked = w.kind === 'load_bearing' || w.kind === 'external' || w.kind === 'party';
   const action = !live ? `<button class="btn primary" data-edit="restoreWall">${tr('Palauta seinä','Restore wall')}</button>`
     : added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista uusi seinä','Remove new wall')}</button>`
+    : isTraced({kind:'wall', id}) ? `<button class="btn danger" data-edit="removeTraced">${tr('Poista jäljennös nykytilasta','Remove traced wall')}</button>`
     : `<button class="btn danger" data-edit="demolishWall" ${locked ? 'disabled' : ''}>${tr('Merkitse purettavaksi','Mark for demolition')}</button>`;
   return `<section><h3>${tr('Seinä','Wall')} <small>${esc(id)}</small></h3>
     <table><tr><td>${tr('Tila','State')}</td><td class="r">${live ? elementState(id) : tr('Purettava','To be demolished')}</td></tr>
@@ -722,6 +729,7 @@ function openingPanel(id){
     <p class="muted">${tr('Suunniteltu mitta tallentuu oletuksena (assumed), ei kenttämittauksena.','A planned size is saved as assumed, not as a field measurement.')}</p>
     <div class="actions"><button class="btn primary" data-edit="modifyOpening">${tr('Tallenna muutos','Save change')}</button>
       ${modified.length ? `<button class="btn" data-edit="revertOpening">${tr('Peru aukon muutokset','Revert opening changes')}</button>` : ''}
+      ${isTraced({kind:'opening', id}) ? `<button class="btn danger" data-edit="removeTraced">${tr('Poista jäljennös nykytilasta','Remove traced opening')}</button>` : ''}
       <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
     ${rulesSection([...elementFindings('opening', id), ...thresholds.flatMap(t => elementFindings('threshold', t.id))])}`;
 }
@@ -758,7 +766,8 @@ function bindElementPanel(sel){
     if (a === 'back') return select(null);
     if (a === 'demolishWall') return toggleWall(id);
     if (a === 'restoreWall') return toggleWall(id);
-    if (a === 'removeNew') return editUnit(revertAll(changeIndexes(c => (c.op === 'add_wall' && c.wall.id === id) || (c.op === 'add_fixture' && c.fixture.id === id))));
+    if (a === 'removeNew') return editUnit(removeAddedChange(id));
+    if (a === 'removeTraced') return deleteSel();
     if (a === 'removeThreshold') return editUnit(u => E.removeThreshold(u, b.dataset.target));
     if (a === 'revertOpening') return editUnit(revertAll(changeIndexes(c => c.op === 'modify_opening' && c.target === id)));
     if (a === 'modifyOpening') return editUnit(u => E.modifyOpening(u, id, {width:num('#oWidth'), clear_width:num('#oClear')}));
@@ -899,7 +908,23 @@ function rotateSel(d){
   if (ui.sel?.kind==='furn') mutate(() => { const f = getF(ui.sel.id); f.rot = norm(f.rot + d); });
   else if (ui.sel?.kind==='fixture'){ const f = FIXTURES.find(f => f.id === ui.sel.id); if (f) moveFixtureTo(f.id, {x:f.x, y:f.y, rot:f.rotation_deg + d}); }
 }
-function deleteSel(){ if (ui.sel?.kind==='furn'){ const id = ui.sel.id; ui.sel = null; mutate(() => state.furniture = state.furniture.filter(f => f.id !== id)); } }
+// Delete key: furniture is removed; a surveyed wall is marked for demolition; a planned wall or fixture
+// is removed from the change layer; an element traced from the drawing is removed from the survey.
+const removeAddedChange = id => u => changeIndexes(c => (c.op === 'add_wall' && c.wall.id === id) || (c.op === 'add_fixture' && c.fixture.id === id))
+  .reverse().reduce((r, i) => EDIT().revertChange(r.unit, i), {unit:u, id});
+const isTraced = s => /^(w|o|r)-trace-/.test(s.id) && (state.unit.baseline[{wall:'walls', opening:'openings', room:'rooms'}[s.kind]] ?? []).some(x => x.id === s.id);
+function deleteSel(){
+  const s = ui.sel; if (!s) return;
+  if (s.kind === 'furn'){ ui.sel = null; mutate(() => state.furniture = state.furniture.filter(f => f.id !== s.id)); return; }
+  if (isTraced(s)){ if (editUnit(u => EDIT().removeTraced(u, s.id))) toast(tr('Jäljennös poistettu nykytilasta','Traced element removed from the survey')); return; }
+  if ((s.kind === 'wall' || s.kind === 'fixture') && MARKS.added.has(s.id)){ if (editUnit(removeAddedChange(s.id))) toast(tr('Suunniteltu lisäys poistettu','Planned addition removed')); return; }
+  if (s.kind === 'wall'){
+    if (WALLS.some(w => w.id === s.id)) toggleWall(s.id); else toast(tr('Seinä on jo merkitty purettavaksi','The wall is already marked for demolition'));
+    return;
+  }
+  if (s.kind === 'fixture' || s.kind === 'opening')
+    toast(tr('Kartoitetun kiintokalusteen tai aukon poistoon tarvitaan muutosoperaatio, jota huoneistomalli unit-v1 ei vielä tue.','Removing a surveyed fixture or opening needs a change operation that unit-v1 does not support yet.'));
+}
 function duplicateSel(){
   if (ui.sel?.kind !== 'furn') return;
   const f = getF(ui.sel.id), n = {...f, id:uid(), cx:f.cx+200, cy:f.cy+200};
@@ -948,7 +973,7 @@ function syncModeHint(){
     measure:COARSE ? tr('Vedä mittaviiva tai napauta kaksi pistettä · kiinnittyy seiniin · poistu napauttamalla "Valitse"', 'Hold and drag a line, or tap two points · snaps to walls · tap "Select" to exit')
       : tr('Napsauta kahta pistettä (tai vedä) mitataksesi etäisyyden · kiinnittyy seiniin · Shift lukitsee vaaka-/pystysuuntaan · Esc peruu', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
     demolish:tr('Napsauta harmaata ei-kantavaa seinää merkitäksesi sen purettavaksi, napsauta uudelleen palauttaaksesi · mustia kantavia seiniä ei voi purkaa', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed'),
-    wall:tr('Napsauta seinän alku- ja loppupiste · jatkuu edellisen päästä · kiinnittyy seinien päihin ja keskilinjoihin · Shift lukitsee vaaka-/pystysuuntaan · Esc lopettaa', 'Click the wall start and end · continues from the last end · snaps to wall ends and centre lines · Shift locks horizontal/vertical · Esc ends'),
+    wall:tr('Napsauta seinän alku- ja loppupiste · suunta lukittuu 45°:n välein ja olemassa olevien seinien suuntiin · pää napsahtaa seinän päähän tai keskilinjaan (vihreä neliö) · Shift = vapaa kulma · Esc lopettaa', 'Click the wall start and end · direction locks to 45° steps and existing walls · ends snap to wall ends or centre lines (green square) · Shift = free angle · Esc ends'),
     route:tr('Napsauta lähtöpiste ja määränpää · reitti väistää seiniä, kiintokalusteita ja kalusteita · kapein kohta merkitään', 'Click a start and a destination · the route avoids walls, fixtures and furniture · the narrowest point is marked'),
     fixture:tr('Napsauta kohtaa · seinän lähellä kaluste asettuu seinää vasten ja sen suuntaiseksi · tyyppi ja koko oikeassa paneelissa', 'Click a spot · near a wall the fixture sits flush and parallel to it · type and size in the right panel')};
   const h = $('#modehint'); h.textContent = hints[ui.tool]; h.classList.toggle('show', !!hints[ui.tool]);
@@ -1012,19 +1037,34 @@ function snapPoint(p, shift){
 
 /* ======================= Uusi seinä ja kiintokaluste (muutoskerros) ======================= */
 const FIXTURE_SIZE = {grab_bar:[600,80], wc:[400,700], sink:[600,450], shower:[900,900], bathtub:[1700,750], stove:[600,600], cabinet:[600,600]};
-// Screen mm (y down). Wall ends first, then a wall centre line, then the 10 mm grid.
-function wallSnap(p, shift){
-  const tol = 10/view.s;
+// Screen mm (y down). Returns the point and what it snapped to: 'end' (a wall end), 'cross' (the locked
+// direction meets a wall centre line), 'ray' (locked direction, 10 mm lengths), 'line' or 'grid'.
+// After the first point the direction locks to 45° steps and to existing walls' directions; Shift frees it.
+function wallSnap(p, free){
+  const tol = 10/view.s, a = ui.wA;
   let best = null, bd = tol;
-  for (const w of WALLS) for (const e of [w.a, w.b]){ const d = Math.hypot(e[0]-p.x, e[1]-p.y); if (d < bd){ bd = d; best = {x:e[0], y:e[1]}; } }
+  for (const w of WALLS) for (const e of [w.a, w.b]){ const d = Math.hypot(e[0]-p.x, e[1]-p.y); if (d < bd){ bd = d; best = {x:e[0], y:e[1], kind:'end'}; } }
   if (best) return best;
-  for (const w of WALLS){
-    const f = foot(p, w); if (f.d < bd){ bd = f.d; best = {x:f.x, y:f.y}; }
+  if (a && !free){
+    const raw = Math.atan2(p.y-a.y, p.x-a.x), dirs = [0, 1, 2, 3, 4, 5, 6, 7].map(k => k*Math.PI/4);
+    for (const w of WALLS){ const t = Math.atan2(w.b[1]-w.a[1], w.b[0]-w.a[0]); for (let k = 0; k < 4; k++) dirs.push(t + k*Math.PI/2); }
+    let dir = null, dd = 10*Math.PI/180;
+    for (const d of dirs){ const diff = Math.abs(Math.atan2(Math.sin(raw-d), Math.cos(raw-d))); if (diff < dd){ dd = diff; dir = d; } }
+    if (dir !== null){
+      const ux = Math.round(Math.cos(dir)*1e9)/1e9, uy = Math.round(Math.sin(dir)*1e9)/1e9, t = (p.x-a.x)*ux + (p.y-a.y)*uy;
+      for (const w of WALLS){
+        const [x1, y1] = w.a, ex = w.b[0]-x1, ey = w.b[1]-y1, den = ux*ey - uy*ex;
+        if (Math.abs(den) < 1e-9) continue;
+        const s = ((x1-a.x)*ey - (y1-a.y)*ex)/den, u = ((x1-a.x)*uy - (y1-a.y)*ux)/den;
+        if (s > 1 && u >= 0 && u <= 1 && Math.abs(s-t) < bd){ bd = Math.abs(s-t); best = {x:a.x+ux*s, y:a.y+uy*s, kind:'cross'}; }
+      }
+      if (best) return best;
+      const len = Math.max(0, Math.round(t/10)*10);
+      return {x:a.x+ux*len, y:a.y+uy*len, kind:'ray'};
+    }
   }
-  if (best) return best;
-  const q = {x:Math.round(p.x/10)*10, y:Math.round(p.y/10)*10};
-  if (shift && ui.wA){ if (Math.abs(q.x-ui.wA.x) > Math.abs(q.y-ui.wA.y)) q.y = ui.wA.y; else q.x = ui.wA.x; }
-  return q;
+  for (const w of WALLS){ const f = foot(p, w); if (f.d < bd){ bd = f.d; best = {x:f.x, y:f.y, kind:'line'}; } }
+  return best || {x:Math.round(p.x/10)*10, y:Math.round(p.y/10)*10, kind:'grid'};
 }
 function foot(p, w){
   const [ax,ay] = w.a, [bx,by] = w.b, L = Math.hypot(bx-ax, by-ay) || 1, ux = (bx-ax)/L, uy = (by-ay)/L;
@@ -1127,7 +1167,7 @@ function bindParams(){
 function toolSection(){
   if (ui.tool === 'wall') return `<section id="toolOptions"><h3>${tr('Uusi seinä','New wall')} <small>${tr('muutos, ei nykytila','a change, not the survey')}</small></h3>
     <div class="form"><label class="full">${tr('Paksuus (mm)','Thickness (mm)')}<input type="number" id="nwThickness" min="20" step="10" value="${ui.newWall.thickness}"></label></div>
-    <p class="muted">${tr('Uusi seinä on väliseinä ja sen mitat tallentuvat suunnitelmana (assumed). Esc lopettaa ketjun.','The new wall is a partition; its sizes are saved as planned (assumed). Esc ends the chain.')}</p></section>`;
+    <p class="muted">${tr('Uusi seinä on väliseinä ja sen mitat tallentuvat suunnitelmana (assumed). Suunta lukittuu suoraksi; Shift vapauttaa kulman. Esc lopettaa ketjun.','The new wall is a partition; its sizes are saved as planned (assumed). The direction locks straight; Shift frees it. Esc ends the chain.')}</p></section>`;
   if (ui.tool === 'route' || ui.route) return routeSection();
   if (ui.tool === 'fixture'){
     const f = ui.newFixture, kinds = Object.entries(FIXTURE_KIND).map(([k, l]) => `<option value="${k}" ${k === f.kind ? 'selected' : ''}>${tr(...l)}</option>`).join('');
@@ -1238,7 +1278,7 @@ svg.addEventListener('pointermove', e => {
     const room = e.target.closest && e.target.closest('[data-room]');
     $('#hover').innerHTML = room ? `<b>${esc(state.rooms[room.dataset.room].name)}</b> ${fmt(area(ROOMS.find(r=>r.id===room.dataset.room).poly))} m²` : '';
     if (ui.tool === 'measure' && ui.mA){ ui.mCur = snapPoint(p, e.shiftKey); renderMeasure(); }
-    if (ui.tool === 'wall' && ui.wA){ ui.wCur = wallSnap(p, e.shiftKey); renderMeasure(); }
+    if (ui.tool === 'wall'){ ui.wCur = wallSnap(p, e.shiftKey); renderMeasure(); }   // hover shows the snap before the first click
     return;
   }
   const far = Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) >= TAP;

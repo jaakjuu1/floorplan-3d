@@ -24,7 +24,7 @@ Arkkitehtuuri ja vaiheet: [ARKKITEHTUURI.md](docs/kodin-muutostyokuva/ARKKITEHTU
   mitat alkuperineen ja muutostoiminnot
 - Pura ja palauta seinä, muuta oven karmiaukkoa ja vapaata leveyttä, poista
   kynnys, vaihda lattia tai kiintokaluste
-- Uusi seinä (`W`) ja kiintokaluste kuten tukikahva (`K`); kiintokalusteen siirto
+- Uusi seinä (`W`, suunta lukittuu suoraksi ja pää napsahtaa seiniin; Shift = vapaa kulma) ja kiintokaluste kuten tukikahva (`K`); kiintokalusteen siirto
   vetämällä, nuolinäppäimillä ja `R`-kierrolla
 - Muutoslista yleisnäkymässä, yksittäisen muutoksen peruminen; purettava
   keltaisena, uusi ja muutettu punaisena
@@ -95,7 +95,7 @@ tuo se uuteen osoitteeseen.
 | `W` / `K` / `U` | Uusi seinä / kiintokaluste / kulkureitti |
 | Nuolet, `R` | Siirrä (Shift 100 mm) ja kierrä valittua kalustetta tai kiintokalustetta |
 | `R` / `Shift+R` | Kierrä valittua kalustetta 90° myötä- / vastapäivään |
-| `Delete` / `Backspace` | Poista valittu kaluste |
+| `Delete` / `Backspace` | Poista valittu kaluste tai suunniteltu lisäys, merkitse kartoitettu seinä purettavaksi, poista jäljennös nykytilasta |
 | `Ctrl/⌘ + D` | Kopioi valittu kaluste |
 | `Ctrl/⌘ + Z`, `Ctrl/⌘ + Shift + Z` | Kumoa, tee uudelleen |
 | `F` | Sovita ikkunaan |
