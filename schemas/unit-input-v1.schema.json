@@ -1,0 +1,1286 @@
+{
+  "$defs": {
+    "AddFixture": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "add_fixture",
+          "title": "Op",
+          "type": "string"
+        },
+        "fixture": {
+          "$ref": "#/$defs/Fixture"
+        }
+      },
+      "required": [
+        "op",
+        "fixture"
+      ],
+      "title": "AddFixture",
+      "type": "object"
+    },
+    "AddWall": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "add_wall",
+          "title": "Op",
+          "type": "string"
+        },
+        "wall": {
+          "$ref": "#/$defs/Wall"
+        }
+      },
+      "required": [
+        "op",
+        "wall"
+      ],
+      "title": "AddWall",
+      "type": "object"
+    },
+    "Baseline": {
+      "additionalProperties": false,
+      "properties": {
+        "walls": {
+          "items": {
+            "$ref": "#/$defs/Wall"
+          },
+          "title": "Walls",
+          "type": "array"
+        },
+        "openings": {
+          "items": {
+            "$ref": "#/$defs/Opening"
+          },
+          "title": "Openings",
+          "type": "array"
+        },
+        "rooms": {
+          "items": {
+            "$ref": "#/$defs/Room"
+          },
+          "title": "Rooms",
+          "type": "array"
+        },
+        "fixtures": {
+          "items": {
+            "$ref": "#/$defs/Fixture"
+          },
+          "title": "Fixtures",
+          "type": "array"
+        },
+        "thresholds": {
+          "items": {
+            "$ref": "#/$defs/Threshold"
+          },
+          "title": "Thresholds",
+          "type": "array"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/$defs/RawMeasurement"
+          },
+          "title": "Measurements",
+          "type": "array"
+        }
+      },
+      "title": "Baseline",
+      "type": "object"
+    },
+    "BuildingRef": {
+      "additionalProperties": false,
+      "properties": {
+        "housing_company": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Housing Company"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        },
+        "floor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Floor"
+        },
+        "stair": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stair"
+        }
+      },
+      "title": "BuildingRef",
+      "type": "object"
+    },
+    "ChangeFinish": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "change_finish",
+          "title": "Op",
+          "type": "string"
+        },
+        "room": {
+          "minLength": 1,
+          "title": "Room",
+          "type": "string"
+        },
+        "floor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Floor"
+        },
+        "walls": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Walls"
+        }
+      },
+      "required": [
+        "op",
+        "room"
+      ],
+      "title": "ChangeFinish",
+      "type": "object"
+    },
+    "Consent": {
+      "additionalProperties": false,
+      "properties": {
+        "video": {
+          "default": false,
+          "title": "Video",
+          "type": "boolean"
+        },
+        "photos": {
+          "default": "none",
+          "enum": [
+            "none",
+            "details_only",
+            "full"
+          ],
+          "title": "Photos",
+          "type": "string"
+        },
+        "given_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Given By"
+        },
+        "given_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "format": "date-time",
+          "pattern": "^(?!0000)\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$",
+          "title": "Given At"
+        },
+        "purpose": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Purpose",
+          "type": "array"
+        },
+        "retention_days": {
+          "$ref": "#/$defs/RetentionDays"
+        }
+      },
+      "title": "Consent",
+      "type": "object"
+    },
+    "DemolishWall": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "demolish_wall",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "DemolishWall",
+      "type": "object"
+    },
+    "Documents": {
+      "additionalProperties": false,
+      "properties": {
+        "recipients": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recipients",
+          "type": "array"
+        },
+        "designer_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Designer Name"
+        },
+        "revision": {
+          "default": "-",
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "title": "Documents",
+      "type": "object"
+    },
+    "Fixture": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "wc",
+            "sink",
+            "shower",
+            "bathtub",
+            "stove",
+            "cabinet",
+            "grab_bar"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "x": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "y": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "width": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "depth": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "rotation_deg": {
+          "default": 0,
+          "title": "Rotation Deg",
+          "type": "number"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "clearance": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Measurement"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clearance"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "x",
+        "y",
+        "width",
+        "depth",
+        "id"
+      ],
+      "title": "Fixture",
+      "type": "object"
+    },
+    "FixtureData": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "wc",
+            "sink",
+            "shower",
+            "bathtub",
+            "stove",
+            "cabinet",
+            "grab_bar"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "x": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "y": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "width": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "depth": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "rotation_deg": {
+          "default": 0,
+          "title": "Rotation Deg",
+          "type": "number"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "clearance": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Measurement"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clearance"
+        }
+      },
+      "required": [
+        "kind",
+        "x",
+        "y",
+        "width",
+        "depth"
+      ],
+      "title": "FixtureData",
+      "type": "object"
+    },
+    "Measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "value_mm": {
+          "title": "Value Mm",
+          "type": "number"
+        },
+        "status": {
+          "enum": [
+            "measured",
+            "inferred",
+            "assumed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "laser",
+            "tape",
+            "lidar_scan",
+            "video",
+            "archive_drawing",
+            "registry",
+            "derived",
+            "assumption"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "confidence_mm": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence Mm"
+        },
+        "confirmed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confirmed By"
+        },
+        "captured_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "format": "date-time",
+          "pattern": "^(?!0000)\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$",
+          "title": "Captured At"
+        },
+        "device": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "value_mm",
+        "status",
+        "method",
+        "source_refs"
+      ],
+      "title": "Measurement",
+      "type": "object"
+    },
+    "ModifyOpening": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "modify_opening",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "set": {
+          "$ref": "#/$defs/ModifyOpeningSet"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "set"
+      ],
+      "title": "ModifyOpening",
+      "type": "object"
+    },
+    "ModifyOpeningSet": {
+      "additionalProperties": false,
+      "properties": {
+        "clear_width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "along_wall": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sill_z": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "swing": {
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right",
+                "double",
+                "slide"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Swing"
+        }
+      },
+      "title": "ModifyOpeningSet",
+      "type": "object"
+    },
+    "Opening": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "door",
+            "sliding_door",
+            "window",
+            "opening"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "host_wall": {
+          "minLength": 1,
+          "title": "Host Wall",
+          "type": "string"
+        },
+        "along_wall": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "width": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "clear_width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sill_z": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Measurement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "swing": {
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right",
+                "double",
+                "slide"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Swing"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "host_wall",
+        "along_wall",
+        "width"
+      ],
+      "title": "Opening",
+      "type": "object"
+    },
+    "Point2D": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "y": {
+          "$ref": "#/$defs/Measurement"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point2D",
+      "type": "object"
+    },
+    "ProjectInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "address": {
+          "minLength": 1,
+          "title": "Address",
+          "type": "string"
+        },
+        "municipality": {
+          "minLength": 1,
+          "title": "Municipality",
+          "type": "string"
+        },
+        "property_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Property Id"
+        },
+        "apartment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Apartment Id"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address",
+        "municipality"
+      ],
+      "title": "ProjectInfo",
+      "type": "object"
+    },
+    "RawMeasurement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "from": {
+          "minLength": 1,
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "minLength": 1,
+          "title": "To",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/Measurement"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "value"
+      ],
+      "title": "RawMeasurement",
+      "type": "object"
+    },
+    "RemoveThreshold": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "remove_threshold",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "RemoveThreshold",
+      "type": "object"
+    },
+    "ReplaceFixture": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "replace_fixture",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "fixture": {
+          "$ref": "#/$defs/FixtureData"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "fixture"
+      ],
+      "title": "ReplaceFixture",
+      "type": "object"
+    },
+    "RetentionDays": {
+      "additionalProperties": false,
+      "properties": {
+        "video": {
+          "default": 30,
+          "minimum": 0,
+          "title": "Video",
+          "type": "integer"
+        },
+        "photos": {
+          "default": 365,
+          "minimum": 0,
+          "title": "Photos",
+          "type": "integer"
+        }
+      },
+      "title": "RetentionDays",
+      "type": "object"
+    },
+    "Room": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "wet",
+            "sauna",
+            "kitchen",
+            "bedroom",
+            "living",
+            "hall",
+            "storage",
+            "wc",
+            "balcony"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "polygon": {
+          "items": {
+            "$ref": "#/$defs/Point2D"
+          },
+          "minItems": 4,
+          "title": "Polygon",
+          "type": "array"
+        },
+        "floor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Floor"
+        },
+        "walls": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Walls"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "polygon"
+      ],
+      "title": "Room",
+      "type": "object"
+    },
+    "SurveyInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "survey_id": {
+          "minLength": 1,
+          "title": "Survey Id",
+          "type": "string"
+        },
+        "captured_at": {
+          "format": "date",
+          "pattern": "^(?!0000)\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])$",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "surveyor": {
+          "$ref": "#/$defs/Surveyor"
+        },
+        "devices": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Devices",
+          "type": "array"
+        },
+        "data_origin": {
+          "enum": [
+            "real_survey",
+            "synthetic_fixture",
+            "regression_baseline"
+          ],
+          "title": "Data Origin",
+          "type": "string"
+        },
+        "consent": {
+          "$ref": "#/$defs/Consent"
+        }
+      },
+      "required": [
+        "survey_id",
+        "captured_at",
+        "surveyor",
+        "data_origin"
+      ],
+      "title": "SurveyInfo",
+      "type": "object"
+    },
+    "Surveyor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "organisation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organisation"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Surveyor",
+      "type": "object"
+    },
+    "Threshold": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "at_opening": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Opening"
+        },
+        "between_rooms": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Between Rooms"
+        },
+        "height": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "kind": {
+          "enum": [
+            "threshold",
+            "step",
+            "slope"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "height",
+        "kind"
+      ],
+      "title": "Threshold",
+      "type": "object"
+    },
+    "Wall": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "a": {
+          "$ref": "#/$defs/Point2D"
+        },
+        "b": {
+          "$ref": "#/$defs/Point2D"
+        },
+        "thickness": {
+          "$ref": "#/$defs/Measurement"
+        },
+        "kind": {
+          "enum": [
+            "load_bearing",
+            "partition",
+            "external",
+            "party"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "wet_side": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wet Side"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "a",
+        "b",
+        "thickness",
+        "kind"
+      ],
+      "title": "Wall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "unit-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "project": {
+      "$ref": "#/$defs/ProjectInfo"
+    },
+    "building_ref": {
+      "$ref": "#/$defs/BuildingRef"
+    },
+    "survey": {
+      "$ref": "#/$defs/SurveyInfo"
+    },
+    "baseline": {
+      "$ref": "#/$defs/Baseline"
+    },
+    "changes": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "add_fixture": "#/$defs/AddFixture",
+            "add_wall": "#/$defs/AddWall",
+            "change_finish": "#/$defs/ChangeFinish",
+            "demolish_wall": "#/$defs/DemolishWall",
+            "modify_opening": "#/$defs/ModifyOpening",
+            "remove_threshold": "#/$defs/RemoveThreshold",
+            "replace_fixture": "#/$defs/ReplaceFixture"
+          },
+          "propertyName": "op"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/DemolishWall"
+          },
+          {
+            "$ref": "#/$defs/AddWall"
+          },
+          {
+            "$ref": "#/$defs/ModifyOpening"
+          },
+          {
+            "$ref": "#/$defs/RemoveThreshold"
+          },
+          {
+            "$ref": "#/$defs/AddFixture"
+          },
+          {
+            "$ref": "#/$defs/ReplaceFixture"
+          },
+          {
+            "$ref": "#/$defs/ChangeFinish"
+          }
+        ]
+      },
+      "title": "Changes",
+      "type": "array"
+    },
+    "profiles": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Profiles",
+      "type": "array"
+    },
+    "user": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "User",
+      "type": "object"
+    },
+    "documents": {
+      "$ref": "#/$defs/Documents"
+    },
+    "north_deg": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "North Deg"
+    }
+  },
+  "required": [
+    "schema_version",
+    "project",
+    "survey",
+    "baseline"
+  ],
+  "title": "UnitInputs",
+  "type": "object"
+}

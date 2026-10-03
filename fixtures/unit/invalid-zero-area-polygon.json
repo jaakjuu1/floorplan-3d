@@ -1,0 +1,829 @@
+{
+  "input": {
+    "schema_version": "unit-v1",
+    "project": {
+      "id": "accessibility-demo",
+      "name": "Esteettömyysmalli",
+      "address": "Testikuja 1",
+      "municipality": "Turku",
+      "property_id": "test-property",
+      "apartment_id": "A 1"
+    },
+    "building_ref": {
+      "housing_company": "Testitaloyhtiö",
+      "year": 2000,
+      "floor": "1",
+      "stair": "A"
+    },
+    "survey": {
+      "survey_id": "survey-s1",
+      "captured_at": "2026-09-29",
+      "surveyor": {
+        "id": "surveyor:s1",
+        "organisation": "Testikartoitus"
+      },
+      "devices": [
+        "Samsung Galaxy Z Fold3",
+        "laser meter"
+      ],
+      "data_origin": "synthetic_fixture",
+      "consent": {
+        "video": false,
+        "photos": "none",
+        "given_by": null,
+        "given_at": null,
+        "purpose": [],
+        "retention_days": {
+          "video": 30,
+          "photos": 365
+        }
+      }
+    },
+    "baseline": {
+      "walls": [
+        {
+          "id": "w1",
+          "a": {
+            "x": {
+              "value_mm": 0,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            },
+            "y": {
+              "value_mm": 0,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            }
+          },
+          "b": {
+            "x": {
+              "value_mm": 4000,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            },
+            "y": {
+              "value_mm": 0,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            }
+          },
+          "thickness": {
+            "value_mm": 100,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "kind": "load_bearing",
+          "wet_side": null,
+          "source_refs": [
+            "archive:wall-schedule"
+          ]
+        },
+        {
+          "id": "w2",
+          "a": {
+            "x": {
+              "value_mm": 0,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            },
+            "y": {
+              "value_mm": 2000,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            }
+          },
+          "b": {
+            "x": {
+              "value_mm": 4000,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            },
+            "y": {
+              "value_mm": 2000,
+              "status": "measured",
+              "method": "laser",
+              "source_refs": [
+                "survey:unit/s1"
+              ],
+              "confidence_mm": 2,
+              "confirmed_by": "surveyor:s1",
+              "captured_at": "2026-09-29T10:14:15.123+02:00",
+              "device": "Samsung Galaxy Z Fold3",
+              "note": null
+            }
+          },
+          "thickness": {
+            "value_mm": 100,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "kind": "partition",
+          "wet_side": null,
+          "source_refs": [
+            "survey:unit/s1"
+          ]
+        }
+      ],
+      "openings": [
+        {
+          "id": "o1",
+          "kind": "door",
+          "host_wall": "w1",
+          "along_wall": {
+            "value_mm": 500,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "width": {
+            "value_mm": 900,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "clear_width": {
+            "value_mm": 800,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "height": {
+            "value_mm": 2050,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "sill_z": null,
+          "swing": "left"
+        },
+        {
+          "id": "o2",
+          "kind": "door",
+          "host_wall": "w2",
+          "along_wall": {
+            "value_mm": 1500,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "width": {
+            "value_mm": 900,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "clear_width": {
+            "value_mm": 800,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "height": {
+            "value_mm": 2050,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "sill_z": null,
+          "swing": "left"
+        }
+      ],
+      "rooms": [
+        {
+          "id": "r1",
+          "name": "Huone",
+          "kind": "hall",
+          "polygon": [
+            {
+              "x": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 1000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 2000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            }
+          ],
+          "floor": "vinyl",
+          "walls": null
+        },
+        {
+          "id": "r2",
+          "name": "Pesuhuone",
+          "kind": "wet",
+          "polygon": [
+            {
+              "x": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 2000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 4000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 2000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 4000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 4000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 4000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            },
+            {
+              "x": {
+                "value_mm": 0,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              },
+              "y": {
+                "value_mm": 2000,
+                "status": "measured",
+                "method": "laser",
+                "source_refs": [
+                  "survey:unit/s1"
+                ],
+                "confidence_mm": 2,
+                "confirmed_by": "surveyor:s1",
+                "captured_at": "2026-09-29T10:14:15.123+02:00",
+                "device": "Samsung Galaxy Z Fold3",
+                "note": null
+              }
+            }
+          ],
+          "floor": "tile",
+          "walls": null
+        }
+      ],
+      "fixtures": [
+        {
+          "id": "f1",
+          "kind": "wc",
+          "x": {
+            "value_mm": 500,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "y": {
+            "value_mm": 2600,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "width": {
+            "value_mm": 400,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "depth": {
+            "value_mm": 700,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "rotation_deg": 0,
+          "height": null,
+          "clearance": null
+        },
+        {
+          "id": "f2",
+          "kind": "sink",
+          "x": {
+            "value_mm": 1300,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "y": {
+            "value_mm": 2600,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "width": {
+            "value_mm": 600,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "depth": {
+            "value_mm": 500,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "rotation_deg": 0,
+          "height": null,
+          "clearance": null
+        }
+      ],
+      "thresholds": [
+        {
+          "id": "t1",
+          "at_opening": "o1",
+          "between_rooms": null,
+          "height": {
+            "value_mm": 15,
+            "status": "measured",
+            "method": "tape",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "kind": "threshold"
+        },
+        {
+          "id": "t2",
+          "at_opening": null,
+          "between_rooms": [
+            "r1",
+            "r2"
+          ],
+          "height": {
+            "value_mm": 20,
+            "status": "measured",
+            "method": "tape",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          },
+          "kind": "threshold"
+        }
+      ],
+      "measurements": [
+        {
+          "id": "raw1",
+          "from": "w2",
+          "to": "o2",
+          "value": {
+            "value_mm": 1500,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          }
+        },
+        {
+          "id": "raw2",
+          "from": "o1",
+          "to": "t1",
+          "value": {
+            "value_mm": 500,
+            "status": "measured",
+            "method": "laser",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          }
+        },
+        {
+          "id": "raw3",
+          "from": "r1",
+          "to": "f1",
+          "value": {
+            "value_mm": 700,
+            "status": "measured",
+            "method": "tape",
+            "source_refs": [
+              "survey:unit/s1"
+            ],
+            "confidence_mm": 2,
+            "confirmed_by": "surveyor:s1",
+            "captured_at": "2026-09-29T10:14:15.123+02:00",
+            "device": "Samsung Galaxy Z Fold3",
+            "note": null
+          }
+        }
+      ]
+    },
+    "changes": [],
+    "profiles": [
+      "wheelchair"
+    ],
+    "user": {
+      "turning_circle_mm": 1500
+    },
+    "documents": {
+      "recipients": [
+        "housing_company",
+        "occupational_therapist"
+      ],
+      "designer_name": "Testisuunnittelija",
+      "revision": "A"
+    },
+    "north_deg": 0
+  },
+  "valid": false
+}

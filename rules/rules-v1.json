@@ -1,0 +1,235 @@
+{
+  "version": "rules-v1",
+  "checked_at": "2026-10-03",
+  "note": "Advisory only: rules never block editing. Values are copied from the cited statutes; VnA 241/2017 applies to new buildings, so in an existing apartment its values are design guidance. Dimension parameters are standard defaults; a project can override them in unit.user (numbers only).",
+  "sources": {
+    "asoyl": {
+      "label": "Asunto-osakeyhtiölaki 1599/2009",
+      "url": "https://www.finlex.fi/fi/lainsaadanto/2009/1599"
+    },
+    "rakentamislaki": {
+      "label": "Rakentamislaki 751/2023",
+      "url": "https://www.finlex.fi/fi/lainsaadanto/2023/751"
+    },
+    "kosteus": {
+      "label": "YM:n asetus rakennusten kosteusteknisestä toimivuudesta 782/2017",
+      "url": "https://www.finlex.fi/fi/lainsaadanto/2017/782"
+    },
+    "esteettomyys": {
+      "label": "VnA rakennuksen esteettömyydestä 241/2017",
+      "url": "https://www.finlex.fi/fi/lainsaadanto/2017/241"
+    },
+    "vammaispalvelulaki": {
+      "label": "Vammaispalvelulaki 675/2023",
+      "url": "https://www.finlex.fi/fi/lainsaadanto/2023/675"
+    },
+    "en12183": {
+      "label": "EN 12183 Manual wheelchairs (perusmitat)",
+      "url": "https://knowledge.bsigroup.com/products/bs-en-12183-manual-wheelchairs-requirements-and-test-methods"
+    }
+  },
+  "rules": [
+    {
+      "id": "muutostyo.ilmoitus",
+      "profile": "muutostyo",
+      "severity": "ilmoitus",
+      "check": "any_change",
+      "source": "asoyl",
+      "section": "5 luku 2 §",
+      "title_fi": "Muutostyöilmoitus taloyhtiölle",
+      "title_en": "Alteration notice to the housing company",
+      "message_fi": "Muutostyöstä on ilmoitettava etukäteen kirjallisesti hallitukselle tai isännöitsijälle, jos se voi vaikuttaa yhtiön tai toisen osakkaan vastuulla olevaan rakennuksen osaan tai huoneiston käyttöön.",
+      "message_en": "Notify the board or property manager in writing in advance if the work may affect parts of the building the company or another shareholder is responsible for, or the use of their apartment."
+    },
+    {
+      "id": "muutostyo.seina_lupa",
+      "profile": "muutostyo",
+      "severity": "tarkista",
+      "check": "change_ops",
+      "params": {
+        "ops": [
+          "demolish_wall",
+          "add_wall"
+        ]
+      },
+      "source": "rakentamislaki",
+      "section": "42 § 3 mom.",
+      "title_fi": "Seinämuutos: lupatarve rakennusvalvonnasta",
+      "title_en": "Wall change: check permit need",
+      "message_fi": "Rakentamislupa tarvitaan korjaus- ja muutostyöhön, joka on verrattavissa rakentamiseen tai voi vaarantaa rakennuksen terveellisyyden ja turvallisuuden. Tarkista lupatarve kunnan rakennusvalvonnasta.",
+      "message_en": "A building permit is needed when the work is comparable to construction or may endanger health and safety. Check with the municipal building control."
+    },
+    {
+      "id": "muutostyo.seina_oletus",
+      "profile": "muutostyo",
+      "severity": "tarkista",
+      "check": "demolish_unverified_wall",
+      "source": "asoyl",
+      "section": "5 luku 3 §",
+      "title_fi": "Purettavan seinän tyyppi on oletus",
+      "title_en": "Demolished wall type is assumed",
+      "message_fi": "Seinän {element} tyyppi perustuu oletukseen. Varmista arkistopiirustuksista tai isännöitsijältä, ettei seinä ole kantava tai jäykistävä; yhtiö voi asettaa ehtoja rakennusta vahingoittavalle työlle.",
+      "message_en": "The type of wall {element} is assumed. Confirm from archive drawings or the property manager that it is not load-bearing or bracing; the company may set conditions on work that can damage the building."
+    },
+    {
+      "id": "muutostyo.markatila",
+      "profile": "muutostyo",
+      "severity": "tarkista",
+      "check": "wet_room_change",
+      "source": "kosteus",
+      "section": "28–29 §",
+      "title_fi": "Märkätilan muutos: vedeneristys ja kaadot",
+      "title_en": "Wet room change: waterproofing and falls",
+      "message_fi": "Muutos koskee märkätilaa {element}. Vedeneristyksen on muodostettava tiivis kokonaisuus saumoineen ja läpivienteineen, ja lattian kaltevuuden on vietävä vesi lattiakaivoon.",
+      "message_en": "The change affects wet room {element}. Waterproofing must be tight including joints and penetrations, and the floor must fall to the drain."
+    },
+    {
+      "id": "esteettomyys.oven_vapaa_leveys",
+      "profile": "esteettomyys",
+      "severity": "suositus",
+      "check": "door_clear_width",
+      "params": {
+        "param": "door_clear_width_mm"
+      },
+      "source": "esteettomyys",
+      "section": "4 § 2 mom.",
+      "title_fi": "Oven vapaa leveys",
+      "title_en": "Door clear width",
+      "message_fi": "Oven {element} vapaa leveys {value} mm; uudisrakentamisen vähimmäistaso asunnon huoneisiin on {limit} mm.",
+      "message_en": "Door {element} clear width {value} mm; the new-build minimum for rooms in a dwelling is {limit} mm."
+    },
+    {
+      "id": "esteettomyys.kynnys",
+      "profile": "esteettomyys",
+      "severity": "suositus",
+      "check": "threshold_height",
+      "params": {
+        "param": "threshold_max_mm"
+      },
+      "source": "esteettomyys",
+      "section": "4 § 3 mom.",
+      "title_fi": "Kynnys tai tasoero",
+      "title_en": "Threshold or level difference",
+      "message_fi": "Kynnys {element} on {value} mm; oven yhteydessä ei tulisi olla kynnystä, ja välttämätön kynnys saa olla enintään {limit} mm.",
+      "message_en": "Threshold {element} is {value} mm; doors should have no threshold, and a necessary one may be at most {limit} mm."
+    },
+    {
+      "id": "esteettomyys.pesutila_vapaa_tila",
+      "profile": "esteettomyys",
+      "severity": "suositus",
+      "check": "free_circle",
+      "params": {
+        "rooms": [
+          "wet",
+          "wc"
+        ],
+        "service_mm": 1500,
+        "param": "free_circle_mm"
+      },
+      "source": "esteettomyys",
+      "section": "9 § 1–2 mom.",
+      "title_fi": "Wc- ja pesutilan vapaa tila",
+      "title_en": "Free space in WC and bathroom",
+      "message_fi": "Huoneen {element} suurin vapaa ympyrä on Ø {value} mm; hissitalon asunnossa vähintään Ø {limit} mm, palveluasumisessa Ø 1500 mm.",
+      "message_en": "The largest free circle in {element} is Ø {value} mm; at least Ø {limit} mm in a building with a lift, Ø 1500 mm in service housing."
+    },
+    {
+      "id": "esteettomyys.kaantymistila",
+      "profile": "esteettomyys",
+      "severity": "suositus",
+      "check": "free_circle",
+      "params": {
+        "rooms": [
+          "hall",
+          "kitchen"
+        ],
+        "service_mm": 1500,
+        "param": "free_circle_mm"
+      },
+      "source": "esteettomyys",
+      "section": "6 § 2–3 mom.",
+      "title_fi": "Kääntymistila eteisessä ja keittiössä",
+      "title_en": "Turning space in hall and kitchen",
+      "message_fi": "Huoneen {element} suurin vapaa ympyrä on Ø {value} mm; hissitalon asunnon eteisessä ja keittiössä vähintään Ø {limit} mm.",
+      "message_en": "The largest free circle in {element} is Ø {value} mm; at least Ø {limit} mm in the hall and kitchen of a building with a lift."
+    },
+    {
+      "id": "esteettomyys.wc_sivutila",
+      "profile": "esteettomyys",
+      "severity": "suositus",
+      "check": "wc_side_space",
+      "params": {
+        "param": "wc_side_space_mm"
+      },
+      "source": "esteettomyys",
+      "section": "9 § 2 mom.",
+      "title_fi": "Wc-istuimen sivutila",
+      "title_en": "Space beside the WC",
+      "message_fi": "Wc-istuimen {element} vapaampi sivu {value} mm; esteettömässä pesutilassa toisella puolella vähintään {limit} mm.",
+      "message_en": "The freer side of WC {element} is {value} mm; an accessible bathroom needs at least {limit} mm on one side."
+    },
+    {
+      "id": "esteettomyys.tuki",
+      "profile": "esteettomyys",
+      "severity": "info",
+      "check": "accessibility_change",
+      "source": "vammaispalvelulaki",
+      "section": "22 §",
+      "title_fi": "Esteettömän asumisen tuki",
+      "title_en": "Support for accessible housing",
+      "message_fi": "Hyvinvointialueen on järjestettävä esteettömän asumisen tukea asunnon muutostöihin, jos vammainen henkilö tarvitsee sitä voidakseen asua vakituisessa asunnossaan.",
+      "message_en": "The wellbeing services county must arrange support for home alterations when a disabled person needs it to live in their permanent home."
+    }
+  ],
+  "parameters": {
+    "door_clear_width_mm": {
+      "default": 800,
+      "source": "esteettomyys",
+      "section": "4 § 2 mom.",
+      "label_fi": "Oven vapaa leveys, vähintään",
+      "label_en": "Door clear width, minimum"
+    },
+    "threshold_max_mm": {
+      "default": 20,
+      "source": "esteettomyys",
+      "section": "4 § 3 mom.",
+      "label_fi": "Kynnys, enintään",
+      "label_en": "Threshold, maximum"
+    },
+    "free_circle_mm": {
+      "default": 1300,
+      "source": "esteettomyys",
+      "section": "6 § 2 mom., 9 § 1 mom.",
+      "label_fi": "Vapaa ympyrä wc-, pesu- ja keittiö/eteistilassa",
+      "label_en": "Free circle in WC, bathroom, kitchen and hall"
+    },
+    "wc_side_space_mm": {
+      "default": 800,
+      "source": "esteettomyys",
+      "section": "9 § 2 mom.",
+      "label_fi": "Wc-istuimen sivutila, vähintään",
+      "label_en": "Space beside the WC, minimum"
+    },
+    "path_width_mm": {
+      "default": 900,
+      "source": "en12183",
+      "section": "oletus: perusleveys 700 mm + 2 × 100 mm",
+      "label_fi": "Kulkureitin leveys, vähintään (oletus)",
+      "label_en": "Route width, minimum (assumption)"
+    },
+    "wheelchair_width_mm": {
+      "default": 700,
+      "source": "en12183",
+      "section": "perusmitat",
+      "label_fi": "Pyörätuolin leveys",
+      "label_en": "Wheelchair width"
+    },
+    "wheelchair_length_mm": {
+      "default": 1200,
+      "source": "en12183",
+      "section": "perusmitat",
+      "label_fi": "Pyörätuolin pituus",
+      "label_en": "Wheelchair length"
+    }
+  }
+}
