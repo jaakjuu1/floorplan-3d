@@ -22,7 +22,37 @@ linkkeineen Finlexiin. Säädösteksti on tiivistetty, ei lainattu kokonaan.
 
 Rajaus: VnA 241/2017 koskee luvanvaraista uudisrakentamista ja asuinkerrostalon
 yleisiä tiloja. Asunnon sisäisessä muutostyössä sen arvot ovat mitoitusohje.
-Toimintaterapeutin käyttäjäkohtaiset arvot (§7.1) eivät vielä ole käytössä.
+
+## Mitoitusperusteet
+
+Käyttäjän päätös 2026-10-03: henkilökohtaisia arvoja ei tarvita. Käytetään
+standardin oletuksia, joita voi tarvittaessa muuttaa kohteelle yleisnäkymän
+"Mitoitusperusteet"-osiossa. Muutettu arvo tallentuu malliin `unit.user`
+(pelkkiä numeroita, ei terveystietoa), ei muutoskerrokseen; tyhjä palauttaa oletuksen.
+
+| Parametri | Oletus | Lähde |
+|---|---|---|
+| `door_clear_width_mm` | 800 | VnA 241/2017 4 § 2 mom. |
+| `threshold_max_mm` | 20 | VnA 241/2017 4 § 3 mom. |
+| `free_circle_mm` | 1300 | VnA 241/2017 6 § 2 mom., 9 § 1 mom. |
+| `wc_side_space_mm` | 800 | VnA 241/2017 9 § 2 mom. |
+| `path_width_mm` | 900 | **Oletus**: pyörätuolin perusleveys 700 mm + 2 × 100 mm käsille. Asunnon sisäiselle kulkureitille ei löytynyt säädösarvoa |
+| `wheelchair_width_mm` | 700 | EN 12183 käsikäyttöisen pyörätuolin perusmitat |
+| `wheelchair_length_mm` | 1200 | EN 12183 perusmitat |
+
+## Kulkureitti ja pyörätuoli
+
+- **Kulkureitti** (2D-työkalu, U): käyttäjä valitsee lähtöpisteen ja määränpään.
+  [`src/model/route.ts`](../../src/model/route.ts) rasteroi huoneet ja aukot 20 mm:n
+  ruudukkoon, esteiksi seinät (oviaukko kavennettuna vapaaseen leveyteen),
+  kiintokalusteet ja irtokalusteet. Euklidinen etäisyysmuunnos antaa väljyyden.
+  Reitti on lyhin, jolla väljyys riittää: ovella ja sen vieressä vaatimus on oven
+  vapaa leveys, muualla kulkureitin leveys. Jos sellaista ei ole, näytetään väljin
+  reitti ja sen kapein kohta. Tarkkuus noin ±20 mm. Tulos on ohjeellinen.
+- **Pyörätuolikävely** (3D, "Pyörätuoli"): kävelyn törmäyssäde on puolet
+  pyörätuolin leveydestä ja katseen korkeus 1,2 m. Ympyräapproksimaatio ei vielä
+  huomioi pyörätuolin pituutta kääntyessä. 3D-törmäys käyttää oviaukon
+  karmileveyttä, 2D-reitti vapaata leveyttä.
 
 Editorin aiempi kantavan, ulko- ja huoneistojen välisen seinän purkueste
 (`demolishWall`) on työkalun suojaus, ei sääntömoottorin esto.
@@ -63,6 +93,6 @@ vaikuta, koska asetus koskee kiinteitä kalusteita.
 ## Avoimet asiat
 
 - Isännöitsijän (K5) ja toimintaterapeutin (K6) tarkistus sääntölistalle.
-- Käyttäjäkohtaiset raja-arvot, kulkureitin leveys ja pyörätuolisimulaatio (§7.4).
+- Pyörätuolin pituuden ja kääntymisen huomioiva liikerata (nyt ympyräapproksimaatio).
 - Ilmanvaihto- ja hormikohtien liputus vaatii niiden mallintamisen.
 - RK:n Python-arvioija ja yhteiset `fixtures/rules`-testit (§7.3).

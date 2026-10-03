@@ -16,7 +16,11 @@ const H = 2.8, FOV = 45;
 const origin = () => ({x:PLAN.bounds.x+PLAN.bounds.w/2,y:PLAN.bounds.y+PLAN.bounds.h/2});
 const wx = x => (x - origin().x) / 1000, wz = y => (y - origin().y) / 1000, M = v => v / 1000;
 const SW = () => stage.clientWidth, SH = () => stage.clientHeight;
-const opt = {cut:2.8, furn:true, labels:true, night:false, hour:10, mode:'orbit'};
+const opt = {cut:2.8, furn:true, labels:true, night:false, chair:false, hour:10, mode:'orbit'};
+// Wheelchair walk: collision radius from the project's wheelchair width, seated eye height.
+// ponytail: circular footprint; the 1200 mm length and turning need a swept wheelchair shape.
+const walkRadius = () => opt.chair ? window.UnitModel.rules.parameter(state.unit, 'wheelchair_width_mm') / 2000 : .22;
+const eyeHeight = () => opt.chair ? 1.2 : 1.6;
 
 let inited = false, active = false, raf = 0, anim = null, fly = null;
 let renderer, labelRenderer, scene, camera, orbit, walkCtl, hemi, sun, ground, glassMat, wallMat, capMat, frameMat, newMat, ghostMat;
@@ -1150,7 +1154,7 @@ function setMode(m){
     if (opt.cut < H){ opt.cut = H; syncCutBtns(); sync(); }
     orbit.enabled = false; fly = null;
     const start=isDefaultUnit() ? [4200,8755] : (ROOMS.find(r=>r.at)?.at || [origin().x,origin().y]);
-    camera.position.set(wx(start[0]),1.6,wz(start[1])); camera.lookAt(wx(start[0])+2.8,1.5,wz(start[1]));
+    camera.position.set(wx(start[0]),eyeHeight(),wz(start[1])); camera.lookAt(wx(start[0])+2.8,eyeHeight()-.1,wz(start[1]));
     $('#walkOverlay').style.display = 'flex';
     syncHint3d();
   } else {
@@ -1192,8 +1196,9 @@ function stepWalk(dt){
   if (mag < .05) return;
   mv.normalize().multiplyScalar(sp * mag);
   const p = camera.position;
-  if (!blocked(p.x + mv.x, p.z)) p.x += mv.x;
-  if (!blocked(p.x, p.z + mv.z)) p.z += mv.z;
+  const r = walkRadius();
+  if (!blocked(p.x + mv.x, p.z, r)) p.x += mv.x;
+  if (!blocked(p.x, p.z + mv.z, r)) p.z += mv.z;
 }
 addEventListener('keydown', e => {
   if (!active || e.target.matches('input,select,textarea')) return;
@@ -1231,6 +1236,7 @@ function bindUI(){
     if (k === 'furn'){ furnG.visible = opt.furn; if (!opt.furn && ui.sel?.kind === 'furn') window.select(null); }
     if (k === 'labels') showLabels(opt.labels && opt.mode === 'orbit' && !anim);
     if (k === 'night') applyLight();
+    if (k === 'chair' && opt.mode === 'walk') camera.position.y = eyeHeight();
   });
   $('#sun').oninput = e => { opt.hour = +e.target.value; applyLight(); };
 }
@@ -1266,6 +1272,6 @@ window.View3D = {enter, exit, relang, sync:() => sync(), shot, groundAt, model,
       return {walls:[...walls.values()],fixtures:furnG.children.filter(o=>o.userData.fixtureId).map(o=>o.userData.fixtureId),
         ghosts:model.all().filter(o=>o.changeState==='demolished').map(o=>o.elementId),
         changed:model.all().filter(o=>o.changeState==='added'||o.changeState==='modified').map(o=>`${o.elementKind}:${o.elementId}:${o.changeState}`),
-        ...(walkPoint ? {blocked:blocked(wx(walkPoint[0]),wz(walkPoint[1]))} : {})};
+        ...(walkPoint ? {blocked:blocked(wx(walkPoint[0]),wz(walkPoint[1]),walkRadius())} : {}), walkRadius:walkRadius(), eyeHeight:eyeHeight()};
   },
   flyToRoom:id => active && !anim && flyToRoom(id), walking:() => active && opt.mode === 'walk'};

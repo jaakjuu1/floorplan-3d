@@ -7,6 +7,7 @@ import { projectUnit } from './model/render-unit';
 import { traceOpening, traceRoom, traceWall } from './model/trace';
 import * as UnitEdit from './model/edit';
 import * as UnitRules from './model/rules';
+import { findRoute } from './model/route';
 import type { UnitInputs } from './model/unit-input-v1';
 import editorScriptUrl from './plan2d/editor.js?url';
 import * as PlanBackground from './io/background';
@@ -28,12 +29,13 @@ declare global {
       traceOpening: typeof traceOpening;
       edit: typeof UnitEdit;
       rules: typeof UnitRules;
+      findRoute: typeof findRoute;
     };
   }
 }
 
 window.UnitModel = {
-  demoUnit: parseUnit(JSON.parse(demoUnitJson)), projectUnit, parseDesign, loadDesign, saveDesign, traceWall, traceRoom, traceOpening, edit: UnitEdit, rules: UnitRules,
+  demoUnit: parseUnit(JSON.parse(demoUnitJson)), projectUnit, parseDesign, loadDesign, saveDesign, traceWall, traceRoom, traceOpening, edit: UnitEdit, rules: UnitRules, findRoute,
 };
 window.PlanBackground = PlanBackground;
 window.AttachmentIO = AttachmentIO;

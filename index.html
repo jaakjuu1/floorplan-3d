@@ -54,7 +54,7 @@ aside.right{border-right:0;border-left:1px solid var(--line)}
 main{position:relative;overflow:hidden;background:var(--paper)}
 #plan{width:100%;height:100%;display:block;touch-action:none;cursor:default}
 #plan.panning{cursor:grabbing}
-#plan.tool-measure,#plan.tool-wall,#plan.tool-fixture{cursor:crosshair}
+#plan.tool-measure,#plan.tool-wall,#plan.tool-fixture,#plan.tool-route{cursor:crosshair}
 #plan .wall{pointer-events:none}
 #plan.tool-demolish .wall,#plan.tool-select .wall{pointer-events:all;cursor:pointer}
 #plan.tool-select .wall:hover{opacity:.82}
@@ -182,6 +182,11 @@ main.animating #hint3d{opacity:0}
 .rule-badge{display:inline-block;padding:0 6px;border-radius:8px;font-size:10px;line-height:16px;font-weight:600}
 .rule-badge.ilmoitus{background:#e3ecf5;color:#2d4f74}.rule-badge.tarkista{background:#f6ead3;color:#7a5a1c}
 .rule-badge.suositus{background:#f3e3dc;color:#8a3f24}.rule-badge.info{background:#eee;color:#555}.rule-badge.ok{background:#dcefe0;color:#24603a}
+.params label{display:grid;grid-template-columns:1fr 92px;align-items:center;gap:6px;margin-top:6px;font-size:12px}
+.params input{width:100%;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.params small{grid-column:1/-1;color:var(--muted);font-size:10px;margin-top:-4px}
+.params summary{cursor:pointer;font-weight:600;font-size:13px}
+.route-result{font-size:12px;line-height:1.5}
 .rule-profile{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--muted)}
 .background-mode span{font-size:12px}
 .background-controls dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:14px;padding:0;box-shadow:0 16px 50px #0004}
@@ -272,6 +277,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
       <button class="btn" data-tool="demolish" title="Pura ei-kantavia seiniä (X)" data-en-title="Demolish non-bearing walls (X)" data-en="Demolish">Purku</button>
       <button class="btn" data-tool="wall" title="Uusi seinä (W)" data-en-title="New wall (W)" data-en="New wall">Uusi seinä</button>
       <button class="btn" data-tool="fixture" title="Lisää kiintokaluste, esim. tukikahva (K)" data-en-title="Add fixture, e.g. grab bar (K)" data-en="Fixture">Kiintokaluste</button>
+      <button class="btn" data-tool="route" title="Kulkureitti pyörätuolilla (U)" data-en-title="Wheelchair route (U)" data-en="Route">Kulkureitti</button>
     </div>
     <div class="grp only2d">
       <button class="btn" id="zoomOut" title="Loitonna" data-en-title="Zoom out">−</button>
@@ -309,6 +315,7 @@ main.drawer-panel #fab{opacity:0;visibility:hidden}
       <button class="btn chip on" data-t="furn" data-en="Furniture">Kalusteet</button>
       <button class="btn chip on" data-t="labels" data-en="Labels">Huoneiden nimet</button>
       <button class="btn chip" data-t="night" data-en="Night">Yö</button>
+      <button class="btn chip" data-t="chair" data-en="Wheelchair" title="Kävely pyörätuolin leveydellä ja istuvan katseen korkeudella" data-en-title="Walk at wheelchair width and seated eye height">Pyörätuoli</button>
     </div>
     <div class="grp only3d"><label class="range"><span data-en="Sun">Aurinko</span> <input type="range" id="sun" min="7" max="18" step=".25" value="10" style="width:84px"><span id="sunT">10:00</span></label></div>
     <div class="spacer"></div>

@@ -15,6 +15,14 @@ export interface Finding {
   circle?: { x: number; y: number; d: number }; // model mm, y up
 }
 type Rule = (typeof rulesFile.rules)[number] & { params?: Record<string, unknown> };
+export type ParameterKey = keyof typeof rulesFile.parameters;
+export const PARAMETERS = rulesFile.parameters;
+export const SOURCES = rulesFile.sources;
+/** Standard default unless the project overrides it in unit.user. */
+export function parameter(unit: Pick<UnitInputs, 'user'>, key: ParameterKey): number {
+  const own = unit.user?.[key];
+  return typeof own === 'number' && Number.isFinite(own) && own > 0 ? own : PARAMETERS[key].default;
+}
 type P = readonly [number, number];
 type Seg = readonly [P, P];
 
@@ -178,13 +186,13 @@ export function evaluate(unit: UnitInputs, rules: Rule[] = rulesFile.rules as Ru
         break;
       case 'door_clear_width':
         for (const o of openings) if (o.kind !== 'window') {
-          const value = Math.round((o.clear_width ?? o.width).value_mm), limit = params.min_mm as number;
+          const value = Math.round((o.clear_width ?? o.width).value_mm), limit = parameter(unit, params.param as ParameterKey);
           push({ ok: value >= limit, value, limit, touched: touched.has(o.id), element: { kind: 'opening', id: o.id } }, o.id);
         }
         break;
       case 'threshold_height':
         for (const t of thresholds) {
-          const value = Math.round(t.height.value_mm), limit = params.max_mm as number;
+          const value = Math.round(t.height.value_mm), limit = parameter(unit, params.param as ParameterKey);
           push({ ok: value <= limit, value, limit, touched: touched.has(t.id) || (!!t.at_opening && touched.has(t.at_opening)),
             element: { kind: 'threshold', id: t.id } }, t.id);
         }
@@ -192,13 +200,13 @@ export function evaluate(unit: UnitInputs, rules: Rule[] = rulesFile.rules as Ru
       case 'free_circle':
         for (const r of rooms) if ((params.rooms as string[]).includes(r.kind)) {
           const circle = freeCircle(r, walls, fixtures);
-          const limit = params.min_mm as number;
+          const limit = parameter(unit, params.param as ParameterKey);
           push({ ok: circle.d >= limit, value: circle.d, limit, circle, touched: touched.has(r.id), element: { kind: 'room', id: r.id } }, r.name);
         }
         break;
       case 'wc_side_space':
         for (const f of fixtures) if (f.kind === 'wc') {
-          const room = roomOf(xy(f), rooms), value = wcSideSpace(f, room, walls, fixtures), limit = params.min_mm as number;
+          const room = roomOf(xy(f), rooms), value = wcSideSpace(f, room, walls, fixtures), limit = parameter(unit, params.param as ParameterKey);
           push({ ok: value >= limit, value, limit, touched: touched.has(f.id) || (!!room && touched.has(room.id)), element: { kind: 'fixture', id: f.id } }, f.id);
         }
         break;

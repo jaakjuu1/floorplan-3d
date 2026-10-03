@@ -166,7 +166,7 @@ const svg = $('#plan');
 
 
 /* ======================= Tila / historia / tallennus ======================= */
-const ui = {tool:'select', sel:null, mA:null, mCur:null, wA:null, wCur:null,
+const ui = {tool:'select', sel:null, mA:null, mCur:null, wA:null, wCur:null, route:null,
   newWall:{thickness:100}, newFixture:{kind:'grab_bar', width:600, depth:80},
   layers:{dims:true, labels:true, furn:true, grid:false, bearing:false, wallSnap:true}};
 let view = {x0:0, y0:0, s:.06};
@@ -507,6 +507,7 @@ function renderMeasure(){
   let s = state.measures.map(m => one(m.a,m.b)).join('');
   if (ui.mA && ui.mCur) s += one(ui.mA, ui.mCur, true);
   if (ui.mA) s += `<circle cx="${ui.mA.x}" cy="${ui.mA.y}" r="${3*k}" fill="#2f5d62"/>`;
+  s += routeSvg(k);
   if (ui.tool === 'wall' && ui.wA){
     const a = ui.wA, b = ui.wCur || a, L = Math.hypot(b.x-a.x, b.y-a.y), t = ui.newWall.thickness/2;
     if (L >= 1){
@@ -551,6 +552,7 @@ function renderSel(){
 
 function renderAll(){
   validateSel();
+  if (ui.route?.goal){ const key = JSON.stringify([state.unit, state.furniture]); if (key !== ui.route.key){ ui.route.key = key; solveRoute(); } }
   renderGrid(); renderRooms(); renderFurn(); renderWalls(); renderOpenings(); renderDims(); renderLabels(); renderMeasure(); renderSel(); renderPanel(); updateHeader();
   backgroundUI.render();
   window.View3D?.sync();
@@ -592,7 +594,7 @@ function overviewPanel(){
     return `<tr><td><span class="sw" style="background:${MATS[m].sw}"></span>${nm(MATS[m].name)}</td><td class="r">${fmt(a,1)} m²</td><td class="r">${Math.round(c).toLocaleString('fi-FI')} €</td></tr>`; }).join('');
   const removed = demolishedIds(), dem = PLAN.demolishedWalls.filter(w => removed.has(w.id));
   const demLen = dem.reduce((a,w) => a + Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]), 0) / 1000;
-  return `${toolSection()}${changesSection()}${noticesSection()}
+  return `${toolSection()}${changesSection()}${noticesSection()}${paramsSection()}
   <section><h3>${tr('Huoneiden pinta-alat','Room Areas')} <small>${tr('Napsauta nähdäksesi / vaihtaaksesi lattian','Click to view / change flooring')}</small></h3>
     <table>${rows}</table>
     <div class="total"><span>${tr('Nettopinta-ala','Net floor area')}</span><b>${fmt(tot)} m²</b></div>
@@ -770,7 +772,7 @@ function bindElementPanel(sel){
 }
 
 function bindOverview(){
-  bindToolSection(); bindRules();
+  bindToolSection(); bindRules(); bindParams();
   document.querySelectorAll('#panel [data-revert]').forEach(b => b.onclick = () => editUnit(u => EDIT().revertChange(u, Number(b.dataset.revert))));
   document.querySelectorAll('#panel tr[data-room]').forEach(tr => tr.onclick = () => { select({kind:'room', id:tr.dataset.room}); if (is3D()) window.View3D.flyToRoom(tr.dataset.room); });
   $('#clearMeasure').onclick = () => state.measures.length && mutate(() => state.measures = []);
@@ -947,6 +949,7 @@ function syncModeHint(){
       : tr('Napsauta kahta pistettä (tai vedä) mitataksesi etäisyyden · kiinnittyy seiniin · Shift lukitsee vaaka-/pystysuuntaan · Esc peruu', 'Click two points (or drag) to measure · snaps to walls · Shift locks horizontal/vertical · Esc cancels'),
     demolish:tr('Napsauta harmaata ei-kantavaa seinää merkitäksesi sen purettavaksi, napsauta uudelleen palauttaaksesi · mustia kantavia seiniä ei voi purkaa', 'Click a grey non-bearing wall to remove it, click again to restore · black bearing walls cannot be removed'),
     wall:tr('Napsauta seinän alku- ja loppupiste · jatkuu edellisen päästä · kiinnittyy seinien päihin ja keskilinjoihin · Shift lukitsee vaaka-/pystysuuntaan · Esc lopettaa', 'Click the wall start and end · continues from the last end · snaps to wall ends and centre lines · Shift locks horizontal/vertical · Esc ends'),
+    route:tr('Napsauta lähtöpiste ja määränpää · reitti väistää seiniä, kiintokalusteita ja kalusteita · kapein kohta merkitään', 'Click a start and a destination · the route avoids walls, fixtures and furniture · the narrowest point is marked'),
     fixture:tr('Napsauta kohtaa · seinän lähellä kaluste asettuu seinää vasten ja sen suuntaiseksi · tyyppi ja koko oikeassa paneelissa', 'Click a spot · near a wall the fixture sits flush and parallel to it · type and size in the right panel')};
   const h = $('#modehint'); h.textContent = hints[ui.tool]; h.classList.toggle('show', !!hints[ui.tool]);
 }
@@ -1058,10 +1061,73 @@ function placeFixture(p){
 }
 // Screen pose → planned model pose; repeated moves update the fixture's single change.
 function moveFixtureTo(id, pose){ return editUnit(u => EDIT().moveFixture(u, id, {x:pose.x, y:-pose.y, rotation_deg:modelAngle(pose.rot)})); }
+/* ======================= Kulkureitti (pyörätuoli) ======================= */
+const RULES = () => window.UnitModel.rules;
+// Points are screen mm; the solver works in model mm (y up) and counts movable furniture as obstacles.
+function solveRoute(){
+  const r = ui.route, P = key => RULES().parameter(state.unit, key);
+  const extra = state.furniture.map(f => ({x:f.cx, y:-f.cy, width:f.w, depth:f.d, rotation_deg:-f.rot}));
+  r.result = window.UnitModel.findRoute({unit:state.unit, start:{x:r.start.x, y:-r.start.y}, goal:{x:r.goal.x, y:-r.goal.y},
+    pathWidth:P('path_width_mm'), doorWidth:P('door_clear_width_mm'), extra});
+}
+function placeRoutePoint(p){
+  if (!ui.route || ui.route.goal) ui.route = {start:p};
+  else { ui.route.goal = p; solveRoute(); }
+  renderMeasure(); renderPanel();
+}
+function routeSvg(k){
+  const r = ui.route; if (!r) return '';
+  let s = `<circle cx="${r.start.x}" cy="${r.start.y}" r="${5*k}" fill="#2f5d62"/>`;
+  const res = r.result;
+  if (r.goal) s += `<circle cx="${r.goal.x}" cy="${r.goal.y}" r="${5*k}" fill="#2f5d62"/>`;
+  if (res?.reachable){
+    const col = res.ok ? '#2f7d4f' : '#c9443a', n = res.narrowest;
+    s += `<polyline data-role="route" points="${res.path.map(p => `${p.x},${-p.y}`).join(' ')}" fill="none" stroke="${col}" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+    if (n) s += `<g data-role="routeNarrowest"><circle cx="${n.x}" cy="${-n.y}" r="${n.width/2}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
+      <text x="${n.x}" y="${-n.y - n.width/2 - 8*k}" font-size="${12*k}" text-anchor="middle" fill="${col}" font-weight="600" stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${n.width} mm</text></g>`;
+  }
+  return s;
+}
+function paramSource(key){
+  const p = RULES().PARAMETERS[key], src = RULES().SOURCES[p.source];
+  return `<a href="${esc(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.label)} ${esc(p.section)}</a>`;
+}
+function routeSection(){
+  const r = ui.route, res = r?.result;
+  let body = `<p class="muted">${tr('Napsauta lähtöpiste ja määränpää pohjassa.','Click a start and a destination on the plan.')}</p>`;
+  if (r && !r.goal) body = `<p class="muted">${tr('Lähtöpiste valittu. Napsauta määränpää.','Start set. Click the destination.')}</p>`;
+  if (res && !res.reachable) body = `<p class="route-result"><span class="rule-badge suositus">${tr('Suositus','Recommendation')}</span> ${tr('Reittiä ei löytynyt: kohteiden välillä ei ole kulkuyhteyttä.','No route: the points are not connected.')}</p>`;
+  if (res?.reachable){
+    const n = res.narrowest, where = n.at === 'door' ? tr(`ovella ${esc(n.opening)}`, `at door ${esc(n.opening)}`) : tr('kulkureitillä','on the route');
+    body = `<p class="route-result">${res.ok ? `<span class="rule-badge ok">✓ ${tr('täyttyy','met')}</span>` : `<span class="rule-badge suositus">${tr('Suositus','Recommendation')}</span>`}
+      ${tr(`Kapein kohta ${where}: ${n.width} mm, vaatimus ${n.required} mm. Reitin pituus ${(res.length_mm/1000).toFixed(1)} m.`,
+        `Narrowest point ${where}: ${n.width} mm, required ${n.required} mm. Route length ${(res.length_mm/1000).toFixed(1)} m.`)}</p>
+      <p class="muted">${tr('Ovilla vaatimus on oven vapaa leveys, muualla kulkureitin leveys. Ruudukon tarkkuus noin 20 mm. Kalusteet lasketaan esteiksi.','Doors use the door clear width, elsewhere the route width. Grid precision about 20 mm. Furniture counts as obstacles.')}</p>
+      <p class="muted">${paramSource('door_clear_width_mm')}<br>${paramSource('path_width_mm')}</p>`;
+  }
+  return `<section id="routeResult"><h3>${tr('Kulkureitti','Route')} <small>${tr('ohjeellinen','advisory')}</small></h3>${body}
+    ${r ? `<div class="actions"><button class="btn" id="routeClear">${tr('Tyhjennä reitti','Clear route')}</button></div>` : ''}</section>`;
+}
+function paramsSection(){
+  const P = RULES().PARAMETERS, user = state.unit.user ?? {};
+  const rows = Object.entries(P).map(([key, p]) => `<label>${esc(LANG === 'en' ? p.label_en : p.label_fi)}
+    <input type="number" min="1" step="10" data-param="${esc(key)}" value="${user[key] ?? ''}" placeholder="${p.default}"><small>${tr('oletus','default')} ${p.default} mm · ${paramSource(key)}</small></label>`).join('');
+  return `<section class="params"><details ${Object.keys(user).some(k => k in P) ? 'open' : ''}><summary>${tr('Mitoitusperusteet','Design parameters')}</summary>
+    <p class="muted">${tr('Standardin oletukset; muuta tarvittaessa tälle kohteelle. Tyhjä palauttaa oletuksen.','Standard defaults; override for this project if needed. Empty restores the default.')}</p>${rows}</details></section>`;
+}
+function bindParams(){
+  document.querySelectorAll('#panel [data-param]').forEach(input => input.onchange = () => {
+    const v = input.value.trim();
+    editUnit(u => EDIT().setUserValue(u, input.dataset.param, v === '' ? null : Number(v)));
+  });
+  if ($('#routeClear')) $('#routeClear').onclick = () => { ui.route = null; renderMeasure(); renderPanel(); };
+}
+
 function toolSection(){
   if (ui.tool === 'wall') return `<section id="toolOptions"><h3>${tr('Uusi seinä','New wall')} <small>${tr('muutos, ei nykytila','a change, not the survey')}</small></h3>
     <div class="form"><label class="full">${tr('Paksuus (mm)','Thickness (mm)')}<input type="number" id="nwThickness" min="20" step="10" value="${ui.newWall.thickness}"></label></div>
     <p class="muted">${tr('Uusi seinä on väliseinä ja sen mitat tallentuvat suunnitelmana (assumed). Esc lopettaa ketjun.','The new wall is a partition; its sizes are saved as planned (assumed). Esc ends the chain.')}</p></section>`;
+  if (ui.tool === 'route' || ui.route) return routeSection();
   if (ui.tool === 'fixture'){
     const f = ui.newFixture, kinds = Object.entries(FIXTURE_KIND).map(([k, l]) => `<option value="${k}" ${k === f.kind ? 'selected' : ''}>${tr(...l)}</option>`).join('');
     return `<section id="toolOptions"><h3>${tr('Lisää kiintokaluste','Add fixture')} <small>${tr('muutos','a change')}</small></h3>
@@ -1135,6 +1201,7 @@ svg.addEventListener('pointerdown', e => {
   }
   if (ui.tool === 'wall'){ placeWallPoint(wallSnap(p, e.shiftKey)); return; }
   if (ui.tool === 'fixture'){ placeFixture(p); return; }
+  if (ui.tool === 'route'){ placeRoutePoint({x:p.x, y:p.y}); return; }
   const h = t.closest('[data-handle]');
   if (h && ui.sel?.kind === 'furn'){
     drag = {kind:h.dataset.handle, id:ui.sel.id, sx:e.clientX, sy:e.clientY, before:snap(), moved:false};
@@ -1240,12 +1307,13 @@ document.addEventListener('keydown', e => {
   if (k === '[' || k === ']'){ drawer(k === '[' ? 'lib' : 'panel'); return; }
   if (k === 'f' && e.shiftKey){ toggleFullscreen(); return; }
   if (k === 't') setView(is3D() ? '2d' : '3d');
-  else if (is3D() && ['v','m','x','w','k','f','+','=','-'].includes(k)) return;
+  else if (is3D() && ['v','m','x','w','k','u','f','+','=','-'].includes(k)) return;
   else if (k === 'v') setTool('select');
   else if (k === 'm') setTool('measure');
   else if (k === 'x') setTool('demolish');
   else if (k === 'w') setTool('wall');
   else if (k === 'k') setTool('fixture');
+  else if (k === 'u') setTool('route');
   else if (k === 'f') fitView();
   else if (k === 'r') rotateSel(e.shiftKey ? -90 : 90);
   else if (k === 'delete' || k === 'backspace'){ e.preventDefault(); deleteSel(); }

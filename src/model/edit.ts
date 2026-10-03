@@ -145,6 +145,15 @@ export function setProfile(unit: UnitInputs, profile: string, on: boolean): Edit
   return accept(next, profile);
 }
 
+/** Override (or with null, reset) one project dimension parameter; unit.user holds numbers only, never health data. */
+export function setUserValue(unit: UnitInputs, key: string, value: number | null): Edited {
+  if (value != null && !(Number.isFinite(value) && value > 0)) throw new Error('Anna positiivinen millimetriarvo');
+  const next = structuredClone(unit), user = { ...(next.user ?? {}) };
+  if (value == null) delete user[key]; else user[key] = Math.round(value);
+  next.user = user;
+  return accept(next, key);
+}
+
 /** Change-drawing classes: new elements in red, changed ones highlighted (§5.6). */
 export function changeMarks(unit: UnitInputs): { added: string[]; modified: string[] } {
   const added = new Set<string>(), modified = new Set<string>();

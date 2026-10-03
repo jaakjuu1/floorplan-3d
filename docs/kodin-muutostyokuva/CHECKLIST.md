@@ -257,6 +257,9 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
 ### Profiili `esteettomyys`
 - [x] **[EI-KOODI]** Viitearvot tarkistettu YM:n asetuksesta 241/2017 ja kirjattu
       lähteineen ([SAANNOT.md](SAANNOT.md), 2026-10-03)
+- [x] **[FP]** Muokattavat mitoitusperusteet (`unit.user`, standardin oletukset
+      lähteineen) ja kulkureitti (`path_width`, 2D-työkalu) 2026-10-03; käyttäjän
+      päätös: ei henkilökohtaisia arvoja. [SAANNOT.md](SAANNOT.md)
 - [ ] **[MOL]** Oviaukon vapaa leveys (`min`, käyttäjäkohtainen parametri, tarkkuus
       ≤ 5 mm)
 - [ ] **[MOL]** Kynnyskorkeus (`max`, menetelmä `tape`)
@@ -274,6 +277,9 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
       globaalin 50 mm:n sijaan
 
 ### Pyörätuolisimulaatio (§7.4)
+- [x] **[FP]** Työpöytäosuus 2026-10-03: 3D-kävely pyörätuolitilassa (törmäyssäde
+      pyörätuolin leveydestä, katse 1,2 m) ja 2D-kulkureitti kapeimman kohdan
+      raportilla; pituuden huomioiva kääntyminen puuttuu
 - [ ] **[FP]** `blocked()` (`src/view3d/view3d.js:1071`) yleistetty: törmäysmuoto parametrina
 - [ ] **[FP]** Pyörätuolin mitat käyttäjäkohtaisista parametreista
 - [ ] **[FP]** 2D: kääntöympyrät ja kapeikot näkyviin

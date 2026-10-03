@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { readUnit } from '../src/io/unit';
-import { addFixture, addWall, demolishWall, modifyOpening, moveFixture, removeThreshold } from '../src/model/edit';
-import { evaluate, surfaced } from '../src/model/rules';
+import { addFixture, addWall, demolishWall, modifyOpening, moveFixture, removeThreshold, setUserValue } from '../src/model/edit';
+import { evaluate, parameter, surfaced } from '../src/model/rules';
 
 const unit = () => readUnit(readFileSync(new URL('../examples/accessibility-unit.json', import.meta.url), 'utf8'));
 const find = (fs: ReturnType<typeof evaluate>, rule: string, id?: string) => fs.find(f => f.rule === rule && (!id || f.element?.id === id));
@@ -54,4 +54,16 @@ test('fixture moves update free space and the WC side clearance', () => {
   // A demolished wall whose type is only assumed asks for evidence.
   const assumed = unit(); assumed.baseline.walls![1].source_refs = ['assumption:typical'];
   assert.ok(find(evaluate(demolishWall(assumed, 'w2').unit), 'muutostyo.seina_oletus', 'w2'));
+});
+
+test('limits are standard defaults that a project can override in unit.user', () => {
+  const u = unit();
+  assert.equal(parameter(u, 'door_clear_width_mm'), 800);
+  const strict = setUserValue(u, 'door_clear_width_mm', 900).unit;
+  assert.equal(parameter(strict, 'door_clear_width_mm'), 900);
+  const door = evaluate(strict).find(f => f.rule === 'esteettomyys.oven_vapaa_leveys' && f.element?.id === 'o1')!;
+  assert.deepEqual([door.ok, door.limit], [false, 900]);
+  assert.equal(setUserValue(strict, 'door_clear_width_mm', null).unit.user!.door_clear_width_mm, undefined);
+  assert.throws(() => setUserValue(u, 'door_clear_width_mm', -5), /positiivinen/);
+  assert.deepEqual(strict.changes, u.changes); // metadata, not the change layer
 });
