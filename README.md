@@ -26,6 +26,9 @@ Arkkitehtuuri ja vaiheet: [ARKKITEHTUURI.md](docs/kodin-muutostyokuva/ARKKITEHTU
   kynnys, vaihda lattia tai kiintokaluste
 - Uusi seinä (`W`, suunta lukittuu suoraksi ja pää napsahtaa seiniin; Shift = vapaa kulma) ja kiintokaluste kuten tukikahva (`K`); kiintokalusteen siirto
   vetämällä, nuolinäppäimillä ja `R`-kierrolla
+- Ovet ja aukot raahataan vasemman kirjaston "Ovet ja aukot" -osiosta seinälle
+  (väliovet, pariovi, liukuovet, oviaukko, ikkuna), siirretään seinää pitkin ja
+  poistetaan Deletellä; myös kartoitetun kiintokalusteen voi poistaa (`unit-v2`)
 - Muutoslista yleisnäkymässä, yksittäisen muutoksen peruminen; purettava
   keltaisena, uusi ja muutettu punaisena
 - 3D:n elementit ovat Three.js-objekteja metodeineen, esim.

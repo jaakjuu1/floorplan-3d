@@ -299,7 +299,10 @@ kirjattu. Myös pohjapiirustuksesta aloituksen selainpolku (§6.5) läpäisty.
       keskilinjoihin, Shift vaaka/pysty) ja "Kiintokaluste" (K: seinän lähellä
       seinää vasten ja sen suuntaisesti, esim. tukikahva). Kiintokalusteen siirto
       vetämällä 2D:ssä ja 3D:ssä, nuolinäppäimillä, R-kierrolla ja paneelista;
-      siirrot päivittävät kalusteen yhtä muutosta (`moveFixture`). Puhelinkäyttöä ei ole testattu
+      siirrot päivittävät kalusteen yhtä muutosta (`moveFixture`). unit-v2 molemmissa
+      repoissa: `add_opening`, `remove_opening`, `remove_fixture`; ovikirjasto
+      raahauksineen, aukon siirto seinää pitkin, poistettavat keltaisina. Kantavan
+      seinän muutos sallitaan huomautuksella (käyttäjän päätös). Puhelinkäyttöä ei ole testattu
 - [ ] **[FP]** Nykytila / muutos -vaihto 2D:ssä ja 3D:ssä
 - [ ] **[FP]** Muutosvärit 2D-näkymässä (K7:n mukaisesti)
 

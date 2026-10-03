@@ -306,7 +306,18 @@ operaatioita:
 { "op": "add_fixture",     "fixture": { "kind": "grab_bar", /* … */ } }
 { "op": "replace_fixture", "target": "f-7", "fixture": { /* … */ } }
 { "op": "change_finish",   "room": "r-kph", "floor": "tile_antislip", "walls": "tile" }
+// unit-v2 (2026-10-03):
+{ "op": "add_opening",     "opening": { /* uusi Opening: ovi, liukuovi, ikkuna tai aukko */ } }
+{ "op": "remove_opening",  "target": "o-4" }
+{ "op": "remove_fixture",  "target": "f-7" }
 ```
+
+**unit-v2 (2026-10-03):** uudet operaatiot lisättiin molempiin repoihin (RK:n
+Pydantic-malli ja `apply`, skeema, yhteiset `fixtures/`-tapaukset, FP:n `apply`).
+Tiedosto, joka käyttää niitä, merkitään `schema_version: "unit-v2"`; tiedosto
+ilman niitä pysyy kelvollisena `unit-v1`:nä, ja vanhempi lukija hylkää v2:n
+selvästi eikä tulkitse sitä väärin. Uusi aukko ei saa mennä päällekkäin saman
+seinän toisen aukon kanssa. Aukon poisto vie sen kynnykset.
 
 - Tavoitetila = `apply(baseline, changes)`. Laskenta on deterministinen ja sama
   molemmissa repoissa (yhteiset testitapaukset, luku 12).
@@ -325,7 +336,15 @@ operaatioita:
 
 **Muutosten muokkaus 2026-10-03 (työpöytä ensin):** `src/model/edit.ts` on ainoa
 tie muutoskerrokseen: `demolishWall`, `restoreWall`, `addWall`, `modifyOpening`,
-`removeThreshold`, `setFloor`, `addFixture`, `replaceFixture` ja `revertChange`.
+`removeThreshold`, `setFloor`, `addFixture`, `replaceFixture`, `moveFixture`,
+`addOpening`, `moveOpening`, `removeOpening`, `removeFixture` ja `revertChange`.
+Käyttäjän päätös 2026-10-03: lopullisen päätöksen tekee ihminen. Myös kantavan,
+ulko- ja huoneistojen välisen seinän purku tai uusi aukko sallitaan, ja sääntö
+`muutostyo.kantava` näyttää Tarkista-huomautuksen lähteineen. Seinän tyyppi on
+mallin tieto (jäljentäjän valinta tai tuodun mallin lähde), ja paneeli näyttää
+sen lähteen. Ovet ja aukot raahataan vasemman kirjaston "Ovet ja aukot"
+-osiosta seinälle (väliovet 800/900/1000, pariovi, liukuovet, oviaukko, ikkuna;
+mitat suunnitelmaoletuksia) ja niitä voi siirtää seinää pitkin.
 Jokainen palauttaa irrotetun, `parseUnit` + `apply` -validoidun mallin, jossa on
 täsmälleen yksi uusi tai poistettu operaatio. Suunnitellut mitat ovat
 `assumed`/`assumption`, viite `design:<id>/<kenttä>`. Kantavaa, ulko- tai

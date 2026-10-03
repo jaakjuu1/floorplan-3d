@@ -49,15 +49,36 @@
       "params": {
         "ops": [
           "demolish_wall",
-          "add_wall"
+          "add_wall",
+          "add_opening",
+          "remove_opening"
         ]
       },
       "source": "rakentamislaki",
       "section": "42 § 3 mom.",
-      "title_fi": "Seinämuutos: lupatarve rakennusvalvonnasta",
-      "title_en": "Wall change: check permit need",
+      "title_fi": "Seinä- tai aukkomuutos: lupatarve rakennusvalvonnasta",
+      "title_en": "Wall or opening change: check permit need",
       "message_fi": "Rakentamislupa tarvitaan korjaus- ja muutostyöhön, joka on verrattavissa rakentamiseen tai voi vaarantaa rakennuksen terveellisyyden ja turvallisuuden. Tarkista lupatarve kunnan rakennusvalvonnasta.",
       "message_en": "A building permit is needed when the work is comparable to construction or may endanger health and safety. Check with the municipal building control."
+    },
+    {
+      "id": "muutostyo.kantava",
+      "profile": "muutostyo",
+      "severity": "tarkista",
+      "check": "structural_wall_change",
+      "params": {
+        "kinds": [
+          "load_bearing",
+          "external",
+          "party"
+        ]
+      },
+      "source": "rakentamislaki",
+      "section": "42 § 3 mom.",
+      "title_fi": "Kantava, ulko- tai huoneistojen välinen seinä",
+      "title_en": "Load-bearing, external or party wall",
+      "message_fi": "Muutos koskee seinää {element}, joka on merkitty tyypiksi {value}. Tällaisen seinän purku tai uusi aukko vaatii rakennesuunnittelijan ja yleensä rakentamisluvan. Tarkista tyyppi ja sen lähde; lopullisen päätöksen tekee ihminen.",
+      "message_en": "The change affects wall {element}, recorded as {value}. Demolishing it or opening it needs a structural engineer and usually a building permit. Check the type and its source; a person makes the final decision."
     },
     {
       "id": "muutostyo.seina_oletus",

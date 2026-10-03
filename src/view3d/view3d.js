@@ -800,7 +800,7 @@ function buildFurniture(f){
 const edit = build => window.editUnit(build), EDITS = () => window.UnitModel.edit;
 class ElementObject extends THREE.Group {
   constructor(kind, id, extra = {}){ super(); this.elementKind = kind; this.elementId = id; Object.assign(this.userData, {element:{kind, id}}, extra); }
-  get changeState(){ return this.userData.demolished ? 'demolished' : MARKS.added.has(this.elementId) ? 'added' : MARKS.modified.has(this.elementId) ? 'modified' : 'existing'; }
+  get changeState(){ return this.userData.demolished || this.userData.removed ? 'demolished' : MARKS.added.has(this.elementId) ? 'added' : MARKS.modified.has(this.elementId) ? 'modified' : 'existing'; }
   select(){ window.select({kind:this.elementKind, id:this.elementId}); return this; }
   /** Client coordinates of the top centre of the element's largest visible part (a wall's centre may be a door gap). */
   screenPosition(){
@@ -824,6 +824,9 @@ class WallObject extends ElementObject {
 class OpeningObject extends ElementObject {
   constructor(id){ super('opening', id); }
   resize(size){ return edit(u => EDITS().modifyOpening(u, this.elementId, size)); }
+  /** Millimetres from the host wall's start. */
+  moveAlong(mm){ return edit(u => EDITS().moveOpening(u, this.elementId, mm)); }
+  remove(){ return edit(u => EDITS().removeOpening(u, this.elementId)); }
   removeThresholds(){
     const ids = (TARGET.thresholds ?? []).filter(t => t.at_opening === this.elementId).map(t => t.id);
     return ids.length > 0 && edit(u => ids.reduce((r, id) => EDITS().removeThreshold(r.unit, id), {unit:u}));
@@ -838,6 +841,7 @@ class FixtureObject extends ElementObject {
   replaceWith(fixture){ return edit(u => EDITS().replaceFixture(u, this.elementId, fixture)); }
   /** Model millimetres (y up) and counter-clockwise degrees. */
   moveTo(pose){ return edit(u => EDITS().moveFixture(u, this.elementId, pose)); }
+  remove(){ return edit(u => EDITS().removeFixture(u, this.elementId)); }
 }
 const elements = new Map();
 const register = o => { elements.set(`${o.elementKind}:${o.elementId}`, o); return o; };
@@ -848,6 +852,8 @@ const model = {
   all:() => [...elements.values()],
   addWall:(a, b, options) => edit(u => EDITS().addWall(u, a, b, options)),
   addFixture:fixture => edit(u => EDITS().addFixture(u, fixture)),
+  /** Planned opening in a wall, e.g. {kind:'door', along_wall:1200, width:900, clear_width:800, swing:'left'}. */
+  addOpening:(wallId, opening) => edit(u => EDITS().addOpening(u, wallId, opening)),
 };
 
 /* ======================= Rakennus ======================= */
@@ -901,7 +907,7 @@ function buildArch(){
     OPENINGS.forEach(o => {
     const [ax,ay]=o.a, [bx,by]=o.b, cx=(ax+bx)/2, cy=(ay+by)/2, length=M(o.width), thick=Math.max(.025,M(o.thickness));
     const sill=M(o.sill||0), height=M(o.height||2100), head=Math.min(top,sill+height), angle=Math.atan2(-(by-ay),bx-ax);
-    const g=register(new OpeningObject(o.id)), changed=MARKS.modified.has(o.id), face=changed?newMat:wallMat; archUp.add(g);
+    const g=register(new OpeningObject(o.id)), changed=MARKS.modified.has(o.id)||MARKS.added.has(o.id), face=changed?newMat:wallMat; archUp.add(g);
     if(o.kind==='door'||o.kind==='sliding_door'){const floor=box(length,.012,thick,changed?newMat:mat('#d8d0c0',{roughness:.3}),wx(cx),.006,wz(cy));floor.rotation.y=angle;floor.castShadow=false;g.add(floor);}
     if(sill>0) wallLinear(o.a,o.b,o.thickness,0,Math.min(sill,top),o.host_wall,`sill-${o.id}`,g,face);
     if(top>head) wallLinear(o.a,o.b,o.thickness,head,top,o.host_wall,`lintel-${o.id}`,g,face);
@@ -920,13 +926,19 @@ function buildArch(){
     }
     if(o.kind!=='door') return;
     const h=o.h||o.a, dx=(bx-ax)/(o.width||1), dy=(by-ay)/(o.width||1), c=o.c||[dx,dy];
-    const swing=o.o||(o.swing==='right'?[c[1],-c[0]]:[-c[1],c[0]]), pivot=new THREE.Group(), dh=Math.min(Math.max(.1,height-.05),top);
-    pivot.position.set(wx(h[0]),0,wz(h[1]));
-    const leaf=box(length,dh,.04,mat(o.entry?'#6b4f3a':'#efe6d8',{roughness:.5}),length/2), knob=new THREE.Mesh(new THREE.SphereGeometry(.03,12,8),metal());
-    knob.position.set(length-.07,Math.min(1,dh-.05),0); knob.scale.z=2.2; pivot.add(leaf,knob);
-    const ang=v=>Math.atan2(-v[1],v[0]), door={pivot,a0:ang(c),a1:ang(swing),open:true,id:o.id,length};
-    if(door.a1-door.a0>Math.PI)door.a1-=Math.PI*2;if(door.a0-door.a1>Math.PI)door.a1+=Math.PI*2;
-    door.cur=door.a1;pivot.rotation.y=door.cur;leaf.userData.door=knob.userData.door=door;doors.push(door);g.add(pivot);
+    const swing=o.o||(o.swing==='right'?[c[1],-c[0]]:[-c[1],c[0]]), dh=Math.min(Math.max(.1,height-.05),top);
+    const ang=v=>Math.atan2(-v[1],v[0]);
+    // One leaf hinged at h closing along c; a double door gets a second, mirrored leaf at the far jamb.
+    const addLeaf=(hinge,close,len)=>{
+      const pivot=new THREE.Group(); pivot.position.set(wx(hinge[0]),0,wz(hinge[1]));
+      const leaf=box(len,dh,.04,mat(o.entry?'#6b4f3a':'#efe6d8',{roughness:.5}),len/2), knob=new THREE.Mesh(new THREE.SphereGeometry(.03,12,8),metal());
+      knob.position.set(len-.07,Math.min(1,dh-.05),0); knob.scale.z=2.2; pivot.add(leaf,knob);
+      const door={pivot,a0:ang(close),a1:ang(swing),open:true,id:o.id,length:len};
+      if(door.a1-door.a0>Math.PI)door.a1-=Math.PI*2;if(door.a0-door.a1>Math.PI)door.a1+=Math.PI*2;
+      door.cur=door.a1;pivot.rotation.y=door.cur;leaf.userData.door=knob.userData.door=door;doors.push(door);g.add(pivot);
+    };
+    if(o.swing==='double'){ addLeaf(h,c,length/2); addLeaf([h[0]+c[0]*o.width,h[1]+c[1]*o.width],[-c[0],-c[1]],length/2); }
+    else addLeaf(h,c,length);
   });
   applyLight(); applyGrow();
 }
@@ -935,6 +947,12 @@ function buildFurn(){
   clearGroup(furnG); forget('fixture');
   state.furniture.forEach(f => furnG.add(buildFurniture(f)));
   const fixtureTypes={wc:'toilet',sink:'vanity',shower:'shower',bathtub:'bathtub',stove:'stove',cabinet:'cabinet',grab_bar:'grabbar'};
+  // Fixtures a change removes stay as a yellow ghost that can be selected and restored.
+  PLAN.removedFixtures.forEach(f => {
+    const ghost=new THREE.Mesh(new THREE.BoxGeometry(M(f.width),.9,M(f.depth)),ghostMat);
+    ghost.position.set(wx(f.x),.45,wz(f.y)); ghost.rotation.y=-f.rotation_deg*Math.PI/180; ghost.renderOrder=2;
+    const fixture=register(new FixtureObject(f.id)); fixture.userData.removed=true; fixture.add(ghost); furnG.add(fixture);
+  });
   FIXTURES.forEach(f => {
     const color=MARKS.added.has(f.id)?'#e58f84':MARKS.modified.has(f.id)?'#efc27d':'#d8d1c5';
     const g=buildFurniture({id:`fixture:${f.id}`,type:fixtureTypes[f.kind]||'cabinet',name:f.kind,cx:f.x,cy:f.y,w:f.width,d:f.depth,rot:f.rotation_deg,color});
@@ -1276,7 +1294,7 @@ window.View3D = {enter, exit, relang, sync:() => sync(), shot, groundAt, model,
         const b=new THREE.Box3().setFromObject(o),size=b.getSize(new THREE.Vector3()), row=walls.get(o.userData.wallId)||{id:o.userData.wallId,length:0,segments:[]};
         row.length+=o.geometry.parameters.width;row.segments.push({position:o.position.toArray(),bounds:[size.x,size.y,size.z],rotationY:o.rotation.y});walls.set(row.id,row);
       });
-      return {walls:[...walls.values()],fixtures:furnG.children.filter(o=>o.userData.fixtureId).map(o=>o.userData.fixtureId),
+      return {walls:[...walls.values()],fixtures:furnG.children.filter(o=>o.userData.fixtureId&&!o.userData.removed).map(o=>o.userData.fixtureId),
         ghosts:model.all().filter(o=>o.changeState==='demolished').map(o=>o.elementId),
         changed:model.all().filter(o=>o.changeState==='added'||o.changeState==='modified').map(o=>`${o.elementKind}:${o.elementId}:${o.changeState}`),
         ...(walkPoint ? {blocked:blocked(wx(walkPoint[0]),wz(walkPoint[1]),walkRadius())} : {}), walkRadius:walkRadius(), eyeHeight:eyeHeight()};

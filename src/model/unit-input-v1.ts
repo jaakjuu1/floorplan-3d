@@ -1,6 +1,6 @@
 /* Generated from schemas/unit-input-v1.schema.json. Run npm run types:generate. */
 
-export type SchemaVersion = "unit-v1";
+export type SchemaVersion = "unit-v1" | "unit-v2";
 export type Id = string;
 export type Name = string;
 export type Address = string;
@@ -93,8 +93,22 @@ export type Op6 = "change_finish";
 export type Room1 = string;
 export type Floor2 = string | null;
 export type Walls2 = string | null;
+export type Op7 = "add_opening";
+export type Op8 = "remove_opening";
+export type Target4 = string;
+export type Op9 = "remove_fixture";
+export type Target5 = string;
 export type Changes = (
-  DemolishWall | AddWall | ModifyOpening | RemoveThreshold | AddFixture | ReplaceFixture | ChangeFinish
+  | DemolishWall
+  | AddWall
+  | ModifyOpening
+  | RemoveThreshold
+  | AddFixture
+  | ReplaceFixture
+  | ChangeFinish
+  | AddOpening
+  | RemoveOpening
+  | RemoveFixture
 )[];
 export type Profiles = string[];
 export type Recipients = string[];
@@ -276,6 +290,27 @@ export interface ChangeFinish {
   room: Room1;
   floor?: Floor2;
   walls?: Walls2;
+}
+/**
+ * unit-v2: a planned new door, window or opening in an existing or added wall.
+ */
+export interface AddOpening {
+  op: Op7;
+  opening: Opening;
+}
+/**
+ * unit-v2: close an opening; its thresholds go with it.
+ */
+export interface RemoveOpening {
+  op: Op8;
+  target: Target4;
+}
+/**
+ * unit-v2: remove a fixed fixture.
+ */
+export interface RemoveFixture {
+  op: Op9;
+  target: Target5;
 }
 export interface User {
   [k: string]: number;

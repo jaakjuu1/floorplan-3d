@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { readUnit } from '../src/io/unit';
 import { apply } from '../src/model/apply';
-import { addFixture, addWall, changeMarks, demolishWall, modifyOpening, moveFixture, removeThreshold, replaceFixture,
+import { addFixture, addOpening, addWall, changeMarks, demolishWall, modifyOpening, moveFixture, moveOpening, removeFixture, removeOpening, removeThreshold, replaceFixture,
   restoreWall, revertChange, setFloor } from '../src/model/edit';
 
 const unit = () => readUnit(readFileSync(new URL('../examples/accessibility-unit.json', import.meta.url), 'utf8'));
@@ -25,11 +25,11 @@ test('each edit appends exactly one validated change and leaves the survey basel
   assert.deepEqual(flat.unit.changes!.at(-1), { op: 'remove_threshold', target: 't1' });
   const floor = setFloor(flat.unit, 'r1', 'antislip');
   assert.deepEqual(floor.unit.changes!.at(-1), { op: 'change_finish', room: 'r1', floor: 'antislip' });
-  assert.deepEqual(changeMarks(floor.unit), { added: [], modified: ['o2', 'r1'] });
+  assert.deepEqual(changeMarks(floor.unit), { added: [], modified: ['o2', 'r1'], removed: [] });
 });
 
-test('walls: bearing walls stay, partitions can be demolished and restored, new walls are planned values', () => {
-  assert.throws(() => demolishWall(unit(), 'w1'), /Kantavia/);
+test('walls: any wall can be demolished (rules flag bearing ones) and restored, new walls are planned values', () => {
+  assert.deepEqual(demolishWall(unit(), 'w1').unit.changes, [{ op: 'demolish_wall', target: 'w1' }]);
   const gone = demolishWall(unit(), 'w2');
   assert.ok(!apply(gone.unit.baseline, gone.unit.changes!).walls!.some(w => w.id === 'w2'));
   assert.ok(!apply(gone.unit.baseline, gone.unit.changes!).openings!.some(o => o.id === 'o2'));
@@ -53,7 +53,7 @@ test('fixtures, reverting and invalid plans', () => {
   const swapped = replaceFixture(bar.unit, 'f1', { kind: 'wc', x: 800, y: 400, width: 400, depth: 700, height: 460 });
   const wc = apply(swapped.unit.baseline, swapped.unit.changes!).fixtures!.find(f => f.id === 'f1')!;
   assert.deepEqual(wc.height, planned(460, 'f1/height'));
-  assert.deepEqual(changeMarks(swapped.unit), { added: ['f-new-1'], modified: ['f1'] });
+  assert.deepEqual(changeMarks(swapped.unit), { added: ['f-new-1'], modified: ['f1'], removed: [] });
   assert.deepEqual(revertChange(swapped.unit, 1).unit, bar.unit);
 
   assert.throws(() => modifyOpening(unit(), 'o2', { clear_width: 1000 }), /hylättiin/); // wider than the frame opening
@@ -87,4 +87,36 @@ test('moving fixtures keeps one planned change per fixture', () => {
   assert.equal((moved.unit.changes![0] as any).op, 'add_fixture');
   assert.deepEqual((moved.unit.changes![0] as any).fixture.x, planned(1000, 'f-new-1/position'));
   assert.throws(() => moveFixture(original, 'nope', { x: 0, y: 0 }), /ei ole tavoitetilassa/);
+});
+
+test('unit-v2: openings are added, moved and removed, fixtures removed, and the file version follows', () => {
+  const original = unit();
+  assert.equal(original.schema_version, 'unit-v1');
+  const door = addOpening(original, 'w2', { kind: 'door', along_wall: 2700, width: 900, clear_width: 800, swing: 'left' });
+  assert.equal(door.id, 'o-new-1');
+  assert.equal(door.unit.schema_version, 'unit-v2');
+  const added = apply(door.unit.baseline, door.unit.changes!).openings!.find(o => o.id === door.id)!;
+  assert.deepEqual([added.host_wall, added.width, added.clear_width], ['w2', planned(900, 'o-new-1/width'), planned(800, 'o-new-1/clear_width')]);
+  assert.deepEqual(changeMarks(door.unit).added, ['o-new-1']);
+  // Overlapping an existing opening or leaving the wall is refused.
+  assert.throws(() => addOpening(original, 'w2', { kind: 'door', along_wall: 1800, width: 900 }), /overlaps/);
+  assert.throws(() => addOpening(original, 'w2', { kind: 'door', along_wall: 3500, width: 900 }), /hylättiin/);
+  // Sliding a planned door keeps one change; sliding an existing one adds one modify_opening, then updates it.
+  const slid = moveOpening(door.unit, door.id, 2900);
+  assert.equal(slid.unit.changes!.length, 1);
+  const existing = moveOpening(moveOpening(original, 'o2', 1200).unit, 'o2', 1100).unit;
+  assert.deepEqual(existing.changes, [{ op: 'modify_opening', target: 'o2', set: { along_wall: planned(1100, 'o2/along_wall') } }]);
+  assert.equal(existing.schema_version, 'unit-v1');
+  // Removing an existing door closes the wall and drops its threshold; a planned one is taken back.
+  const closed = removeOpening(original, 'o1').unit;
+  assert.deepEqual(closed.changes, [{ op: 'remove_opening', target: 'o1' }]);
+  const t = apply(closed.baseline, closed.changes!);
+  assert.ok(!t.openings!.some(o => o.id === 'o1') && !t.thresholds!.some(x => x.at_opening === 'o1'));
+  assert.deepEqual(changeMarks(closed).removed, ['o1']);
+  assert.deepEqual(removeOpening(door.unit, door.id).unit.changes, []);
+  const noWc = removeFixture(original, 'f1').unit;
+  assert.deepEqual(noWc.changes, [{ op: 'remove_fixture', target: 'f1' }]);
+  assert.equal(noWc.schema_version, 'unit-v2');
+  // A unit-v1 file may not carry unit-v2 operations.
+  assert.throws(() => readUnit(JSON.stringify({ ...noWc, schema_version: 'unit-v1' })), /requires schema_version unit-v2/);
 });

@@ -54,17 +54,20 @@ standardin oletuksia, joita voi tarvittaessa muuttaa kohteelle yleisnäkymän
   huomioi pyörätuolin pituutta kääntyessä. 3D-törmäys käyttää oviaukon
   karmileveyttä, 2D-reitti vapaata leveyttä.
 
-Editorin aiempi kantavan, ulko- ja huoneistojen välisen seinän purkueste
-(`demolishWall`) on työkalun suojaus, ei sääntömoottorin esto.
+Kantavan, ulko- ja huoneistojen välisen seinän muutoksia ei estetä (käyttäjän
+päätös 2026-10-03: ihminen tekee lopullisen päätöksen). Seinän tyyppi on mallin
+tieto, jonka jäljentäjä valitsee tai tuotu malli antaa lähteineen; paneeli näyttää
+lähteen, ja `muutostyo.kantava` muistuttaa tarkistamaan sen.
 
 ## Säännöt
 
 | Tunniste | Taso | Milloin näkyy | Lähde |
 |---|---|---|---|
 | `muutostyo.ilmoitus` | Ilmoitus | Mikä tahansa muutos | Asunto-osakeyhtiölaki 1599/2009 5 luku 2 § |
-| `muutostyo.seina_lupa` | Tarkista | Seinän purku tai uusi seinä | Rakentamislaki 751/2023 42 § 3 mom. |
+| `muutostyo.seina_lupa` | Tarkista | Seinän purku, uusi seinä, uusi tai poistettu aukko | Rakentamislaki 751/2023 42 § 3 mom. |
+| `muutostyo.kantava` | Tarkista | Kantavan, ulko- tai huoneistojen välisen seinän purku tai aukkomuutos | Rakentamislaki 751/2023 42 § 3 mom. |
 | `muutostyo.seina_oletus` | Tarkista | Puretun seinän tyypillä ei ole muuta kuin oletuslähdettä | Asunto-osakeyhtiölaki 5 luku 3 § |
-| `muutostyo.markatila` | Tarkista | Märkätilan pinta, siellä oleva kiintokaluste, sen ovi tai kynnys muuttuu | YM:n asetus 782/2017 28–29 § |
+| `muutostyo.markatila` | Tarkista | Märkätilan pinta, siellä oleva kiintokaluste (lisäys, vaihto, poisto), sen ovi tai kynnys muuttuu | YM:n asetus 782/2017 28–29 § |
 | `esteettomyys.oven_vapaa_leveys` | Suositus | Ovi tai kulkuaukko, vapaa leveys < 800 mm (puuttuessa karmiaukko) | VnA 241/2017 4 § 2 mom. |
 | `esteettomyys.kynnys` | Suositus | Kynnys > 20 mm | VnA 241/2017 4 § 3 mom. |
 | `esteettomyys.pesutila_vapaa_tila` | Suositus | Wc- tai pesutilan suurin vapaa ympyrä < Ø 1300 mm (palveluasuminen Ø 1500 mm) | VnA 241/2017 9 § 1–2 mom. |

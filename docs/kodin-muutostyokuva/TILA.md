@@ -32,15 +32,18 @@ npm run dev
 3. **Tee muutos.** Syötä vapaaksi leveydeksi 700 → Tallenna muutos. Tallennus
    onnistuu; sääntö muuttuu suositukseksi. Palaa yleisnäkymään: Huomiot listaa
    muutostyöilmoituksen, märkätilan, oven ja wc:n sivutilan lähteineen.
-4. **Pura ja lisää.** Valitse väliseinä → Merkitse purettavaksi (keltainen).
+4. **Ovi kirjastosta.** Vedä vasemman valikon "Ovet ja aukot" -osiosta väliovi
+   seinälle: esikatselu näyttää etäisyydet seinän päihin. Vedä ovea seinää pitkin,
+   vaihda aukeamissuunta paneelista, Delete poistaa (olemassa oleva ovi keltaiseksi).
+5. **Pura ja lisää.** Valitse väliseinä → Merkitse purettavaksi (keltainen).
    `W` piirtää uuden väliseinän (punainen), `K` lisää tukikahvan seinää vasten.
    Vedä wc-istuinta; seinäkiinnitys kääntää sen seinää vasten.
-5. **Kulkureitti.** `U`, napsauta eteinen ja kylpyhuone: reitti ja kapein kohta
+6. **Kulkureitti.** `U`, napsauta eteinen ja kylpyhuone: reitti ja kapein kohta
    piirtyvät. Mitoitusperusteissa oven arvo 900 muuttaa reitin punaiseksi.
-6. **3D.** `T` vaihtaa 3D:hen. Napsauta seinää, oven ylitystä tai kalustetta;
+7. **3D.** `T` vaihtaa 3D:hen. Napsauta seinää, oven ylitystä tai kalustetta;
    sama paneeli muokkaa. Purettu seinä on keltainen haamu, josta sen voi palauttaa.
    Kävele-tilassa "Pyörätuoli" kävelee pyörätuolin leveydellä.
-7. **Kumoa ja vie.** `Ctrl+Z` kumoaa jokaisen muutoksen erikseen. Tiedosto → Vie JSON
+8. **Kumoa ja vie.** `Ctrl+Z` kumoaa jokaisen muutoksen erikseen. Tiedosto → Vie JSON
    sisältää nykytilan muuttumattomana ja muutokset erillään.
 
 Pohjakuvan jäljentäminen: Ominaisuudet → Pohjakuva → Tuo, avaa lukitus,
@@ -71,11 +74,9 @@ Selaintestit: `background`, `trace` (työpöytä ja 390×844), `legacy-smoke`,
 - Kulkureitin 900 mm on johdettu oletus, ei säädösarvo.
 - Nykytilan lukitus (kartoituksen hyväksyntä) puuttuu: jäljennös voi muuttaa
   nykytilaa myöhemminkin.
-- Kantavan, ulko- ja huoneistojen välisen seinän purkueste on työkalun suojaus,
-  ei sääntö.
-- Ovea tai aukkoa ei voi lisätä muutoksena, eikä kartoitettua aukkoa tai
-  kiintokalustetta voi poistaa: unit-v1:ssä ei ole `add_opening`-, `remove_opening`-
-  tai `remove_fixture`-operaatiota. Aukon voi jäljentää nykytilaan pohjakuvasta.
+- Oven saranapuoli on aina seinän alkupäässä; paneelista voi vaihtaa vain
+  aukeamissuunnan (vasen/oikea) ja parioven. Saranan paikka ei ole mallissa.
+- Ovikirjaston mitat (karmiaukko ja vapaa leveys) ovat suunnitelmaoletuksia.
 - Tuonti lähiverkko-osoitteesta (http) käyttää SHA-256:n JavaScript-varatoteutusta,
   koska selain antaa WebCryptoa vain suojatussa yhteydessä.
 - Seinät ovat nurkissa päällekkäisiä suorakaiteita (ei viistettyjä liitoksia).

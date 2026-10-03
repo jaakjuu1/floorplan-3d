@@ -49,7 +49,7 @@ function applyStaticLang(){
 
 // Demo: examples/demo-unit.json, assumed/archive_drawing; ei vahvistettuja kenttämittoja.
 // Rakennusgeometria johdetaan unit-v1:stä; vanhaa koordinaattilistaa ei säilytetä.
-let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null, TARGET = null, MARKS = {added:new Set(), modified:new Set()}, FINDINGS = [];
+let ROOMS = [], WALLS = [], OPENINGS = [], FIXTURES = [], PLAN = null, TARGET = null, MARKS = {added:new Set(), modified:new Set(), removed:new Set()}, FINDINGS = [];
 const MATS = {
   wood:    {name:'Tammiparketti', price:55, sw:'#d8b88a'},
   walnut:  {name:'Pähkinäparketti', price:75, sw:'#9b7250'},
@@ -148,7 +148,7 @@ function project(){
   WALLS = PLAN.walls; OPENINGS = PLAN.openings; FIXTURES = PLAN.fixtures || [];
   TARGET = window.UnitModel.edit.targetState(state.unit);
   const marks = window.UnitModel.edit.changeMarks(state.unit);
-  MARKS = {added:new Set(marks.added), modified:new Set(marks.modified)};
+  MARKS = {added:new Set(marks.added), modified:new Set(marks.modified), removed:new Set(marks.removed)};
   FINDINGS = window.UnitModel.rules.evaluate(state.unit);
 }
 project();
@@ -233,7 +233,8 @@ function validateSel(){
   const s = ui.sel; if (!s) return;
   const ok = s.kind==='furn' ? !!getF(s.id) : s.kind==='room' ? ROOMS.some(r => r.id===s.id)
     : s.kind==='wall' ? [...WALLS, ...PLAN.demolishedWalls].some(w => w.id===s.id)
-    : s.kind==='opening' ? OPENINGS.some(o => o.id===s.id) : s.kind==='fixture' ? FIXTURES.some(f => f.id===s.id) : false;
+    : s.kind==='opening' ? [...OPENINGS, ...PLAN.removedOpenings].some(o => o.id===s.id)
+    : s.kind==='fixture' ? [...FIXTURES, ...PLAN.removedFixtures].some(f => f.id===s.id) : false;
   if (!ok) ui.sel = null;
 }
 const getF = id => state.furniture.find(f => f.id === id);
@@ -413,7 +414,8 @@ function renderFurn(){
   const types = {wc:'toilet',sink:'vanity',stove:'stove',cabinet:'cabinet',shower:'shower',bathtub:'bathtub',grab_bar:'grabbar'};
   const fixtureColor = id => MARKS.added.has(id) ? '#efb1a8' : MARKS.modified.has(id) ? '#f3d6a8' : '#d8d1c5';
   const fixtures = FIXTURES.map(f => `<g data-fixture="${esc(f.id)}" transform="translate(${f.x} ${f.y}) rotate(${f.rotation_deg})">${furnSVG(types[f.kind] || 'cabinet',f.width,f.depth,fixtureColor(f.id))}</g>`).join('');
-  g.innerHTML = furniture + fixtures;
+  const removed = PLAN.removedFixtures.map(f => `<g data-removed-fixture="${esc(f.id)}" transform="translate(${f.x} ${f.y}) rotate(${f.rotation_deg})"><rect x="${-f.width/2}" y="${-f.depth/2}" width="${f.width}" height="${f.depth}" fill="rgba(232,197,71,.38)" stroke="#a8861c" stroke-width="1.5" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/></g>`).join('');
+  g.innerHTML = furniture + fixtures + removed;
 }
 
 function renderWalls(){
@@ -432,13 +434,14 @@ function renderOpenings(){
   let s = '';
   OPENINGS.filter(o => o.kind === 'window' || o.kind === 'opening').forEach(o => {
     const [a,b] = o.a, [c,d] = o.b, dx=c-a, dy=d-b, n=Math.hypot(dx,dy)||1;
-    s += `<polygon data-opening="${esc(o.id)}" points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="${o.kind==='window'?'#f7fbfd':'transparent'}" ${o.kind==='window'?WS:'pointer-events="none"'}/>`;
+    s += `<polygon data-opening="${esc(o.id)}" points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="${o.kind==='window'?'#f7fbfd':'rgba(0,0,0,0)'}" ${o.kind==='window'?WS:'pointer-events="all"'}/>`;
     if(o.kind==='window') [1/3,2/3].forEach(t => { const off=(t-.5)*o.thickness, ox=-dy/n*off, oy=dx/n*off; s += `<line x1="${a+ox}" y1="${b+oy}" x2="${c+ox}" y2="${d+oy}" ${WS}/>`; });
   });
   const DS = 'stroke="#3d3a34" stroke-width="1" vector-effect="non-scaling-stroke"';
   OPENINGS.filter(o => o.kind !== 'window').forEach(o => {
     const [ax,ay] = o.a, [bx,by] = o.b, L = o.width, [hx,hy] = o.h || o.a;
     const col = o.entry ? '#b5653a' : '#3d3a34';
+    if (o.kind !== 'opening') s += `<polygon data-opening-frame="${esc(o.id)}" points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="rgba(0,0,0,0)" pointer-events="all"/>`;   // easy to grab the whole frame
     if (o.kind === 'sliding_door') {
       const dx=(bx-ax)/(L||1),dy=(by-ay)/(L||1), nx=Math.abs(dy)>Math.abs(dx)?dy:-dy,ny=Math.abs(dy)>Math.abs(dx)?-dx:dx, plen=L*.55, off=25;
       const panel=(start,sign)=>{const x0=ax+dx*start+nx*(off*sign-20),y0=ay+dy*start+ny*(off*sign-20),x1=x0+dx*plen,y1=y0+dy*plen;return `<polygon data-opening="${esc(o.id)}" points="${x0},${y0} ${x1},${y1} ${x1+nx*40},${y1+ny*40} ${x0+nx*40},${y0+ny*40}" fill="#fff" ${DS}/>`;};
@@ -446,14 +449,19 @@ function renderOpenings(){
     } else if (o.kind === 'door') {
       const dx=(bx-ax)/(L||1),dy=(by-ay)/(L||1), [cx,cy]=o.c || [dx,dy];
       const swing=o.o || (o.swing==='right' ? [dy,-dx] : [-dy,dx]), [ox,oy]=swing;
-      const sweep=ox*cy-oy*cx>0?1:0;
-      const endx=hx+cx*L, endy=hy+cy*L, openx=hx+ox*L, openy=hy+oy*L;
-      const tx=cx*Math.max(25,o.thickness*.16),ty=cy*Math.max(25,o.thickness*.16);
-      s += `<polygon data-opening="${esc(o.id)}" points="${hx},${hy} ${openx},${openy} ${openx+tx},${openy+ty} ${hx+tx},${hy+ty}" fill="#fff" stroke="${col}" stroke-width="${o.entry?1.8:1}" vector-effect="non-scaling-stroke"/><path d="M${openx} ${openy}A${L} ${L} 0 0 ${sweep} ${endx} ${endy}" fill="none" ${DS} stroke-dasharray="5 3" opacity=".7"/>`;
+      const leaf = (hx, hy, cx, cy, len) => {
+        const sweep=ox*cy-oy*cx>0?1:0, endx=hx+cx*len, endy=hy+cy*len, openx=hx+ox*len, openy=hy+oy*len;
+        const tx=cx*Math.max(25,o.thickness*.16),ty=cy*Math.max(25,o.thickness*.16);
+        return `<polygon data-opening="${esc(o.id)}" points="${hx},${hy} ${openx},${openy} ${openx+tx},${openy+ty} ${hx+tx},${hy+ty}" fill="#fff" stroke="${col}" stroke-width="${o.entry?1.8:1}" vector-effect="non-scaling-stroke"/><path d="M${openx} ${openy}A${len} ${len} 0 0 ${sweep} ${endx} ${endy}" fill="none" ${DS} stroke-dasharray="5 3" opacity=".7"/>`;
+      };
+      // A double door has two half-width leaves hinged at either jamb.
+      s += o.swing === 'double' ? leaf(hx, hy, cx, cy, L/2) + leaf(hx+cx*L, hy+cy*L, -cx, -cy, L/2) : leaf(hx, hy, cx, cy, L);
     }
     if (o.entry) s += `<path d="M${ax} ${ay}L${bx} ${by}" fill="none" stroke="#b5653a" stroke-width="2" vector-effect="non-scaling-stroke"/><text x="${ax}" y="${ay-120}" font-size="180" fill="#b5653a">${tr('Sisäänkäynti','Entry')}</text>`;
   });
-  OPENINGS.filter(o => MARKS.modified.has(o.id)).forEach(o => s += `<polygon points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#c9443a" stroke-width="2.5" vector-effect="non-scaling-stroke" pointer-events="none"/>`);
+  OPENINGS.filter(o => MARKS.modified.has(o.id) || MARKS.added.has(o.id)).forEach(o => s += `<polygon points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#c9443a" stroke-width="2.5" vector-effect="non-scaling-stroke" pointer-events="none"/>`);
+  // Openings a change closes stay visible as yellow ghosts that can be selected and restored.
+  PLAN.removedOpenings.forEach(o => s += `<polygon data-removed-opening="${esc(o.id)}" points="${o.polygon.map(p=>p.join(',')).join(' ')}" fill="rgba(232,197,71,.55)" stroke="#a8861c" stroke-width="1.5" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>`);
   $('#gOpen').innerHTML = s;
 }
 
@@ -509,6 +517,12 @@ function renderMeasure(){
   if (ui.mA && ui.mCur) s += one(ui.mA, ui.mCur, true);
   if (ui.mA) s += `<circle cx="${ui.mA.x}" cy="${ui.mA.y}" r="${3*k}" fill="#2f5d62"/>`;
   s += routeSvg(k);
+  const op = ui.openingPreview;
+  if (op?.polygon){
+    const col = op.ok ? '#c9443a' : '#777', c = op.polygon.reduce((m, p) => [m[0]+p[0]/4, m[1]+p[1]/4], [0, 0]);
+    s += `<polygon data-role="openingPreview" data-ok="${op.ok}" points="${op.polygon.map(p => p.join(',')).join(' ')}" fill="${op.ok ? 'rgba(201,68,58,.5)' : 'rgba(120,120,120,.4)'}" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      <text x="${c[0]}" y="${c[1] - 22*k}" font-size="${12*k}" text-anchor="middle" fill="${col}" font-weight="600" stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${op.ok ? `${op.along} mm | ${op.end} mm` : esc(op.reason)}</text>`;
+  }
   if (ui.tool === 'wall' && ui.wCur){
     const q = ui.wCur, snapped = q.kind === 'end' || q.kind === 'cross' || q.kind === 'line';
     s += snapped ? `<rect data-role="wallSnap" data-kind="${q.kind}" x="${q.x-5*k}" y="${q.y-5*k}" width="${10*k}" height="${10*k}" fill="none" stroke="#2f7d4f" stroke-width="2" vector-effect="non-scaling-stroke"/>`
@@ -545,7 +559,7 @@ function renderSel(){
         stroke="#fff" stroke-width="${3*k}" paint-order="stroke">${f.w} × ${f.d}</text>`;
     }
   } else if (ui.sel?.kind === 'wall' || ui.sel?.kind === 'opening'){
-    const el = ui.sel.kind === 'wall' ? [...WALLS, ...PLAN.demolishedWalls].find(w => w.id === ui.sel.id) : OPENINGS.find(o => o.id === ui.sel.id);
+    const el = ui.sel.kind === 'wall' ? [...WALLS, ...PLAN.demolishedWalls].find(w => w.id === ui.sel.id) : [...OPENINGS, ...PLAN.removedOpenings].find(o => o.id === ui.sel.id);
     if (el) s += `<polygon points="${el.polygon.map(p=>p.join(',')).join(' ')}" fill="rgba(181,101,58,.18)" stroke="#b5653a" stroke-width="2.5" vector-effect="non-scaling-stroke" pointer-events="none"/>`;
   } else if (ui.sel?.kind === 'room'){
     const r = ROOMS.find(r => r.id === ui.sel.id), c = elementFindings('room', ui.sel.id).find(f => f.circle)?.circle;
@@ -657,6 +671,9 @@ function changeLabel(c){
     case 'remove_threshold': return tr(`Poista kynnys ${esc(c.target)}`, `Remove threshold ${esc(c.target)}`);
     case 'add_fixture': return tr(`Lisää ${tr(...FIXTURE_KIND[c.fixture.kind])} ${esc(c.fixture.id)}`, `Add ${tr(...FIXTURE_KIND[c.fixture.kind])} ${esc(c.fixture.id)}`);
     case 'replace_fixture': return tr(`Vaihda kiintokaluste ${esc(c.target)}`, `Replace fixture ${esc(c.target)}`);
+    case 'add_opening': return tr(`Uusi ${tr(...OPENING_KIND[c.opening.kind]).toLowerCase()} seinään ${esc(c.opening.host_wall)} · ${Math.round(c.opening.width.value_mm)} mm`, `New ${tr(...OPENING_KIND[c.opening.kind]).toLowerCase()} in wall ${esc(c.opening.host_wall)} · ${Math.round(c.opening.width.value_mm)} mm`);
+    case 'remove_opening': return tr(`Poista aukko ${esc(c.target)}`, `Remove opening ${esc(c.target)}`);
+    case 'remove_fixture': return tr(`Poista kiintokaluste ${esc(c.target)}`, `Remove fixture ${esc(c.target)}`);
     case 'change_finish': return tr(`Lattia ${room(c.room)}: ${esc(nm(MATS[c.floor]?.name ?? c.floor ?? ''))}`, `Floor ${room(c.room)}: ${esc(nm(MATS[c.floor]?.name ?? c.floor ?? ''))}`);
   }
   return esc(c.op);
@@ -704,17 +721,27 @@ function wallPanel(id){
   const action = !live ? `<button class="btn primary" data-edit="restoreWall">${tr('Palauta seinä','Restore wall')}</button>`
     : added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista uusi seinä','Remove new wall')}</button>`
     : isTraced({kind:'wall', id}) ? `<button class="btn danger" data-edit="removeTraced">${tr('Poista jäljennös nykytilasta','Remove traced wall')}</button>`
-    : `<button class="btn danger" data-edit="demolishWall" ${locked ? 'disabled' : ''}>${tr('Merkitse purettavaksi','Mark for demolition')}</button>`;
+    : `<button class="btn danger" data-edit="demolishWall">${tr('Merkitse purettavaksi','Mark for demolition')}</button>`;
+  const refs = (src?.source_refs ?? state.unit.baseline.walls.find(x => x.id === id)?.source_refs ?? []).join(', ');
   return `<section><h3>${tr('Seinä','Wall')} <small>${esc(id)}</small></h3>
     <table><tr><td>${tr('Tila','State')}</td><td class="r">${live ? elementState(id) : tr('Purettava','To be demolished')}</td></tr>
       <tr><td>${tr('Tyyppi','Type')}</td><td class="r">${tr(...WALL_KIND[w.kind])}</td></tr>
+      <tr><td>${tr('Tyypin lähde','Type source')}</td><td class="r">${refs ? esc(refs) : `<span class="muted">${tr('ei lähdettä (oletus)','no source (assumed)')}</span>`}</td></tr>
       <tr><td>${tr('Pituus','Length')}</td><td class="r">${Math.round(Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]))} mm</td></tr>
       <tr><td>${tr('Paksuus','Thickness')}</td><td class="r">${prov(src?.thickness)}</td></tr></table>
-    ${live && !added && locked ? `<p class="muted">${w.kind === 'load_bearing' ? tr('Kantavan seinän muutos vaatii rakennesuunnittelijan.','Changing a load-bearing wall needs a structural engineer.') : tr('Ulko- ja huoneistojen välisiä seiniä ei pureta tässä työkalussa.','External and party walls are not demolished in this tool.')}</p>` : ''}
+    ${live && !added && locked ? `<p class="muted">${tr('Tarkista: kantavan, ulko- tai huoneistojen välisen seinän muutos vaatii rakennesuunnittelijan. Lopullisen päätöksen tekee ihminen.','Check: changing a load-bearing, external or party wall needs a structural engineer. A person makes the final decision.')}</p>` : ''}
     <div class="actions">${action}<button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
     ${rulesSection(elementFindings('wall', id))}`;
 }
 function openingPanel(id){
+  const ghost = PLAN.removedOpenings.find(o => o.id === id);
+  if (ghost && !OPENINGS.some(o => o.id === id)){
+    const src = state.unit.baseline.openings.find(o => o.id === id);
+    return `<section><h3>${tr(...OPENING_KIND[ghost.kind])} <small>${esc(id)}</small></h3>
+      <table><tr><td>${tr('Tila','State')}</td><td class="r">${tr('Poistettava','To be removed')}</td></tr>
+        <tr><td>${tr('Karmiaukko','Frame opening')}</td><td class="r">${prov(src?.width)}</td></tr></table>
+      <div class="actions"><button class="btn primary" data-edit="restoreOpening">${tr('Palauta aukko','Restore opening')}</button><button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+  }
   const o = OPENINGS.find(o => o.id === id), src = TARGET.openings?.find(x => x.id === id);
   if (!o || !src) return null;
   const thresholds = (TARGET.thresholds ?? []).filter(t => t.at_opening === id), modified = changeIndexes(c => c.op === 'modify_opening' && c.target === id);
@@ -722,18 +749,30 @@ function openingPanel(id){
     <table><tr><td>${tr('Tila','State')}</td><td class="r">${elementState(id)}</td></tr>
       <tr><td>${tr('Karmiaukko','Frame opening')}</td><td class="r">${prov(src.width)}</td></tr>
       <tr><td>${tr('Vapaa kulkuleveys','Clear width')}</td><td class="r">${prov(src.clear_width)}</td></tr>
+      <tr><td>${tr('Etäisyys seinän alusta','From wall start')}</td><td class="r">${prov(src.along_wall)}</td></tr>
       ${thresholds.map(t => `<tr><td>${tr('Kynnys','Threshold')} ${esc(t.id)}</td><td class="r">${prov(t.height)} <button class="btn" data-edit="removeThreshold" data-target="${esc(t.id)}">${tr('Poista','Remove')}</button></td></tr>`).join('')}</table>
     <div class="form" style="margin-top:10px">
       <label>${tr('Uusi karmiaukko (mm)','New frame opening (mm)')}<input type="number" id="oWidth" min="1" step="10" placeholder="${Math.round(src.width.value_mm)}"></label>
-      <label>${tr('Uusi vapaa leveys (mm)','New clear width (mm)')}<input type="number" id="oClear" min="1" step="10" placeholder="${src.clear_width ? Math.round(src.clear_width.value_mm) : ''}"></label></div>
+      <label>${tr('Uusi vapaa leveys (mm)','New clear width (mm)')}<input type="number" id="oClear" min="1" step="10" placeholder="${src.clear_width ? Math.round(src.clear_width.value_mm) : ''}"></label>
+      <label>${tr('Etäisyys seinän alusta (mm)','From wall start (mm)')}<input type="number" id="oAlong" min="0" step="10" placeholder="${Math.round(src.along_wall.value_mm)}"></label>
+      ${o.kind === 'door' ? `<label>${tr('Aukeaa','Opens')}<select id="oSwing">${[['left','Vasemmalle','Left'],['right','Oikealle','Right'],['double','Pariovi','Double']].map(([v,fi,en]) => `<option value="${v}" ${(src.swing ?? 'left') === v ? 'selected' : ''}>${tr(fi,en)}</option>`).join('')}</select></label>` : ''}</div>
+    <p class="muted">${tr('Ovea voi myös vetää seinää pitkin.','You can also drag the door along the wall.')}</p>
     <p class="muted">${tr('Suunniteltu mitta tallentuu oletuksena (assumed), ei kenttämittauksena.','A planned size is saved as assumed, not as a field measurement.')}</p>
     <div class="actions"><button class="btn primary" data-edit="modifyOpening">${tr('Tallenna muutos','Save change')}</button>
       ${modified.length ? `<button class="btn" data-edit="revertOpening">${tr('Peru aukon muutokset','Revert opening changes')}</button>` : ''}
-      ${isTraced({kind:'opening', id}) ? `<button class="btn danger" data-edit="removeTraced">${tr('Poista jäljennös nykytilasta','Remove traced opening')}</button>` : ''}
+      ${isTraced({kind:'opening', id}) ? `<button class="btn danger" data-edit="removeTraced">${tr('Poista jäljennös nykytilasta','Remove traced opening')}</button>`
+        : `<button class="btn danger" data-edit="removeOpening">${MARKS.added.has(id) ? tr('Poista uusi aukko','Remove new opening') : tr('Poista aukko (sulje seinä)','Remove opening (close the wall)')}</button>`}
       <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
     ${rulesSection([...elementFindings('opening', id), ...thresholds.flatMap(t => elementFindings('threshold', t.id))])}`;
 }
 function fixturePanel(id){
+  if (!FIXTURES.some(f => f.id === id) && PLAN.removedFixtures.some(f => f.id === id)){
+    const src = state.unit.baseline.fixtures.find(f => f.id === id);
+    return `<section><h3>${tr('Kiintokaluste','Fixture')} <small>${esc(id)}</small></h3>
+      <table><tr><td>${tr('Tila','State')}</td><td class="r">${tr('Poistettava','To be removed')}</td></tr>
+        <tr><td>${tr('Tyyppi','Type')}</td><td class="r">${tr(...FIXTURE_KIND[src.kind])}</td></tr></table>
+      <div class="actions"><button class="btn primary" data-edit="restoreFixture">${tr('Palauta kiintokaluste','Restore fixture')}</button><button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>`;
+  }
   const f = TARGET.fixtures?.find(x => x.id === id);
   if (!f) return null;
   const added = MARKS.added.has(id), kinds = Object.entries(FIXTURE_KIND).map(([k, l]) => `<option value="${k}" ${k === f.kind ? 'selected' : ''}>${tr(...l)}</option>`).join('');
@@ -753,7 +792,7 @@ function fixturePanel(id){
       <label class="full">${tr('Kierto (°, vastapäivään)','Rotation (°, counter-clockwise)')}<input type="number" id="xR" step="15" value="${f.rotation_deg ?? 0}"></label></div>
     <p class="muted">${tr('Vedä kalustetta tai käytä nuolinäppäimiä (Shift 100 mm) ja R-näppäintä. Seinäkiinnitys asettaa sen seinää vasten.','Drag it or use the arrow keys (Shift 100 mm) and R. Wall snap puts it against a wall.')}</p>
     <div class="actions"><button class="btn primary" data-edit="moveFixture">${tr('Siirrä','Move')}</button>
-      ${added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista lisätty kaluste','Remove added fixture')}</button>` : ''}
+      ${added ? `<button class="btn danger" data-edit="removeNew">${tr('Poista lisätty kaluste','Remove added fixture')}</button>` : `<button class="btn danger" data-edit="removeFixture">${tr('Poista kiintokaluste','Remove fixture')}</button>`}
       <button class="btn" data-edit="back">${tr('← Takaisin','← Back')}</button></div></section>
     ${rulesSection(elementFindings('fixture', id))}`;
 }
@@ -770,7 +809,19 @@ function bindElementPanel(sel){
     if (a === 'removeTraced') return deleteSel();
     if (a === 'removeThreshold') return editUnit(u => E.removeThreshold(u, b.dataset.target));
     if (a === 'revertOpening') return editUnit(revertAll(changeIndexes(c => c.op === 'modify_opening' && c.target === id)));
-    if (a === 'modifyOpening') return editUnit(u => E.modifyOpening(u, id, {width:num('#oWidth'), clear_width:num('#oClear')}));
+    if (a === 'modifyOpening'){
+      const src = TARGET.openings.find(o => o.id === id), swing = $('#oSwing')?.value, along = num('#oAlong');
+      const set = {width:num('#oWidth'), clear_width:num('#oClear'), ...(swing && swing !== (src.swing ?? 'left') ? {swing} : {})};
+      const hasSet = Object.values(set).some(v => v != null);
+      if (!hasSet && along == null) return toast(tr('Anna aukolle uusi mitta tai suunta','Enter a new size or direction'));
+      return editUnit(u => { let r = {unit:u, id}; if (hasSet) r = E.modifyOpening(r.unit, id, set); if (along != null) r = E.moveOpening(r.unit, id, along); return r; });
+    }
+    if (a === 'removeOpening') return deleteSel();
+    if (a === 'removeFixture') return deleteSel();
+    if (a === 'restoreOpening' || a === 'restoreFixture'){
+      const op = a === 'restoreOpening' ? 'remove_opening' : 'remove_fixture';
+      return editUnit(revertAll(changeIndexes(c => c.op === op && c.target === id)));
+    }
     if (a === 'moveFixture') return editUnit(u => E.moveFixture(u, id, {x:num('#xX'), y:num('#xY'), rotation_deg:num('#xR')}));
     if (a === 'replaceFixture'){
       const f = TARGET.fixtures.find(x => x.id === id);
@@ -922,8 +973,13 @@ function deleteSel(){
     if (WALLS.some(w => w.id === s.id)) toggleWall(s.id); else toast(tr('Seinä on jo merkitty purettavaksi','The wall is already marked for demolition'));
     return;
   }
-  if (s.kind === 'fixture' || s.kind === 'opening')
-    toast(tr('Kartoitetun kiintokalusteen tai aukon poistoon tarvitaan muutosoperaatio, jota huoneistomalli unit-v1 ei vielä tue.','Removing a surveyed fixture or opening needs a change operation that unit-v1 does not support yet.'));
+  if (s.kind === 'opening' && OPENINGS.some(o => o.id === s.id)){
+    if (editUnit(u => EDIT().removeOpening(u, s.id))) toast(MARKS.removed.has(s.id) ? tr('Aukko merkitty poistettavaksi','Opening marked for removal') : tr('Uusi aukko poistettu','New opening removed'));
+    return;
+  }
+  if (s.kind === 'fixture' && FIXTURES.some(f => f.id === s.id)){
+    if (editUnit(u => EDIT().removeFixture(u, s.id))) toast(MARKS.removed.has(s.id) ? tr('Kiintokaluste merkitty poistettavaksi','Fixture marked for removal') : tr('Lisätty kiintokaluste poistettu','Added fixture removed'));
+  }
 }
 function duplicateSel(){
   if (ui.sel?.kind !== 'furn') return;
@@ -954,8 +1010,6 @@ function addItem(it, x, y){
 function toggleWall(id){
   const active=WALLS.find(w=>w.id===id), w=active || PLAN.demolishedWalls.find(w=>w.id===id);
   if (!w) return;
-  if (w.kind === 'load_bearing') return toast(tr('Kantavia seiniä ei voi purkaa', 'Load-bearing walls cannot be removed'));
-  if (w.kind === 'external' || w.kind === 'party') return toast(tr('Ulkoseinää ei voi purkaa', 'External walls cannot be removed'));
   const length=Math.hypot(w.b[0]-w.a[0],w.b[1]-w.a[1]);
   if(active){ if(editUnit(u=>EDIT().demolishWall(u,id))) toast(tr(`Merkitty purettavaksi ${Math.round(length)} mm seinää`, `Marked ${Math.round(length)} mm of wall for removal`)); return; }
   if(editUnit(u=>EDIT().restoreWall(u,id))) toast(tr('Seinä palautettu', 'Wall restored'));
@@ -1216,6 +1270,12 @@ function endDrag(cancel){
     if (!cancel && d.moved && d.pose) moveFixtureTo(d.id, d.pose); else renderFurn();
     return;
   }
+  if (d.kind === 'opening'){
+    ui.openingPreview = null;
+    if (!cancel && d.moved && d.at?.ok) editUnit(u => EDIT().moveOpening(u, d.id, d.at.along));
+    else { if (d.moved && d.at && !d.at.ok) toast(d.at.reason); renderMeasure(); }
+    return;
+  }
   if (d.moved){ commit(d.before); renderAll(); }
 }
 
@@ -1248,6 +1308,10 @@ svg.addEventListener('pointerdown', e => {
     drag = {kind:h.dataset.handle, id:ui.sel.id, sx:e.clientX, sy:e.clientY, before:snap(), moved:false};
   } else if (ui.tool === 'demolish' && t.closest('[data-wall]')){
     toggleWall(t.closest('[data-wall]').dataset.wall); return;
+  } else if (ui.tool === 'select' && t.closest('[data-opening],[data-opening-frame]')){
+    const el = t.closest('[data-opening],[data-opening-frame]'), id = el.dataset.opening || el.dataset.openingFrame, o = OPENINGS.find(o => o.id === id);
+    if (ui.sel?.id !== id) select({kind:'opening', id});
+    drag = {kind:'opening', id, sx:e.clientX, sy:e.clientY, moved:false, preset:{width:o.width, ignore:id, wall:o.host_wall}, at:null};
   } else if (ui.tool === 'select' && t.closest('[data-fixture]') && !t.closest('[data-fid]')){
     const id = t.closest('[data-fixture]').dataset.fixture, f = FIXTURES.find(f => f.id === id);
     if (ui.sel?.id !== id) select({kind:'fixture', id});
@@ -1257,8 +1321,10 @@ svg.addEventListener('pointerdown', e => {
     if (ui.sel?.id !== f.id) select({kind:'furn', id:f.id});
     drag = {kind:'move', id:f.id, sx:e.clientX, sy:e.clientY, ox:p.x-f.cx, oy:p.y-f.cy, before:snap(), moved:false};
   } else {
-    const room = t.closest('[data-room]'), el = t.closest('[data-wall],[data-opening],[data-fixture]');
-    const pickEl = el && (el.dataset.wall ? {kind:'wall', id:el.dataset.wall} : el.dataset.opening ? {kind:'opening', id:el.dataset.opening} : {kind:'fixture', id:el.dataset.fixture});
+    const room = t.closest('[data-room]'), el = t.closest('[data-wall],[data-opening],[data-fixture],[data-removed-opening],[data-removed-fixture]');
+    const d = el?.dataset;
+    const pickEl = el && (d.wall ? {kind:'wall', id:d.wall} : d.opening || d.removedOpening ? {kind:'opening', id:d.opening || d.removedOpening}
+      : {kind:'fixture', id:d.fixture || d.removedFixture});
     drag = {kind:'pan', sx:e.clientX, sy:e.clientY, x0:view.x0, y0:view.y0, room:room && room.dataset.room, el:pickEl, moved:false};
   }
   svg.setPointerCapture(e.pointerId);
@@ -1285,6 +1351,11 @@ svg.addEventListener('pointermove', e => {
   if (drag.kind === 'measure'){
     if (far) drag.moved = true;
     ui.mCur = snapPoint(p, e.shiftKey); renderMeasure(); return;
+  }
+  if (drag.kind === 'opening'){
+    if (!drag.moved && !far) return;
+    drag.moved = true; drag.at = ui.openingPreview = openingPlacement(drag.preset, p); renderMeasure();
+    return;
   }
   if (drag.kind === 'fixture'){
     if (!drag.moved && !far) return;
@@ -1373,8 +1444,62 @@ document.addEventListener('keydown', e => {
 });
 
 /* ======================= Kalustekirjasto ======================= */
+/* ======================= Ovet ja aukot -kirjasto ======================= */
+// Planned defaults (assumed); width = frame opening, clear = free passage. Editable after placing.
+const OPENING_LIB = [
+  {kind:'door', name:['Väliovi 800','Door 800'], width:800, clear:700, swing:'left', height:2100},
+  {kind:'door', name:['Väliovi 900','Door 900'], width:900, clear:800, swing:'left', height:2100},
+  {kind:'door', name:['Väliovi 1000 (esteetön)','Door 1000 (accessible)'], width:1000, clear:900, swing:'left', height:2100},
+  {kind:'door', name:['Pariovi 1200','Double door 1200'], width:1200, clear:1100, swing:'double', height:2100},
+  {kind:'sliding_door', name:['Liukuovi 900','Sliding door 900'], width:900, clear:800, swing:'slide', height:2100},
+  {kind:'sliding_door', name:['Liukuovi 1200','Sliding door 1200'], width:1200, clear:1100, swing:'slide', height:2100},
+  {kind:'opening', name:['Oviaukko 900','Opening 900'], width:900, clear:900, height:2100},
+  {kind:'window', name:['Ikkuna 1200','Window 1200'], width:1200, height:1200, sill:900},
+];
+function openingIcon(p){
+  const w = p.width, t = 120, pad = 160, leafs = p.swing === 'double' ? 2 : 1, depth = p.kind === 'door' ? w/leafs : 260;
+  const S = 'stroke="#3d3a34" stroke-width="22" fill="none"';
+  let s = `<rect x="${-pad}" y="0" width="${pad}" height="${t}" fill="#8f897d"/><rect x="${w}" y="0" width="${pad}" height="${t}" fill="#8f897d"/>`;
+  if (p.kind === 'door') for (let i = 0; i < leafs; i++){
+    const hx = i ? w : 0, dir = i ? -1 : 1, len = w/leafs;
+    s += `<line x1="${hx}" y1="${t}" x2="${hx}" y2="${t+len}" ${S}/><path d="M${hx} ${t+len}A${len} ${len} 0 0 ${i ? 1 : 0} ${hx+dir*len} ${t}" ${S} stroke-dasharray="40 30"/>`;
+  }
+  else if (p.kind === 'sliding_door') s += `<rect x="0" y="${t*.15}" width="${w*.55}" height="${t*.3}" fill="#fff" stroke="#3d3a34" stroke-width="16"/><rect x="${w*.45}" y="${t*.55}" width="${w*.55}" height="${t*.3}" fill="#fff" stroke="#3d3a34" stroke-width="16"/>`;
+  else if (p.kind === 'window') s += `<rect x="0" y="0" width="${w}" height="${t}" fill="#f7fbfd" stroke="#4f7394" stroke-width="16"/><line x1="0" y1="${t/2}" x2="${w}" y2="${t/2}" stroke="#4f7394" stroke-width="16"/>`;
+  return `<svg viewBox="${-pad} ${-pad/2} ${w+2*pad} ${depth+t+pad}">${s}</svg>`;
+}
+// Where an opening lands: the nearest wall within reach (or its own wall when sliding), centred on the pointer, kept on the wall.
+function openingPlacement(preset, p){
+  let best = null;
+  for (const w of WALLS){
+    if (preset.wall && w.id !== preset.wall) continue;
+    const f = foot(p, w); if ((preset.wall || f.d < Math.max(400, w.thickness/2 + 250)) && (!best || f.d < best.f.d)) best = {w, f};
+  }
+  if (!best) return null;
+  const {w, f} = best, L = Math.hypot(w.b[0]-w.a[0], w.b[1]-w.a[1]), ux = (w.b[0]-w.a[0])/L, uy = (w.b[1]-w.a[1])/L;
+  if (preset.width > L) return {wall:w, ok:false, reason:tr('Seinä on aukkoa lyhyempi','The wall is shorter than the opening')};
+  const t = (f.x-w.a[0])*ux + (f.y-w.a[1])*uy, along = Math.max(0, Math.min(L - preset.width, Math.round((t - preset.width/2)/10)*10));
+  const at = o => Math.round(Math.hypot(o.a[0]-w.a[0], o.a[1]-w.a[1]));
+  const clash = OPENINGS.find(o => o.host_wall === w.id && o.id !== preset.ignore && along < at(o) + o.width && at(o) < along + preset.width);
+  const nx = -uy*w.thickness/2, ny = ux*w.thickness/2, p0 = [w.a[0]+ux*along, w.a[1]+uy*along], p1 = [p0[0]+ux*preset.width, p0[1]+uy*preset.width];
+  return {wall:w, along, end:Math.round(L - along - preset.width), ok:!clash,
+    reason:clash ? tr(`Menee päällekkäin aukon ${clash.id} kanssa`, `Overlaps opening ${clash.id}`) : '',
+    polygon:[[p0[0]+nx,p0[1]+ny],[p1[0]+nx,p1[1]+ny],[p1[0]-nx,p1[1]-ny],[p0[0]-nx,p0[1]-ny]]};
+}
+function placeOpening(preset, p){
+  const at = openingPlacement(preset, p);
+  if (!at) return toast(tr('Pudota ovi tai aukko seinän kohdalle','Drop the door or opening on a wall'));
+  if (!at.ok) return toast(at.reason);
+  let id = null;
+  const data = {kind:preset.kind, along_wall:at.along, width:preset.width, ...(preset.clear ? {clear_width:preset.clear} : {}),
+    ...(preset.height ? {height:preset.height} : {}), ...(preset.sill ? {sill_z:preset.sill} : {}), ...(preset.swing ? {swing:preset.swing} : {})};
+  if (editUnit(u => { const r = EDIT().addOpening(u, at.wall.id, data); id = r.id; return r; })){ setTool('select'); select({kind:'opening', id}); }
+}
+
 function buildLib(){
-  $('#lib').innerHTML = LIB.map((c,ci) => `<h4>${nm(c.cat)}</h4><div class="lib-grid">${c.items.map((it,ii) => {
+  $('#lib').innerHTML = `<h4>${tr('Ovet ja aukot','Doors and openings')}</h4><div class="lib-grid">${OPENING_LIB.map((p, i) =>
+    `<div class="item" data-key="o:${i}" title="${tr('Vedä seinälle. Napsautus lisää valitulle seinälle.','Drag onto a wall. Click adds it to the selected wall.')}">${openingIcon(p)}<b>${esc(tr(...p.name))}</b><small>${p.width}${p.clear ? ` · ${tr('vapaa','clear')} ${p.clear}` : ''}</small></div>`).join('')}</div>`
+  + LIB.map((c,ci) => `<h4>${nm(c.cat)}</h4><div class="lib-grid">${c.items.map((it,ii) => {
     const [t,n,w,d,col] = it, pad = Math.max(w,d)*.08;
     return `<div class="item" data-key="${ci}:${ii}" title="${tr('Napsauta lisätäksesi tai vedä haluamaasi kohtaan pohjapiirroksessa', 'Click to add, or drag onto the plan')}">
       <svg viewBox="${-w/2-pad} ${-d/2-pad} ${w+2*pad} ${d+2*pad}">${furnSVG(t,w,d,col)}</svg><b>${esc(nm(n))}</b><small>${w}×${d}</small></div>`;
@@ -1386,7 +1511,7 @@ function buildLib(){
     libDrag = {el, id:e.pointerId, sx:e.clientX, sy:e.clientY, it:itemOf(el), ghost:null};
   }));
 }
-const itemOf = el => { const [ci, ii] = el.dataset.key.split(':').map(Number); return LIB[ci].items[ii]; };
+const itemOf = el => { const [ci, ii] = el.dataset.key.split(':'); return ci === 'o' ? {opening:OPENING_LIB[+ii]} : LIB[+ci].items[+ii]; };
 
 // Kalustekirjaston veto ja pudotus: toteutettu pointer-tapahtumilla (HTML5-veto ei ole luotettava iPadilla).
 // Listalla on touch-action:pan-y, joten pystysuuntaisen pyyhkäisyn selain vierittää (laukaisee pointercancelin) ja vain vaakasuuntainen veto aloittaa pudotuksen.
@@ -1402,6 +1527,17 @@ function dropPoint(x, y){
 addEventListener('pointermove', e => {
   if (!libDrag || e.pointerId !== libDrag.id) return;
   const {it} = libDrag;
+  if (it.opening){
+    if (!libDrag.ghost){
+      if (Math.hypot(e.clientX-libDrag.sx, e.clientY-libDrag.sy) < TAP) return;
+      const g = libDrag.ghost = document.createElement('div'); g.id = 'ghost'; g.innerHTML = openingIcon(it.opening);
+      Object.assign(g.style, {width:'44px', height:'44px'}); document.body.appendChild(g); libDrag.el.classList.add('dragging');
+    }
+    const p = dropPoint(e.clientX, e.clientY), at = p && !is3D() ? openingPlacement(it.opening, p) : null;
+    ui.openingPreview = at; renderMeasure();
+    Object.assign(libDrag.ghost.style, {left:e.clientX+'px', top:e.clientY+'px', opacity:at ? '0' : '.8'});   // the in-wall preview replaces the icon
+    return;
+  }
   if (!libDrag.ghost){
     if (Math.hypot(e.clientX-libDrag.sx, e.clientY-libDrag.sy) < TAP) return;
     const g = libDrag.ghost = document.createElement('div'); g.id = 'ghost';
@@ -1418,6 +1554,16 @@ function endLibDrag(e, ok){
   if (!libDrag || e.pointerId !== libDrag.id) return;
   const d = libDrag; libDrag = null;
   d.el.classList.remove('dragging');
+  if (d.it.opening){
+    if (d.ghost) d.ghost.remove();
+    ui.openingPreview = null; renderMeasure();
+    if (!ok) return;
+    if (d.ghost){ const p = dropPoint(e.clientX, e.clientY); if (p) placeOpening(d.it.opening, p); else toast(tr('Pudota ovi tai aukko seinän kohdalle','Drop the door or opening on a wall')); return; }
+    const wall = ui.sel?.kind === 'wall' && WALLS.find(w => w.id === ui.sel.id);   // click: the selected wall's middle
+    if (wall) placeOpening(d.it.opening, {x:(wall.a[0]+wall.b[0])/2, y:(wall.a[1]+wall.b[1])/2});
+    else toast(tr('Vedä ovi seinälle tai valitse ensin seinä','Drag the door onto a wall or select a wall first'));
+    return;
+  }
   if (d.ghost){
     d.ghost.remove();
     if (!ok) return;

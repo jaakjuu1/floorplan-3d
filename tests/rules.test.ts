@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { readUnit } from '../src/io/unit';
-import { addFixture, addWall, demolishWall, modifyOpening, moveFixture, removeThreshold, setUserValue } from '../src/model/edit';
+import { addFixture, addOpening, addWall, demolishWall, modifyOpening, moveFixture, removeFixture, removeThreshold, setUserValue } from '../src/model/edit';
 import { evaluate, parameter, surfaced } from '../src/model/rules';
 
 const unit = () => readUnit(readFileSync(new URL('../examples/accessibility-unit.json', import.meta.url), 'utf8'));
@@ -66,4 +66,19 @@ test('limits are standard defaults that a project can override in unit.user', ()
   assert.equal(setUserValue(strict, 'door_clear_width_mm', null).unit.user!.door_clear_width_mm, undefined);
   assert.throws(() => setUserValue(u, 'door_clear_width_mm', -5), /positiivinen/);
   assert.deepEqual(strict.changes, u.changes); // metadata, not the change layer
+});
+
+test('changes to bearing walls and unit-v2 operations surface their checks without blocking', () => {
+  const bearing = demolishWall(unit(), 'w1').unit;
+  const f = evaluate(bearing).find(f => f.rule === 'muutostyo.kantava')!;
+  assert.deepEqual([f.element?.id, f.severity, f.ok], ['w1', 'tarkista', false]);
+  assert.match(f.message.fi, /w1.*kantava/);
+  const door = addOpening(unit(), 'w1', { kind: 'door', along_wall: 2500, width: 900, clear_width: 700 }).unit;
+  const fs = evaluate(door);
+  assert.ok(fs.find(f => f.rule === 'muutostyo.kantava' && f.element?.id === 'w1'));
+  assert.ok(fs.find(f => f.rule === 'muutostyo.seina_lupa'));
+  const newDoor = fs.find(f => f.rule === 'esteettomyys.oven_vapaa_leveys' && f.element?.id === 'o-new-1')!;
+  assert.deepEqual([newDoor.ok, newDoor.touched], [false, true]);
+  assert.ok(evaluate(removeFixture(unit(), 'f1').unit).find(f => f.rule === 'muutostyo.markatila' && f.element?.id === 'r2'));
+  assert.equal(evaluate(demolishWall(unit(), 'w2').unit).find(f => f.rule === 'muutostyo.kantava'), undefined);
 });

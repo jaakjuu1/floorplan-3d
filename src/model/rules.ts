@@ -133,6 +133,7 @@ export function evaluate(unit: UnitInputs, rules: Rule[] = rulesFile.rules as Ru
     if ('target' in c) touched.add(c.target);
     if (c.op === 'add_wall') touched.add(c.wall.id);
     if (c.op === 'add_fixture') touched.add(c.fixture.id);
+    if (c.op === 'add_opening') touched.add(c.opening.id);
     if (c.op === 'change_finish') touched.add(c.room);
   }
   for (const f of fixtures) if (touched.has(f.id)) { const r = roomOf(xy(f), rooms); if (r) touched.add(r.id); }
@@ -146,7 +147,7 @@ export function evaluate(unit: UnitInputs, rules: Rule[] = rulesFile.rules as Ru
     const source = { ...rulesFile.sources[rule.source as keyof typeof rulesFile.sources], section: rule.section };
     const params = (rule as { params?: Record<string, unknown> }).params ?? {};
     const push = (f: Partial<Finding> & { ok: boolean; touched: boolean }, label = '') => {
-      const fill = (s: string) => s.replace('{element}', label).replace('{value}', String(f.value ?? '')).replace('{limit}', String(f.limit ?? ''));
+      const fill = (s: string) => s.replace('{element}', label).replace('{kind}', String(f.value ?? '')).replace('{value}', String(f.value ?? '')).replace('{limit}', String(f.limit ?? ''));
       out.push({ rule: rule.id, profile: rule.profile, severity: rule.severity as Severity, source,
         title: { fi: rule.title_fi, en: rule.title_en }, message: { fi: fill(rule.message_fi), en: fill(rule.message_en) }, ...f });
     };
@@ -157,6 +158,22 @@ export function evaluate(unit: UnitInputs, rules: Rule[] = rulesFile.rules as Ru
       case 'change_ops':
         if (changes.some(c => (params.ops as string[]).includes(c.op))) push({ ok: false, touched: true });
         break;
+      case 'structural_wall_change': {
+        const kinds = params.kinds as string[], seen = new Set<string>();
+        const names: Record<string, [string, string]> = { load_bearing: ['kantava', 'load-bearing'], external: ['ulkoseinä', 'external'], party: ['huoneistojen välinen', 'party wall'] };
+        for (const c of changes) {
+          const wallId = c.op === 'demolish_wall' ? c.target : c.op === 'add_opening' ? c.opening.host_wall
+            : c.op === 'remove_opening' ? unit.baseline.openings?.find(o => o.id === c.target)?.host_wall : undefined;
+          const wall = wallId && (unit.baseline.walls?.find(w => w.id === wallId) ?? walls.find(w => w.id === wallId));
+          if (!wall || !kinds.includes(wall.kind) || seen.has(wall.id)) continue;
+          seen.add(wall.id);
+          const [fi, en] = names[wall.kind];
+          out.push({ rule: rule.id, profile: rule.profile, severity: rule.severity as Severity, source, ok: false, touched: true,
+            element: { kind: 'wall', id: wall.id }, title: { fi: rule.title_fi, en: rule.title_en },
+            message: { fi: rule.message_fi.replace('{element}', wall.id).replace('{value}', fi), en: rule.message_en.replace('{element}', wall.id).replace('{value}', en) } });
+        }
+        break;
+      }
       case 'demolish_unverified_wall':
         for (const c of changes) if (c.op === 'demolish_wall') {
           const wall = unit.baseline.walls?.find(w => w.id === c.target);
@@ -170,7 +187,9 @@ export function evaluate(unit: UnitInputs, rules: Rule[] = rulesFile.rules as Ru
         for (const c of changes) {
           if (c.op === 'change_finish') { const r = rooms.find(r => r.id === c.room); if (r && WET.has(r.kind)) wet.add(r.id); }
           if (c.op === 'add_fixture' || c.op === 'replace_fixture') { const f = fixtures.find(f => f.id === (c.op === 'add_fixture' ? c.fixture.id : c.target)); if (f) mark(xy(f)); }
-          if (c.op === 'modify_opening') { const o = openings.find(o => o.id === c.target); if (o) openingSides(o, walls).forEach(mark); }
+          if (c.op === 'modify_opening' || c.op === 'add_opening') { const o = openings.find(o => o.id === (c.op === 'add_opening' ? c.opening.id : c.target)); if (o) openingSides(o, walls).forEach(mark); }
+          if (c.op === 'remove_opening') { const o = unit.baseline.openings?.find(o => o.id === c.target); if (o) openingSides(o, unit.baseline.walls ?? []).forEach(mark); }
+          if (c.op === 'remove_fixture') { const f = unit.baseline.fixtures?.find(f => f.id === c.target); if (f) mark(xy(f)); }
           if (c.op === 'remove_threshold') {
             const t = unit.baseline.thresholds?.find(t => t.id === c.target), o = t?.at_opening && unit.baseline.openings?.find(o => o.id === t.at_opening);
             if (o) openingSides(o, unit.baseline.walls ?? []).forEach(mark);

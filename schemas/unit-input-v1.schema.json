@@ -19,6 +19,26 @@
       "title": "AddFixture",
       "type": "object"
     },
+    "AddOpening": {
+      "additionalProperties": false,
+      "description": "unit-v2: a planned new door, window or opening in an existing or added wall.",
+      "properties": {
+        "op": {
+          "const": "add_opening",
+          "title": "Op",
+          "type": "string"
+        },
+        "opening": {
+          "$ref": "#/$defs/Opening"
+        }
+      },
+      "required": [
+        "op",
+        "opening"
+      ],
+      "title": "AddOpening",
+      "type": "object"
+    },
     "AddWall": {
       "additionalProperties": false,
       "properties": {
@@ -856,6 +876,50 @@
       "title": "RawMeasurement",
       "type": "object"
     },
+    "RemoveFixture": {
+      "additionalProperties": false,
+      "description": "unit-v2: remove a fixed fixture.",
+      "properties": {
+        "op": {
+          "const": "remove_fixture",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "RemoveFixture",
+      "type": "object"
+    },
+    "RemoveOpening": {
+      "additionalProperties": false,
+      "description": "unit-v2: close an opening; its thresholds go with it.",
+      "properties": {
+        "op": {
+          "const": "remove_opening",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "RemoveOpening",
+      "type": "object"
+    },
     "RemoveThreshold": {
       "additionalProperties": false,
       "properties": {
@@ -1188,7 +1252,10 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "unit-v1",
+      "enum": [
+        "unit-v1",
+        "unit-v2"
+      ],
       "title": "Schema Version",
       "type": "string"
     },
@@ -1209,10 +1276,13 @@
         "discriminator": {
           "mapping": {
             "add_fixture": "#/$defs/AddFixture",
+            "add_opening": "#/$defs/AddOpening",
             "add_wall": "#/$defs/AddWall",
             "change_finish": "#/$defs/ChangeFinish",
             "demolish_wall": "#/$defs/DemolishWall",
             "modify_opening": "#/$defs/ModifyOpening",
+            "remove_fixture": "#/$defs/RemoveFixture",
+            "remove_opening": "#/$defs/RemoveOpening",
             "remove_threshold": "#/$defs/RemoveThreshold",
             "replace_fixture": "#/$defs/ReplaceFixture"
           },
@@ -1239,6 +1309,15 @@
           },
           {
             "$ref": "#/$defs/ChangeFinish"
+          },
+          {
+            "$ref": "#/$defs/AddOpening"
+          },
+          {
+            "$ref": "#/$defs/RemoveOpening"
+          },
+          {
+            "$ref": "#/$defs/RemoveFixture"
           }
         ]
       },

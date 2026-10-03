@@ -1,6 +1,7 @@
 import { parseUnit } from '../io/unit';
 import { apply } from './apply';
-import type { Changes, Fixture, Measurement, UnitInputs, Wall } from './unit-input-v1';
+import type { Changes, Fixture, Measurement, Opening, UnitInputs, Wall } from './unit-input-v1';
+import { UNIT_V2_OPS } from './validate';
 
 type Change = Changes[number];
 type XY = { x: number; y: number };
@@ -17,6 +18,7 @@ export function nextId(unit: UnitInputs, prefix: string): string {
   for (const c of unit.changes ?? []) {
     if (c.op === 'add_wall') used.add(c.wall.id);
     if (c.op === 'add_fixture') used.add(c.fixture.id);
+    if (c.op === 'add_opening') used.add(c.opening.id);
   }
   let n = 1;
   while (used.has(`${prefix}-${n}`)) n++;
@@ -37,21 +39,24 @@ export function accept(unit: UnitInputs, id: string, label = 'Muutos'): Edited {
 /** Target state (survey + changes) with full measurement provenance. */
 export const targetState = (unit: UnitInputs) => apply(unit.baseline, unit.changes ?? []);
 const target = targetState;
+// The first unit-v2 operation upgrades the file version; plans without them stay unit-v1.
 function withChange(unit: UnitInputs, change: Change, id: string): Edited {
   const next = structuredClone(unit);
   next.changes = [...(next.changes ?? []), change];
+  if (UNIT_V2_OPS.has(change.op)) next.schema_version = 'unit-v2';
   return accept(next, id);
 }
+const changeId = (c: Change): string => 'target' in c ? c.target : c.op === 'add_wall' ? c.wall.id
+  : c.op === 'add_fixture' ? c.fixture.id : c.op === 'add_opening' ? c.opening.id : c.room;
 function find<T extends { id: string }>(items: T[] | undefined, id: string, what: string): T {
   const item = items?.find(item => item.id === id);
   if (!item) throw new Error(`${what} ${id} ei ole tavoitetilassa`);
   return item;
 }
 
+/** A person makes the final call: bearing, external and party walls can be demolished; the rules flag them. */
 export function demolishWall(unit: UnitInputs, id: string): Edited {
-  const wall = find(target(unit).walls, id, 'Seinää');
-  if (wall.kind === 'load_bearing') throw new Error('Kantavia seiniä ei voi purkaa');
-  if (wall.kind === 'external' || wall.kind === 'party') throw new Error('Ulkoseinää ei voi purkaa');
+  find(target(unit).walls, id, 'Seinää');
   return withChange(unit, { op: 'demolish_wall', target: id }, id);
 }
 
@@ -61,9 +66,7 @@ export function revertChange(unit: UnitInputs, index: number): Edited {
   if (!change) throw new Error('Muutosta ei löydy');
   const next = structuredClone(unit);
   next.changes = next.changes!.filter((_, i) => i !== index);
-  const id = 'target' in change ? change.target : change.op === 'add_wall' ? change.wall.id
-    : change.op === 'add_fixture' ? change.fixture.id : change.room;
-  return accept(next, id, 'Muutoksen peruminen');
+  return accept(next, changeId(change), 'Muutoksen peruminen');
 }
 
 export function restoreWall(unit: UnitInputs, id: string): Edited {
@@ -118,6 +121,55 @@ export function replaceFixture(unit: UnitInputs, id: string, fixture: PlannedFix
   return withChange(unit, { op: 'replace_fixture', target: id, fixture: fixtureData(fixture, id) }, id);
 }
 
+export interface PlannedOpening {
+  kind: Opening['kind']; along_wall: number; width: number; clear_width?: number; height?: number; sill_z?: number;
+  swing?: Opening['swing'];
+}
+function openingData(o: PlannedOpening, id: string) {
+  const v = (value: number, key: string) => designed(value, `${id}/${key}`);
+  return { along_wall: v(o.along_wall, 'along_wall'), width: v(o.width, 'width'),
+    ...(o.clear_width != null ? { clear_width: v(o.clear_width, 'clear_width') } : {}),
+    ...(o.height != null ? { height: v(o.height, 'height') } : {}),
+    ...(o.sill_z != null ? { sill_z: v(o.sill_z, 'sill_z') } : {}),
+    ...(o.swing ? { swing: o.swing } : {}) };
+}
+
+/** unit-v2: a planned door, window or opening in a wall of the target state (existing or added). */
+export function addOpening(unit: UnitInputs, wallId: string, opening: PlannedOpening): Edited {
+  find(target(unit).walls, wallId, 'Seinää');
+  const id = nextId(unit, 'o-new');
+  return withChange(unit, { op: 'add_opening', opening: { id, kind: opening.kind, host_wall: wallId, ...openingData(opening, id) } }, id);
+}
+
+/** unit-v2: close an opening (its thresholds go too); a planned one is simply taken back. */
+export function removeOpening(unit: UnitInputs, id: string): Edited {
+  find(target(unit).openings, id, 'Aukkoa');
+  const index = (unit.changes ?? []).findIndex(c => c.op === 'add_opening' && c.opening.id === id);
+  if (index >= 0) return revertChange(unit, index);
+  return withChange(unit, { op: 'remove_opening', target: id }, id);
+}
+
+/** unit-v2: remove a fixture; a planned one is simply taken back. */
+export function removeFixture(unit: UnitInputs, id: string): Edited {
+  find(target(unit).fixtures, id, 'Kiintokalustetta');
+  const index = (unit.changes ?? []).findIndex(c => c.op === 'add_fixture' && c.fixture.id === id);
+  if (index >= 0) return revertChange(unit, index);
+  return withChange(unit, { op: 'remove_fixture', target: id }, id);
+}
+
+/** Slide an opening along its wall: a planned opening keeps its add_opening, an existing one gets one modify_opening. */
+export function moveOpening(unit: UnitInputs, id: string, along: number): Edited {
+  find(target(unit).openings, id, 'Aukkoa');
+  const next = structuredClone(unit), changes = next.changes ?? [], value = designed(along, `${id}/along_wall`);
+  const added = changes.find(c => c.op === 'add_opening' && c.opening.id === id) as Extract<Change, { op: 'add_opening' }> | undefined;
+  if (added) { added.opening.along_wall = value; return accept(next, id); }
+  const last = changes.length ? changes[changes.length - 1] : undefined;
+  if (last?.op === 'modify_opening' && last.target === id && Object.keys(last.set).every(k => k === 'along_wall')) {
+    last.set.along_wall = value; return accept(next, id);
+  }
+  return withChange(unit, { op: 'modify_opening', target: id, set: { along_wall: value } }, id);
+}
+
 /** Move or turn a fixture. Repeated moves update the fixture's own planned change instead of piling up:
  *  an added fixture keeps its add_fixture, a surveyed one gets (or reuses) one replace_fixture. */
 export function moveFixture(unit: UnitInputs, id: string, pose: { x: number; y: number; rotation_deg?: number }): Edited {
@@ -168,13 +220,15 @@ export function setUserValue(unit: UnitInputs, key: string, value: number | null
 }
 
 /** Change-drawing classes: new elements in red, changed ones highlighted (§5.6). */
-export function changeMarks(unit: UnitInputs): { added: string[]; modified: string[] } {
-  const added = new Set<string>(), modified = new Set<string>();
+export function changeMarks(unit: UnitInputs): { added: string[]; modified: string[]; removed: string[] } {
+  const added = new Set<string>(), modified = new Set<string>(), removed = new Set<string>();
   for (const c of unit.changes ?? []) {
     if (c.op === 'add_wall') added.add(c.wall.id);
     else if (c.op === 'add_fixture') added.add(c.fixture.id);
+    else if (c.op === 'add_opening') added.add(c.opening.id);
     else if (c.op === 'modify_opening' || c.op === 'replace_fixture') modified.add(c.target);
     else if (c.op === 'change_finish') modified.add(c.room);
+    else if (c.op === 'remove_opening' || c.op === 'remove_fixture') removed.add(c.target);
   }
-  return { added: [...added], modified: [...modified].filter(id => !added.has(id)) };
+  return { added: [...added], modified: [...modified].filter(id => !added.has(id)), removed: [...removed] };
 }

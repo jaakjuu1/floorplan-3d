@@ -77,7 +77,7 @@ function roomDefaults(unit: UnitInputs): Design['rooms'] {
 /** Validate everything on a detached copy before the editor swaps its live state. */
 export function parseDesign(input: unknown, defaults: Design): Design {
   const data = record(structuredClone(input));
-  if (data.schema_version === 'unit-v1') {
+  if (data.schema_version === 'unit-v1' || data.schema_version === 'unit-v2') {
     const unit = parseUnit(data);
     return { schema_version: DEFAULT_STORE, unit, furniture: [], rooms: roomDefaults(unit), measures: [] };
   }

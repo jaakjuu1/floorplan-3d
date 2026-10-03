@@ -58,6 +58,29 @@ export function apply(baseline: Baseline, changes: Changes): Baseline {
         target(current.fixtures, change.target);
         current.fixtures = current.fixtures.map(f => f.id === change.target ? { ...change.fixture, id: change.target } : f);
         break;
+      case 'add_opening': {
+        newId(change.opening.id);
+        const start = change.opening.along_wall.value_mm, end = start + change.opening.width.value_mm;
+        const other = current.openings.find(o => o.host_wall === change.opening.host_wall &&
+          start < o.along_wall.value_mm + o.width.value_mm && o.along_wall.value_mm < end);
+        if (other) throw new Error(`add_opening: ${change.opening.id} overlaps ${other.id}`);
+        current.openings.push(change.opening);
+        break;
+      }
+      case 'remove_opening': {
+        target(current.openings, change.target);
+        const removed = new Set([change.target]);
+        current.thresholds.filter(t => t.at_opening === change.target).forEach(t => removed.add(t.id));
+        current.openings = current.openings.filter(o => o.id !== change.target);
+        current.thresholds = current.thresholds.filter(t => !removed.has(t.id));
+        removeMeasurements(removed);
+        break;
+      }
+      case 'remove_fixture':
+        target(current.fixtures, change.target);
+        current.fixtures = current.fixtures.filter(f => f.id !== change.target);
+        removeMeasurements(new Set([change.target]));
+        break;
       case 'change_finish': {
         const room = target(current.rooms, change.room);
         if (change.floor != null) room.floor = change.floor;

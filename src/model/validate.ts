@@ -118,10 +118,15 @@ export function validateChanges(input: unknown): UnitInputs['changes'] {
   return changes;
 }
 
+/** unit-v2 only adds change operations; a file that uses them must say so. */
+export const UNIT_V2_OPS = new Set(['add_opening', 'remove_opening', 'remove_fixture']);
+
 export function validateUnit(input: unknown): UnitInputs {
   requireValid(unitSchema(input), ajv.errorsText(unitSchema.errors));
   const unit = input as UnitInputs;
   validateBaseline(unit.baseline);
   validateChanges(unit.changes ?? []);
+  const newer = [...new Set((unit.changes ?? []).map(c => c.op).filter(op => UNIT_V2_OPS.has(op)))].sort();
+  requireValid(unit.schema_version === 'unit-v2' || !newer.length, `${newer.join(', ')} requires schema_version unit-v2`);
   return unit;
 }

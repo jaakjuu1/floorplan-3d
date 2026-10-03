@@ -22,10 +22,12 @@ test('walls, openings, thresholds and fixtures are changed as element objects in
   const baseline = (await saved()).unit.baseline;
   await expect(panel.locator('#changeList')).toContainText('Ei muutoksia');
 
-  // 2D: a bearing wall explains why it stays; a partition is demolished and drawn as a yellow ghost.
+  // 2D: a bearing wall shows its type and source and a check note, but the person decides; a partition is demolished as a yellow ghost.
   await page.locator('#gWalls [data-wall="w1"]').last().click();
   await expect(panel).toContainText('Kantava');
-  await expect(panel.locator('[data-edit="demolishWall"]')).toBeDisabled();
+  await expect(panel).toContainText('archive:wall-schedule');
+  await expect(panel).toContainText('Lopullisen päätöksen tekee ihminen');
+  await expect(panel.locator('[data-edit="demolishWall"]')).toBeEnabled();
   await page.locator('#gWalls [data-wall="w2"]').first().click();
   await expect(panel).toContainText('Väliseinä');
   await panel.locator('[data-edit="demolishWall"]').click();
@@ -316,10 +318,14 @@ test('new walls are drawn straight and snap to walls; Delete removes or demolish
   await page.evaluate(() => (window as any).select({ kind: 'wall', id: 'w2' }));
   await page.keyboard.press('Delete');
   await expect.poll(async () => (await changes()).at(-1)).toEqual({ op: 'demolish_wall', target: 'w2' });
-  // A surveyed fixture explains why it cannot be deleted yet; a planned grab bar is deleted. Its 2D symbol is a rail.
+  // A surveyed fixture is marked for removal (unit-v2) and shown as a yellow ghost; a planned grab bar is deleted. Its 2D symbol is a rail.
   await page.evaluate(() => (window as any).select({ kind: 'fixture', id: 'f1' }));
   await page.keyboard.press('Delete');
-  await expect(page.locator('#toast')).toContainText('unit-v1');
+  await expect.poll(async () => (await changes()).at(-1)).toEqual({ op: 'remove_fixture', target: 'f1' });
+  expect((await saved()).unit.schema_version).toBe('unit-v2');
+  await expect(page.locator('#gFurn [data-removed-fixture="f1"]')).toHaveCount(1);
+  await page.locator('#undo').click();
+  await expect.poll(async () => (await changes()).some((c: any) => c.op === 'remove_fixture')).toBe(false);
   await page.keyboard.press('k');
   await click(3200, -150);
   await expect.poll(async () => (await changes()).some((c: any) => c.op === 'add_fixture')).toBe(true);

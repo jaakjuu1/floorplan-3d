@@ -61,7 +61,7 @@ test('canonical model preserves editor flows, migration and diagonal 2D/3D geome
   if (phone) await shot('2d-before');
 
   if (phone) await activate(page.locator('#tgLib'));
-  await activate(page.locator('#lib .item').first());
+  await activate(page.locator('#lib .item:not([data-key^="o:"])').first());
   await expect(furniture).toHaveCount(migratedCount + 1);
   await activate(page.locator('#undo'));
   await expect(furniture).toHaveCount(migratedCount);
@@ -224,7 +224,7 @@ test('canonical model preserves editor flows, migration and diagonal 2D/3D geome
   expect(viewBox[2]).toBeGreaterThan(0);
   expect(viewBox[3]).toBeGreaterThan(0);
   if (phone && !await page.locator('aside.lib').evaluate(el => el.classList.contains('open'))) await activate(page.locator('#tgLib'));
-  await activate(page.locator('#lib .item').first());
+  await activate(page.locator('#lib .item:not([data-key^="o:"])').first());
   await expect(furniture).toHaveCount(1);
   expect(pageErrors).toEqual([]);
 });
@@ -237,7 +237,7 @@ test('corrupt v2 storage survives edits until a validated import recovers saving
   const activate = async (locator: ReturnType<typeof page.locator>) => phone ? locator.tap() : locator.click();
   await expect(page.locator('#toast')).toContainText('Tallennus on virheellinen');
   if (phone) await activate(page.locator('#tgLib'));
-  await activate(page.locator('#lib .item').first());
+  await activate(page.locator('#lib .item:not([data-key^="o:"])').first());
   if (phone) await activate(page.locator('#tgLib'));
   expect(await page.evaluate(() => localStorage.getItem('kodin-design-v2'))).toBe(corrupt);
 

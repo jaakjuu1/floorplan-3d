@@ -24,6 +24,8 @@ export interface ProjectedFixture {
 export interface ProjectedUnit {
   rooms: ProjectedRoom[]; walls: ProjectedWall[]; openings: ProjectedOpening[];
   fixtures: ProjectedFixture[]; demolishedWalls: ProjectedWall[];
+  /** Survey elements a change removes (shown yellow); openings only while their wall stays. */
+  removedOpenings: ProjectedOpening[]; removedFixtures: ProjectedFixture[];
   bounds: { x: number; y: number; w: number; h: number };
 }
 
@@ -129,12 +131,17 @@ export function projectUnit(unit: UnitInputs): ProjectedUnit {
       ...(presentation?.counted === false ? { counted: false } : {}) };
   });
   const openings = targetOpenings.map(o => projectOpening(o, wallById, isDemo));
-  const fixtures = (target.fixtures ?? []).map(f => {
+  const projectFixture = (f: NonNullable<typeof target.fixtures>[number]): ProjectedFixture => {
     const [x, y] = measurementPoint(f.x.value_mm, f.y.value_mm);
     return { id: f.id, kind: f.kind, x, y,
     width: f.width.value_mm, depth: f.depth.value_mm, rotation_deg: toScreenAngle(f.rotation_deg ?? 0),
     ...(f.height ? { height: f.height.value_mm } : {}),
-  }; });
-  return { rooms, walls, openings, fixtures, demolishedWalls,
+  }; };
+  const fixtures = (target.fixtures ?? []).map(projectFixture);
+  const targetOpeningIds = new Set(targetOpenings.map(o => o.id)), targetFixtureIds = new Set((target.fixtures ?? []).map(f => f.id));
+  const removedOpenings = sourceOpenings.filter(o => !targetOpeningIds.has(o.id) && wallById.has(o.host_wall))
+    .map(o => projectOpening(o, wallById, isDemo));
+  const removedFixtures = (baseline.fixtures ?? []).filter(f => !targetFixtureIds.has(f.id)).map(projectFixture);
+  return { rooms, walls, openings, fixtures, demolishedWalls, removedOpenings, removedFixtures,
     bounds: boundsOf([...rooms.map(r => r.poly), ...walls.flatMap(w => [w.polygon]), ...openings.map(o => o.polygon)]) };
 }
